@@ -29,6 +29,7 @@ xray [base]            base branch of the PR (default main; also tries origin/<b
   -f, --format <fmt>   markdown | json
   -o, --out <file>     write the report to a file
   -c, --config <file>  config, relative to --cwd (default xray.config.json)
+  --inventory          print entry point candidates and feature map checks as JSON (ignores base)
   --head <sha>         commit to report as the PR head (default HEAD; the Action passes the PR's head)
 ```
 
@@ -122,9 +123,26 @@ Optional. It names the product's features so diagrams say "Cart" instead of a co
 
 - `entryPoints` are `path#name` units where the feature starts; the walk stops there.
 - `files` (optional) claims changed code even when no walk reaches an entry point.
-- xray only reads this file. It is meant to be written and updated by the xray skill in Claude Code
-  and reviewed like code; the report lists changed code no feature covers.
+- xray only reads this file. The xray skill for Claude Code writes and updates it; review it like
+  code. The report lists changed code no feature covers, which is the cue to run the skill again.
 - Without it, every entry point reached is its own feature and the section says the map is missing.
+
+### The xray skill for Claude Code
+
+Install the plugin from this repository, then ask Claude to create the feature map (or run
+`/xray:features`) from your project's root:
+
+```
+/plugin install xray --marketplace pearpages/xray
+```
+
+On older Claude Code versions: `/plugin marketplace add pearpages/xray`, then
+`/plugin install xray@xray`. The skill needs Node.js 22+, git and npm: on first use it downloads and
+builds xray into the plugin's data folder (about a minute), then reuses that build. It reads your
+code, writes `xray.features.json`, checks it, and leaves it for you to review and commit.
+
+To audit a map yourself, `xray --inventory` prints the entry point candidates, the map's status,
+entry points that no longer exist and pages no feature claims.
 
 ## Monorepos
 
@@ -147,7 +165,7 @@ Every package with a `tsconfig.json` is analysed together, and workspace imports
 4. **Public API / contracts** — diff of exports and endpoints, compatible/breaking, affected usages.
 5. **Bundle size** — build base and PR, gzip/brotli chunks, configurable threshold and cause.
 
-Next: a Claude skill on top of the CLI that explains the diagrams and risks.
+Claude skill: ✅ writes and updates the feature map. Next: explaining the diagrams and risks.
 
 ## Development
 
