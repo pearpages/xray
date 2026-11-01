@@ -3,3 +3,4 @@ dist/
 *.tsbuildinfo
 coverage/
 xray-report.md
+packages/quality-ui/tmp-reports/

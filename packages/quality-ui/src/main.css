@@ -1,0 +1,7 @@
+@import "@pearpages/pulp-css";
+@import "@pearpages/pulp-react/styles.css";
+
+body {
+  background: var(--color-surface-base);
+  color: var(--color-text-default);
+}

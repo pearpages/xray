@@ -1,0 +1,25 @@
+.evolution {
+  width: 100%;
+  max-width: 48rem;
+  height: auto;
+}
+
+.evolution__grid {
+  stroke: var(--color-border-default);
+  stroke-dasharray: 2 4;
+}
+
+.evolution__line {
+  fill: none;
+  stroke: var(--color-action-primary);
+  stroke-width: 2;
+}
+
+.evolution__point {
+  fill: var(--color-action-primary);
+}
+
+.evolution__label {
+  fill: var(--color-text-default);
+  font-size: 11px;
+}

@@ -1,0 +1,18 @@
+.report-loader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px dashed var(--color-border-default);
+  border-radius: var(--radius-surface);
+}
+
+.report-loader--dragging {
+  border-color: var(--color-border-focus);
+  background: var(--color-surface-sunken);
+}
+
+.report-loader__input {
+  display: none;
+}
