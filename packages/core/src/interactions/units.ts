@@ -88,6 +88,23 @@ function defaultExportName(sourceFile: SourceFile): string | undefined {
   return undefined;
 }
 
+/** PascalCase (not ALL_CAPS): `MarketScreen`, `Cart`, but not `OPTIONS` or `listingsFor`. */
+const COMPONENT_NAME = /^[A-Z][a-z0-9]/;
+
+export function isComponentLike(unit: Unit): boolean {
+  return unit.kind === "code" && (unit.isDefaultExport || COMPONENT_NAME.test(unit.name));
+}
+
+/**
+ * Whether a unit of an entry-glob file may start a feature: a component, or, in a file
+ * without components (`main.tsx`, a route file), a unit nothing in the code calls (`root`,
+ * `GET`: the framework does). Helpers in those files, used by screens, are not.
+ */
+export function isEntryUnit(unit: Unit, fileUnits: Unit[], callers: () => number): boolean {
+  if (isComponentLike(unit)) return true;
+  return unit.kind === "code" && !fileUnits.some(isComponentLike) && callers() === 0;
+}
+
 /** Caches units per file and finds the unit enclosing a node. */
 export class UnitIndex {
   private readonly byFile = new Map<SourceFile, Unit[]>();

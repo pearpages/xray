@@ -2,7 +2,7 @@ import { matchesGlob } from "node:path";
 import type { XrayConfig } from "../config.js";
 import type { ChangedCode } from "./changed-code.js";
 import { featuresFor, loadFeatureMap, type FeatureDefinition } from "./features.js";
-import type { Unit } from "./units.js";
+import { isEntryUnit, type Unit } from "./units.js";
 import { walkDown, walkUp, type DownWalk, type Interaction, type UpWalk } from "./walk.js";
 
 export interface InteractionUnit {
@@ -118,7 +118,9 @@ export function analyzeInteractions(
   const map = featureMap.status === "found" ? featureMap.map : undefined;
   const mapEntries = new Set(map?.features.flatMap((feature) => feature.entryPoints) ?? []);
   const isEntry = (unit: Unit) =>
-    mapEntries.has(unit.id) || settings.entryGlobs.some((glob) => matchesGlob(unit.file, glob));
+    mapEntries.has(unit.id) ||
+    (settings.entryGlobs.some((glob) => matchesGlob(unit.file, glob)) &&
+      isEntryUnit(unit, code.units.of(unit.node.getSourceFile()), () => code.walker.callersOf(unit).length));
 
   const drafts = new Map<string, FeatureDraft>();
   type DraftHead = Omit<FeatureDraft, "entryPoints" | "touched" | "interactions" | "hiddenCallees">;

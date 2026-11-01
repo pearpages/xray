@@ -3,7 +3,7 @@ import type { XrayConfig } from "../config.js";
 import { isTestFile } from "../dependencies/analyze.js";
 import { loadFeatureMap, type FeatureDefinition, type FeatureMapStatus } from "./features.js";
 import { loadProject } from "./project.js";
-import { UnitIndex, type Unit } from "./units.js";
+import { isEntryUnit, UnitIndex, type Unit } from "./units.js";
 import { Walker } from "./walk.js";
 import { discoverWorkspace } from "../workspaces.js";
 
@@ -65,7 +65,12 @@ export function inventory(cwd: string, config: XrayConfig): Inventory {
   const candidates: EntryPointCandidate[] = [];
   for (const unit of all) {
     const reasons: CandidateReason[] = [];
-    if (settings.entryGlobs.some((glob) => matchesGlob(unit.file, glob))) reasons.push("entry-glob");
+    if (
+      settings.entryGlobs.some((glob) => matchesGlob(unit.file, glob)) &&
+      isEntryUnit(unit, units.of(unit.node.getSourceFile()), () => walker.callersOf(unit).length)
+    ) {
+      reasons.push("entry-glob");
+    }
     const exported = unit.isDefaultExport || (Boolean(unit.nameNode) && isExported(unit));
     // Only exported units can be used from elsewhere; counting references is the slow part.
     const callers = reasons.length > 0 || exported ? walker.callersOf(unit).length : 0;

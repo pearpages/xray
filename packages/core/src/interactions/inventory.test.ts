@@ -52,3 +52,24 @@ describe("inventory", () => {
     expect(result.uncovered).toEqual(["src/main.tsx#root", "src/pages/Orders.tsx#Orders"]);
   });
 });
+
+describe("entry candidates in entry-glob files", () => {
+  it("offers components, and uncalled units of component-less files, but not helpers", () => {
+    fixture = new GitFixture().write({
+      ...APP,
+      // A helper next to a component, and a helper module the pages use.
+      "src/pages/Home.tsx": 'import { label } from "./labels";\nexport const shout = (s: string) => s.toUpperCase();\nexport const Home = () => <p>{shout(label())}</p>;\n',
+      "src/pages/labels.ts": 'export const label = () => "home";\n',
+    });
+    const ids = inventory(fixture.root, resolveConfig(fixture.root))
+      .candidates.filter((c) => c.reasons.includes("entry-glob"))
+      .map((c) => c.id)
+      .sort();
+    expect(ids).toEqual([
+      "src/main.tsx#root",
+      "src/pages/Cart.tsx#Cart",
+      "src/pages/Home.tsx#Home",
+      "src/pages/Orders.tsx#Orders",
+    ]);
+  });
+});
