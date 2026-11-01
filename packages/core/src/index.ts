@@ -1,3 +1,5 @@
+import { analyzeApi, type ApiAnalysis } from "./api/analyze.js";
+import { renderApiSection } from "./api/render.js";
 import { loadConfig, type XrayConfig } from "./config.js";
 import { analyzeDependencies, type DependencyAnalysis } from "./dependencies/analyze.js";
 import { renderDependencySection } from "./dependencies/render.js";
@@ -19,6 +21,10 @@ export * from "./interactions/features.js";
 export * from "./interactions/inventory.js";
 export * from "./interactions/render.js";
 export type { Interaction, RelationKind } from "./interactions/walk.js";
+export * from "./api/analyze.js";
+export * from "./api/compare.js";
+export * from "./api/exports.js";
+export * from "./api/render.js";
 export * from "./risk/analyze.js";
 export * from "./risk/render.js";
 
@@ -42,6 +48,7 @@ export interface XrayResult {
   dependencies: DependencyAnalysis;
   interactions: InteractionsAnalysis;
   risk: RiskAnalysis;
+  api: ApiAnalysis;
   /** Kept so renderers can apply the same limits the analyses used. */
   config: XrayConfig;
 }
@@ -61,6 +68,7 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<XrayR
     dependencies: await analyzeDependencies(cwd, changed, config),
     interactions,
     risk: analyzeRisk(cwd, code, interactions, config),
+    api: analyzeApi(cwd, mergeBase, changed, code),
     config,
   };
 }
@@ -84,6 +92,11 @@ export function reportSections(result: XrayResult): ReportSection[] {
       id: "risk",
       title: "🚦 Impact and risk",
       markdown: renderRiskSection(result.risk),
+    },
+    {
+      id: "api",
+      title: "📜 Public API",
+      markdown: renderApiSection(result.api),
     },
   ];
 }

@@ -18,6 +18,7 @@ accepted.
 | [0005](docs/adr/0005-interactions-refinements.md) | Interactions: lookup tables, hubs and shallower callees (amends 0004) | Accepted | 2026-11-01 |
 | [0006](docs/adr/0006-feature-map-skill-plugin.md) | The feature map skill ships as a Claude Code plugin from this repo | Accepted | 2026-11-01 |
 | [0007](docs/adr/0007-impact-and-risk-analysis.md) | Impact and risk: static test evidence × complexity → traffic light | Accepted | 2026-11-01 |
+| [0008](docs/adr/0008-public-api-analysis.md) | Public API: syntactic export diff, usages through barrels, OpenAPI JSON | Accepted (delegated) | 2026-11-01 |
 
 ## Format
 

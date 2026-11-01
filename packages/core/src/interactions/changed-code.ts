@@ -1,5 +1,5 @@
 import { join, matchesGlob } from "node:path";
-import { Project } from "ts-morph";
+import { Project, type SourceFile } from "ts-morph";
 import type { XrayConfig } from "../config.js";
 import { isTestFile } from "../dependencies/analyze.js";
 import { showFile, type ChangedFile, type LineRange } from "../git.js";
@@ -14,6 +14,15 @@ const STORY_FILE = /\.stories\.[cm]?[jt]sx?$/;
  * The PR's code as the ts-morph analyses see it, loaded once and shared:
  * the project, the units the diff touches, and their versions on the base.
  */
+/** A changed code file on both sides of the PR. */
+export interface ChangedSource {
+  change: ChangedFile;
+  /** Undefined when the PR deletes the file or it's outside the loaded project. */
+  head?: SourceFile;
+  /** Parsed from `git show` in a scratch project (no types across files); undefined when added. */
+  base?: SourceFile;
+}
+
 export interface ChangedCode {
   loaded: LoadedProject;
   units: UnitIndex;
@@ -25,6 +34,8 @@ export interface ChangedCode {
   baseOf: Map<string, Unit>;
   /** Units the PR removed (`path#name` on the base). */
   deleted: string[];
+  /** Changed code files (tests, stories and ignored globs excluded). */
+  files: ChangedSource[];
 }
 
 function overlaps(unit: Unit, ranges: LineRange[]): boolean {
@@ -33,19 +44,18 @@ function overlaps(unit: Unit, ranges: LineRange[]): boolean {
   return ranges.some(([start, end]) => start <= to && end >= from);
 }
 
-/** Units per changed file on the base, without touching the working tree. */
-function baseUnits(cwd: string, mergeBase: string, files: ChangedFile[]): Map<string, Unit[]> {
+/** Changed files as they were on the base, without touching the working tree. */
+function baseSources(cwd: string, mergeBase: string, files: ChangedFile[]): Map<string, SourceFile> {
   const scratch = new Project({ useInMemoryFileSystem: true, compilerOptions: { allowJs: true } });
-  const units = new Map<string, Unit[]>();
+  const sources = new Map<string, SourceFile>();
   for (const file of files) {
     if (file.status === "added") continue;
     const path = file.previousPath ?? file.path;
     const text = showFile(cwd, mergeBase, path);
     if (text === undefined) continue;
-    const sourceFile = scratch.createSourceFile(`/${path}`, text, { overwrite: true });
-    units.set(file.path, unitsOf(sourceFile, path));
+    sources.set(file.path, scratch.createSourceFile(`/${path}`, text, { overwrite: true }));
   }
-  return units;
+  return sources;
 }
 
 /** Loads the changed code, or returns undefined when the PR changes no analysable code. */
@@ -64,7 +74,8 @@ export function loadChangedCode(
 
   const loaded = loadProject(cwd, config);
   const units = new UnitIndex(loaded.fileOf);
-  const before = baseUnits(cwd, mergeBase, codeChanges);
+  const bases = baseSources(cwd, mergeBase, codeChanges);
+  const files: ChangedSource[] = [];
   const touched: Unit[] = [];
   const baseOf = new Map<string, Unit>();
   const deleted: string[] = [];
@@ -72,8 +83,10 @@ export function loadChangedCode(
   for (const file of codeChanges) {
     const sourceFile =
       file.status === "deleted" ? undefined : loaded.project.getSourceFile(join(cwd, file.path));
+    const base = bases.get(file.path);
+    files.push({ change: file, ...(sourceFile ? { head: sourceFile } : {}), ...(base ? { base } : {}) });
     const now = sourceFile ? units.of(sourceFile) : [];
-    const was = new Map((before.get(file.path) ?? []).map((unit) => [unit.name, unit]));
+    const was = new Map((base ? unitsOf(base, file.previousPath ?? file.path) : []).map((unit) => [unit.name, unit]));
     const nowNames = new Set(now.map((unit) => unit.name));
     for (const unit of was.values()) {
       if (!nowNames.has(unit.name)) deleted.push(unit.id);
@@ -87,5 +100,5 @@ export function loadChangedCode(
   }
 
   const walker = new Walker(loaded.project, loaded.resolveModule, units, loaded.fileOf, ignored);
-  return { loaded, units, walker, ignored, touched, baseOf, deleted };
+  return { loaded, units, walker, ignored, touched, baseOf, deleted, files };
 }
