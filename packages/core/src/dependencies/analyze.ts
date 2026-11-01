@@ -1,10 +1,11 @@
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { cruise, type ICruiseResult, type IDependency } from "dependency-cruiser";
 import extractTSConfig from "dependency-cruiser/config-utl/extract-ts-config";
 import ts from "typescript";
 import type { XrayConfig } from "../config.js";
 import type { ChangedFile, ChangeStatus } from "../git.js";
+import { readCompilerOptions } from "../interactions/project.js";
 import { discoverWorkspace, workspaceAliases } from "../workspaces.js";
 
 export type NodeKind = "source" | "test" | "external" | "group";
@@ -71,37 +72,97 @@ function isExternal(dependency: IDependency): boolean {
   );
 }
 
-async function cruiseProject(
-  cwd: string,
-  config: XrayConfig,
-  warnings: string[],
-): Promise<ICruiseResult> {
+/** `paths` as resolver aliases: `@/*` → `<dir>/*` becomes `@` → `<dir>`; exact keys match exactly. */
+export function pathAliases(options: ts.CompilerOptions, tsConfigDir: string): Record<string, string> {
+  const base = (options as { pathsBasePath?: string }).pathsBasePath ?? options.baseUrl ?? tsConfigDir;
+  const aliases: [string, string][] = [];
+  for (const [key, targets] of Object.entries(options.paths ?? {})) {
+    const [target] = targets;
+    if (!target) continue;
+    if (key.endsWith("/*") && target.endsWith("/*")) aliases.push([key.slice(0, -2), resolve(base, target.slice(0, -2))]);
+    else if (!key.includes("*") && !target.includes("*")) aliases.push([`${key}$`, resolve(base, target)]);
+  }
+  // Longest first: `@/assets` must win over `@`.
+  return Object.fromEntries(aliases.sort(([a], [b]) => b.length - a.length));
+}
+
+interface Scope {
+  /** Folders to cruise, relative to the root. */
+  roots: string[];
+  tsConfig?: string;
+  /** Folders whose files are left to their own scope's cruise. */
+  others: string[];
+}
+
+/**
+ * Cruises one scope: a workspace package with its own tsconfig, or the files outside
+ * packages with the root's. Its `paths` are given as resolver aliases, so they work
+ * without a baseUrl and even when an `extends` isn't installed.
+ */
+async function cruiseScope(cwd: string, config: XrayConfig, scope: Scope, workspaceAlias: Record<string, string>): Promise<ICruiseResult> {
   let tsConfig: ReturnType<typeof extractTSConfig> | undefined;
-  if (config.tsConfig) {
+  let aliases: Record<string, string> = {};
+  if (scope.tsConfig && existsSync(join(cwd, scope.tsConfig))) {
+    // `paths` always become aliases: dependency-cruiser's tsconfig plugin ignores them without a
+    // baseUrl (optional since TypeScript 4.1), and can't read a file whose `extends` is missing.
+    const options = readCompilerOptions(join(cwd, scope.tsConfig));
+    if (options) aliases = pathAliases(options, join(cwd, scope.tsConfig, ".."));
     try {
-      tsConfig = extractTSConfig(join(cwd, config.tsConfig));
-    } catch (error) {
-      warnings.push(`Could not read ${config.tsConfig}: ${(error as Error).message}`);
+      tsConfig = extractTSConfig(join(cwd, scope.tsConfig));
+    } catch {
+      tsConfig = undefined;
     }
   }
-  const workspace = discoverWorkspace(cwd);
+  const escape = (folder: string) => folder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const result = await cruise(
-    config.roots,
+    scope.roots,
     {
       baseDir: cwd,
-      doNotFollow: { path: "node_modules" },
+      // Other packages' files are reached as leaves; their own cruise resolves their imports.
+      doNotFollow: { path: ["node_modules", ...scope.others.map((folder) => `^${escape(folder)}/`)] },
       exclude: { path: config.exclude },
       tsPreCompilationDeps: true,
-      ...(tsConfig && config.tsConfig ? { tsConfig: { fileName: join(cwd, config.tsConfig) } } : {}),
+      ...(tsConfig && scope.tsConfig ? { tsConfig: { fileName: join(cwd, scope.tsConfig) } } : {}),
     },
-    // CI has no node_modules: map workspace package names to their files ourselves.
-    workspace ? { alias: workspaceAliases(workspace) } : {},
+    { alias: { ...aliases, ...workspaceAlias } },
     tsConfig ? { tsConfig } : {},
   );
-  if (typeof result.output === "string") {
-    return JSON.parse(result.output) as ICruiseResult;
+  return typeof result.output === "string" ? (JSON.parse(result.output) as ICruiseResult) : result.output;
+}
+
+/**
+ * The whole project's modules. At a workspace root, each package is cruised with its own
+ * tsconfig (its `paths` aliases), and the files outside packages with the root's.
+ */
+async function cruiseProject(cwd: string, config: XrayConfig): Promise<ICruiseResult> {
+  const workspace = discoverWorkspace(cwd);
+  // CI has no node_modules: map workspace package names to their files ourselves.
+  const workspaceAlias = workspace ? workspaceAliases(workspace) : {};
+  if (!workspace) {
+    return cruiseScope(cwd, config, { roots: config.roots, tsConfig: config.tsConfig, others: [] }, workspaceAlias);
   }
-  return result.output;
+  const dirs = workspace.map((pkg) => pkg.dir);
+  const scopes: Scope[] = workspace.map((pkg) => ({
+    roots: [pkg.dir],
+    tsConfig: existsSync(join(cwd, pkg.dir, "tsconfig.json")) ? `${pkg.dir}/tsconfig.json` : config.tsConfig,
+    others: dirs.filter((dir) => dir !== pkg.dir && !pkg.dir.startsWith(`${dir}/`)),
+  }));
+  // Files outside packages: start from what isn't a package or holds one, so no package is
+  // cruised twice with the wrong aliases.
+  const holdsPackage = (path: string) => dirs.some((dir) => dir === path || dir.startsWith(`${path}/`));
+  const outside = config.roots
+    .flatMap((root) =>
+      root === "."
+        ? readdirSync(cwd, { withFileTypes: true })
+            .filter((entry) => !entry.name.startsWith(".") && entry.name !== "node_modules")
+            .filter((entry) => entry.isDirectory() || /\.[cm]?[jt]sx?$/.test(entry.name))
+            .map((entry) => entry.name)
+        : [root],
+    )
+    .filter((root) => !holdsPackage(root));
+  if (outside.length > 0) scopes.push({ roots: outside, tsConfig: config.tsConfig, others: dirs });
+  const results = await Promise.all(scopes.map((scope) => cruiseScope(cwd, config, scope, workspaceAlias)));
+  return { ...results[0]!, modules: results.flatMap((result) => result.modules) };
 }
 
 export interface Graph {
@@ -321,7 +382,7 @@ export async function analyzeDependencies(
   config: XrayConfig,
 ): Promise<DependencyAnalysis> {
   const warnings: string[] = [];
-  const result = await cruiseProject(cwd, config, warnings);
+  const result = await cruiseProject(cwd, config);
   const graph = toGraph(result, config.dependencies.includeExternal, repoPathResolver(cwd));
   const isBarrel = (path: string) => {
     try {

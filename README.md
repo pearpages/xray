@@ -184,9 +184,10 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
   When a package is imported through its `index.ts`, a change deeper in that package also shows
   who imports that `index.ts`, grouped per folder.
 - **Interactions** analyses every package with a `tsconfig.json` together, so a change in a shared
-  package is followed into the screens that use it. They share the root's compiler options: a
-  package's own `paths` aliases (`@/…` inside one package) are not applied; relative imports and
-  workspace package names are.
+  package is followed into the screens that use it.
+- Each package resolves imports with **its own** `tsconfig.json`, `paths` aliases included (`@/…`
+  meaning a different folder in each app), even when an `extends` base isn't installed in CI
+  ([ADR-0013](docs/adr/0013-per-package-tsconfig.md)).
 
 ## Analyses
 

@@ -106,3 +106,64 @@ describe("workspaces", () => {
     ]);
   });
 });
+
+describe("per-package tsconfig paths", () => {
+  /** bitepals' shape: every app has `@/*` pointing at itself; one extends a base that isn't installed. */
+  const APPS = {
+    "pnpm-workspace.yaml": "packages:\n  - apps/*\n",
+    "package.json": JSON.stringify({ name: "root", private: true }),
+    // The root only extends something CI doesn't install.
+    "tsconfig.json": JSON.stringify({ extends: "expo/tsconfig.base", compilerOptions: {} }),
+    "apps/web/package.json": JSON.stringify({ name: "web" }),
+    "apps/web/tsconfig.json": JSON.stringify({ compilerOptions: { jsx: "react-jsx", paths: { "@/*": ["./*"] } } }),
+    "apps/web/lib/photo.ts": "export const photo = (id: string) => `/photos/${id}`;\n",
+    "apps/web/app/place/page.tsx": 'import { photo } from "@/lib/photo";\nexport default function PlacePage() {\n  return <img src={photo("a")} />;\n}\n',
+    "apps/mobile/package.json": JSON.stringify({ name: "mobile" }),
+    "apps/mobile/tsconfig.json": JSON.stringify({
+      extends: "expo/tsconfig.base",
+      compilerOptions: { jsx: "react-jsx", paths: { "@/*": ["./src/*"] } },
+    }),
+    // Same alias, same file name, different app.
+    "apps/mobile/src/lib/photo.ts": "export const photo = (id: string) => `mobile/${id}`;\n",
+    "apps/mobile/src/screens/Place.tsx": 'import { photo } from "@/lib/photo";\nexport const Place = () => <img src={photo("b")} />;\n',
+  };
+
+  it("resolves each app's @/ alias inside that app, and warns about nothing", async () => {
+    const repo = (fixture = new GitFixture().write(APPS).commit("base").branch("feature"));
+    repo
+      .write({
+        "apps/web/lib/photo.ts": "export const photo = (id: string) => `/cdn/photos/${id}`;\n",
+        "apps/mobile/src/lib/photo.ts": "export const photo = (id: string) => `mobile/cdn/${id}`;\n",
+      })
+      .commit("change");
+
+    const { dependencies, interactions } = await analyzePullRequest({
+      cwd: repo.root,
+      base: "main",
+      config: resolveConfig(repo.root),
+    });
+    expect(dependencies.warnings).toEqual([]);
+    expect(interactions.warnings).toEqual([]);
+    expect(dependencies.edges.map((edge) => `${edge.from} -> ${edge.to}`).sort()).toEqual([
+      "apps/mobile/src/screens/Place.tsx -> apps/mobile/src/lib/photo.ts",
+      "apps/web/app/place/page.tsx -> apps/web/lib/photo.ts",
+    ]);
+    const callers = interactions.features.flatMap((feature) => feature.interactions.map((i) => `${i.from} -${i.kind}-> ${i.to}`));
+    expect(callers.sort()).toEqual([
+      "apps/mobile/src/screens/Place.tsx#Place -calls-> apps/mobile/src/lib/photo.ts#photo",
+      "apps/web/app/place/page.tsx#PlacePage -calls-> apps/web/lib/photo.ts#photo",
+    ]);
+  });
+});
+
+describe("pathAliases", () => {
+  it("turns tsconfig paths into resolver aliases, longest first", async () => {
+    const { pathAliases } = await import("./dependencies/analyze.js");
+    const aliases = pathAliases({ paths: { "@/*": ["./src/*"], "@/assets/*": ["./assets/*"], "env": ["./env.ts"] } }, "/repo/app");
+    expect(Object.entries(aliases)).toEqual([
+      ["@/assets", "/repo/app/assets"],
+      ["env$", "/repo/app/env.ts"],
+      ["@", "/repo/app/src"],
+    ]);
+  });
+});

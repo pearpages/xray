@@ -44,9 +44,24 @@ function resolvedModule(file: string): ts.ResolvedModuleFull {
 }
 
 /**
+ * Compiler options of a tsconfig, following its `extends` as far as it can: a base that
+ * isn't installed (CI has no node_modules, e.g. `expo/tsconfig.base`) is skipped, and the
+ * options written in the file itself, `paths` included, still count.
+ */
+export function readCompilerOptions(tsConfigPath: string): ts.CompilerOptions | undefined {
+  const parsed = ts.getParsedCommandLineOfConfigFile(tsConfigPath, {}, {
+    ...ts.sys,
+    onUnRecoverableConfigFileDiagnostic: () => undefined,
+  });
+  return parsed?.options;
+}
+
+/**
  * Loads the analysed root's TypeScript project into ts-morph. At a workspace
- * root, every package with a tsconfig.json joins one project, and workspace
- * package names resolve to their source (CI has no node_modules to link them).
+ * root, every package with a tsconfig.json joins one project; each package's
+ * files resolve imports with that package's own options (its `paths` aliases),
+ * and workspace package names resolve to their source (CI has no node_modules
+ * to link them).
  */
 export function loadProject(cwd: string, config: XrayConfig): LoadedProject {
   const warnings: string[] = [];
@@ -55,6 +70,20 @@ export function loadProject(cwd: string, config: XrayConfig): LoadedProject {
   const hasTsConfig = !!tsConfigFilePath && existsSync(tsConfigFilePath);
   const workspace = discoverWorkspace(cwd);
   const fromWorkspace = workspaceResolver(workspace ?? []);
+
+  // Per package: its options, longest folder first so nested packages win.
+  const packageOptions = (workspace ?? [])
+    .map((pkg) => {
+      const tsConfig = join(cwd, pkg.dir, "tsconfig.json");
+      const options = existsSync(tsConfig) ? readCompilerOptions(tsConfig) : undefined;
+      return options ? { dir: `${pkg.dir}/`, options } : undefined;
+    })
+    .filter((entry): entry is { dir: string; options: ts.CompilerOptions } => entry !== undefined)
+    .sort((a, b) => b.dir.length - a.dir.length);
+  const optionsFor = (file: string) => {
+    const path = toRoot(file);
+    return path === undefined ? undefined : packageOptions.find((entry) => path.startsWith(entry.dir))?.options;
+  };
 
   let project: Project;
   if (workspace) {
@@ -67,7 +96,8 @@ export function loadProject(cwd: string, config: XrayConfig): LoadedProject {
           names.map((name) => {
             const file = fromWorkspace(name);
             if (file) return resolvedModule(file);
-            return ts.resolveModuleName(name, containingFile, getCompilerOptions(), host).resolvedModule;
+            const options = optionsFor(containingFile) ?? getCompilerOptions();
+            return ts.resolveModuleName(name, containingFile, options, host).resolvedModule;
           }),
       }),
     });
@@ -91,7 +121,7 @@ export function loadProject(cwd: string, config: XrayConfig): LoadedProject {
   const host = project.getModuleResolutionHost();
   const resolveModule = (specifier: string, containingFile: string) =>
     fromWorkspace(specifier) ??
-    ts.resolveModuleName(specifier, containingFile, project.getCompilerOptions(), host).resolvedModule
-      ?.resolvedFileName;
+    ts.resolveModuleName(specifier, containingFile, optionsFor(containingFile) ?? project.getCompilerOptions(), host)
+      .resolvedModule?.resolvedFileName;
   return { project, fileOf, resolveModule, warnings };
 }

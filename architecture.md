@@ -48,7 +48,7 @@ flowchart LR
 | `packages/core/src/config.ts` | `xray.config.json` loading and defaults (`roots`, `tsConfig`, `exclude`, `dependencies.*`, `interactions.*`) |
 | `packages/core/src/dependencies/` | Analysis 1: cruise the project, keep changed modules + direct neighbours, render the Mermaid flowchart |
 | `packages/core/src/workspaces.ts` | Workspace discovery (`pnpm-workspace.yaml`, `workspaces`) and mapping package names and subpath exports to files, for both analyses (CI has no `node_modules`) |
-| `packages/core/src/interactions/project.ts` | Loading the ts-morph project: the root tsconfig, or every workspace package at a workspace root, with workspace package names resolved to source |
+| `packages/core/src/interactions/project.ts` | Loading the ts-morph project: the root tsconfig, or every workspace package at a workspace root, each file resolving imports with its package's own options (`paths`), and workspace package names resolved to source |
 | `packages/core/src/interactions/changed-code.ts` | Loading the PR's code once for the ts-morph analyses: the project, the touched units, their base versions and removed units |
 | `packages/core/src/api/` | Analysis 4: export shapes from the source text, base vs PR compatibility, usages through barrels, OpenAPI JSON operations, Next.js route handlers |
 | `packages/core/src/bundle/` | Analysis 5 (opt-in): worktrees, install and build commands, chunk sizes, source-map attribution per package, dependency changes |
@@ -71,8 +71,10 @@ flowchart LR
 
 1. `resolveMergeBase` finds the commit the branch forked from; `getChangedFiles` lists what changed
    since then (`git diff --name-status -M` + `git ls-files --others`).
-2. `analyzeDependencies` cruises the configured `roots` once with dependency-cruiser (using the
-   repo's tsconfig for path aliases, and exact aliases for workspace packages at a workspace root), normalises every path to repo-relative POSIX, and builds the
+2. `analyzeDependencies` cruises the configured `roots` with dependency-cruiser: once, or at a
+   workspace root once per package with its own tsconfig plus once for the files outside packages
+   ([ADR-0013](docs/adr/0013-per-package-tsconfig.md)); `paths` and workspace packages become exact
+   resolver aliases, normalises every path to repo-relative POSIX, and builds the
    module graph. Type-only and dynamic imports are kept as edge flags; npm/Node modules are dropped
    unless `includeExternal`.
 3. `selectNeighbourhood` keeps the changed modules plus whatever they import and whatever imports

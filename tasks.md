@@ -8,6 +8,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Done
 
+- [x] 2026-11-01: v0.3.1, from bitepals' first report (#134): each workspace package resolves imports with its own tsconfig (`paths`, tolerant of a missing `extends`), in both analyses; no more `Could not read tsconfig.json` for an uninstalled base ([ADR-0013](docs/adr/0013-per-package-tsconfig.md)). #134's change now reaches Place page.
 - [x] 2026-11-01: Real adoption PR opened, pearpages/futbol-manager#23 (workflow on `@v0` with `mise-action@v5`, `checkout@v7`, coverage and bundle; the 13-feature map), awaiting the owner's review. Its run: 4 min 48 s, no Node 20 warnings; the report is short because it adds no code (bundle −3 B: the app embeds its commit). The v0.3.0 replay on #22 confirmed the folder view, branch coverage and shared units on GitHub; #22 closed and its `try/` branches deleted.
 - [x] 2026-11-01: Released v0.3.0 (ADR-0012 follow-ups); `v0` moved to it.
 - [x] 2026-11-01: Pilot follow-ups done under delegation ([ADR-0012](docs/adr/0012-pilot-follow-ups.md)): entry points are components in entry-glob files (futbol-manager 73 → 38 candidates), folder-level dependency diagram for big PRs (29 folders instead of 60 files + 80 left out), branch coverage from lcov `BRDA`. Limit recorded: untested data paths (a lookup, a default value) have no branch to miss.
