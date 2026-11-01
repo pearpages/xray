@@ -1,0 +1,16 @@
+{
+  "name": "@xray/cli",
+  "version": "0.1.0",
+  "description": "xray CLI: analyse the current branch against a base branch",
+  "type": "module",
+  "bin": {
+    "xray": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@xray/core": "0.1.0",
+    "commander": "^15.0.0"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@xray/action",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GitHub Action glue: publish the xray report as a single, updated PR comment",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@xray/core": "0.1.0"
+  }
+}

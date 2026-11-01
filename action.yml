@@ -1,0 +1,69 @@
+name: xray PR analysis
+description: Analyse a TypeScript/React pull request and publish the report as a single, updated comment.
+branding:
+  icon: activity
+  color: blue
+
+inputs:
+  base:
+    description: Base branch to compare against. Defaults to the PR's target branch.
+    required: false
+    default: ${{ github.base_ref }}
+  working-directory:
+    description: Root of the project to analyse, relative to the workspace.
+    required: false
+    default: .
+  config:
+    description: Path to the xray config, relative to working-directory. Defaults to xray.config.json.
+    required: false
+    default: ""
+  comment:
+    description: Publish the report as a PR comment. Set to "false" to only produce the file.
+    required: false
+    default: "true"
+  github-token:
+    description: Token used to write the comment. Needs pull-requests write permission.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  report-path:
+    description: Path of the generated Markdown report.
+    value: ${{ steps.analyse.outputs.report-path }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+
+    - name: Build xray
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        npm ci --no-audit --no-fund
+        npm run build
+
+    - name: Analyse
+      id: analyse
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        XRAY_BASE: ${{ inputs.base }}
+        XRAY_CONFIG: ${{ inputs.config }}
+        XRAY_CLI: ${{ github.action_path }}/packages/cli/dist/index.js
+      run: |
+        report="$RUNNER_TEMP/xray-report.md"
+        args=("$XRAY_BASE" --out "$report")
+        if [ -n "$XRAY_CONFIG" ]; then args+=(--config "$XRAY_CONFIG"); fi
+        node "$XRAY_CLI" "${args[@]}"
+        cat "$report" >> "$GITHUB_STEP_SUMMARY"
+        echo "report-path=$report" >> "$GITHUB_OUTPUT"
+
+    - name: Comment on the PR
+      if: inputs.comment == 'true' && github.event_name == 'pull_request'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: node "${{ github.action_path }}/packages/action/dist/index.js" "${{ steps.analyse.outputs.report-path }}"

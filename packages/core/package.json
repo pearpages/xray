@@ -1,0 +1,19 @@
+{
+  "name": "@xray/core",
+  "version": "0.1.0",
+  "description": "Reusable PR analysis core: diff, dependency graph and report rendering",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "dependency-cruiser": "^18.7.0",
+    "typescript": "~6.0.3"
+  }
+}

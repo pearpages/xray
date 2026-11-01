@@ -1,0 +1,18 @@
+# Dogfooding: runs this repository's own action on its pull requests.
+name: xray
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  xray:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # xray needs the base branch to find the merge base
+      - uses: ./
