@@ -7,6 +7,7 @@ import type { ChangedCode } from "../interactions/changed-code.js";
 import { discoverWorkspace } from "../workspaces.js";
 import { compareExports, worstOf, type Compatibility, type ExportChange } from "./compare.js";
 import { exportsOf } from "./exports.js";
+import { routeChanges } from "./routes.js";
 import { UsageIndex } from "./usages.js";
 
 export interface ApiChange extends ExportChange {
@@ -18,6 +19,7 @@ export interface ApiChange extends ExportChange {
 }
 
 export interface EndpointChange {
+  /** The OpenAPI spec or the Next.js route file that declares it. */
   file: string;
   method: string;
   path: string;
@@ -94,7 +96,7 @@ export function analyzeApi(
   code: ChangedCode | undefined,
 ): ApiAnalysis {
   const warnings: string[] = [];
-  const endpoints = endpointChanges(cwd, mergeBase, changed, warnings);
+  const endpoints = [...endpointChanges(cwd, mergeBase, changed, warnings), ...(code ? routeChanges(code.files) : [])];
   const exports: ApiChange[] = [];
 
   if (code) {

@@ -57,7 +57,7 @@ export function renderApiSection(api: ApiAnalysis): string {
   if (api.endpoints.length > 0) {
     out.push(
       "",
-      "| | Endpoint | Change | Spec |",
+      "| | Endpoint | Change | Declared in |",
       "|---|---|---|---|",
       ...api.endpoints.map(
         (endpoint) =>
