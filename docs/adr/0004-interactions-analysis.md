@@ -1,7 +1,7 @@
 # 0004. Interactions analysis: ts-morph walk, feature map and sequence diagrams
 
 - **Date:** 2026-11-01
-- **Status:** Proposed
+- **Status:** Accepted
 
 ## Context
 
@@ -35,6 +35,18 @@ sees files outside the scanned roots. ts-morph took ~0.5 s against ~0.17 s.
   tsconfig. Analysis 1 stays on dependency-cruiser ([ADR-0002](0002-typescript-6-for-dependency-cruiser.md)):
   the graphs agree, dependency-cruiser keeps CSS imports and is ~3× faster, so switching buys
   nothing yet.
+
+### Workspaces
+
+- When the analysed root declares workspaces (`workspaces` in `package.json`, or
+  `pnpm-workspace.yaml`), every workspace package with a `tsconfig.json` is loaded into the same
+  ts-morph project, so a change in a shared package is followed into the packages that use it.
+- CI has no `node_modules` for the analysed repo, so xray maps workspace package names to folders
+  itself: `@fm/domain` → the source file named by that package's `exports` (or `main`), falling
+  back to `src/index.ts(x)`. Packages whose entry is only built output stop the walk there.
+- Unit ids are repo-relative paths, so they already say which package a unit lives in
+  (`packages/domain/src/finances.ts#budget`).
+- Without workspaces, the project is the root `tsconfig.json`.
 
 ### What is a unit
 
@@ -77,7 +89,7 @@ sees files outside the scanned roots. ts-morph took ~0.5 s against ~0.17 s.
     "version": 1,
     "features": [
       { "id": "cart", "name": "Cart", "description": "See and pay for what you added",
-        "entryPoints": ["src/pages/Cart.tsx#default"], "files": ["src/pages/Cart.tsx", "src/hooks/useCart.ts"] }
+        "entryPoints": ["src/pages/Cart.tsx#Cart"], "files": ["src/pages/Cart.tsx", "src/hooks/useCart.ts"] }
     ]
   }
   ```
@@ -124,7 +136,7 @@ sequenceDiagram
   PriceTag->>formatPrice: calls
 ```
 
-## Open questions (to settle before Accepted)
+## Questions settled before acceptance
 
 1. ~~Who generates the feature map?~~ **Decided 2026-11-01: the Claude skill only** (see *Feature
    map*). Calling the Claude API from xray was rejected: it needs a secret in every consumer repo,
@@ -133,8 +145,12 @@ sequenceDiagram
 2. ~~No map?~~ **Decided 2026-11-01: draw per entry point, with a warning** that the map is
    missing and a reminder to run the skill (see *Feature map*). Showing only a table until the map
    exists was rejected: the section would be much less useful until someone runs the skill.
-3. **Monorepos** (futbol-manager's `packages/*`): v1 analyses one tsconfig (the Action's
-   `working-directory`); references into other workspace packages stop there. Good enough?
+3. ~~Monorepos?~~ **Decided 2026-11-01: the whole workspace in v1** (see *Workspaces*). Analysing
+   one package at a time was rejected: the most useful diagram — a shared package's change reaching
+   screens in another package — would be missing, and several target repos are monorepos. Built in
+   two stages (single package on dummy, then workspaces on futbol-manager) and released once.
+   Analysis 1 has the same gap (dependency-cruiser can't resolve workspace imports without
+   `node_modules`) and follows as a separate task.
 
 ## Consequences
 
@@ -147,5 +163,7 @@ sequenceDiagram
   `maxTouchedUnits` guard and a measurement before shipping.
 − Static analysis misses dynamic dispatch (string keys, `props.render()`, context-provided
   functions); diagrams show what the code states, not every runtime path.
+− Loading a whole workspace is slower (futbol-manager: 318 files against 92 for `packages/app`);
+  measured on futbol-manager before release.
 − Two parsers in the project (dependency-cruiser for analysis 1, ts-morph for 2) until ADR-0002 is
   revisited.
