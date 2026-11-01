@@ -7,9 +7,9 @@ permission).
 
 ## Reporting a vulnerability
 
-TODO: the repository has no public remote yet. Once it is on GitHub, enable private vulnerability
-reporting and report through a GitHub private security advisory. Never open a public issue for an
-unfixed vulnerability.
+Use GitHub's private vulnerability reporting: the **Report a vulnerability** button in the
+[Security tab](https://github.com/pearpages/xray/security) of pearpages/xray. Only the maintainer
+sees the report. Never open a public issue for an unfixed vulnerability.
 
 ## Surface
 
