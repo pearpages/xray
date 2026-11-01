@@ -6,13 +6,14 @@ item, and add a dated line at the top of **Done**.
 ## Open
 
 - [ ] **Dependencies through barrels** (optional): when a neighbour only re-exports (a package's `index.ts`), also show its importers, so a change inside a shared package reaches the apps in the dependency diagram too.
-- [ ] **Analysis 3 — impact and risk** ([ADR-0007](docs/adr/0007-impact-and-risk-analysis.md)): built on branch `feat/risk`; left: measure the Action on dummy (P6), merge to main.
+- [ ] **Analysis 3 — impact and risk** ([ADR-0007](docs/adr/0007-impact-and-risk-analysis.md)): built and measured on branch `feat/risk`; left: merge to main (release), close pearpages/dummy#5.
 - [ ] **Analysis 4 — public API / contracts**: diff exports (types, functions, props) between base and PR with ts-morph, and endpoints (OpenAPI or routes) → compatible/breaking, list affected usages.
 - [ ] **Analysis 5 — bundle size**: build base and PR, compare chunks (gzip/brotli), flag over a configurable threshold and name the causing dependency/import.
 - [ ] **Claude skill, part 2**: explain the diagrams and risks of a report (part 1, the feature map, is done).
 
 ## Done
 
+- [x] 2026-11-01: Action measured with impact and risk (P6) on pearpages/dummy#5: job 14 s (was 13 s), install + build 4.5 s (was 3.5 s), analysis 1.5 s (was 0.9 s). No new dependencies.
 - [x] 2026-11-01: Impact and risk built: test evidence (direct, by name, indirect), complexity deltas, traffic lights. futbol-manager 6f2e08e: 19 units, 6 more complex, full report 1.9 s. The ts-morph analyses now share one loaded project (`changed-code.ts`).
 - [x] 2026-11-01: ADR-0007 accepted: static evidence only, the light never fails the check, defaults 15 / 3 / 3.
 - [x] 2026-11-01: Impact and risk designed (ADR-0007) after surveying coverage in 9 projects (none publish it) and a spike on dummy and futbol-manager.
