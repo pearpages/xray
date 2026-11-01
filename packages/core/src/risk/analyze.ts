@@ -13,7 +13,15 @@ export type Light = "green" | "yellow" | "red";
 /** The strongest sign that a test exercises a unit; no test is run to find it. */
 export type TestEvidence =
   /** From an lcov report: covered lines among the unit's changed lines (or all its lines). */
-  | { kind: "coverage"; covered: number; total: number; scope: "changed lines" | "lines" }
+  | {
+      kind: "coverage";
+      /** Lines that ran, with every branch on them taken when the report has branch data. */
+      covered: number;
+      total: number;
+      scope: "changed lines" | "lines";
+      /** Branches never taken on the measured lines. */
+      untakenBranches: number;
+    }
   | { kind: "direct"; tests: string[] }
   | { kind: "by-name"; tests: string[] }
   | { kind: "indirect"; via: string; depth: number; tests: string[] }
@@ -131,8 +139,9 @@ export function analyzeRisk(
   result.coverageFiles = coverageFiles;
   /** Covered lines of the unit's changed lines, or of all its lines when no changed line is instrumented. */
   const coverageOf = (unit: Unit): TestEvidence | undefined => {
-    const lines = coverage?.get(unit.file);
-    if (!lines) return undefined;
+    const file = coverage?.get(unit.file);
+    if (!file) return undefined;
+    const { lines, branches } = file;
     const from = unit.statement.getStartLineNumber();
     const to = unit.statement.getEndLineNumber();
     const inUnit = [...lines.keys()].filter((line) => line >= from && line <= to);
@@ -141,7 +150,17 @@ export function analyzeRisk(
     const scope = changed.length > 0 ? "changed lines" : "lines";
     const measured = changed.length > 0 ? changed : inUnit;
     if (measured.length === 0) return undefined;
-    return { kind: "coverage", covered: measured.filter((line) => (lines.get(line) ?? 0) > 0).length, total: measured.length, scope };
+    const untaken = (line: number) => {
+      const branch = branches.get(line);
+      return branch ? branch.total - branch.taken : 0;
+    };
+    return {
+      kind: "coverage",
+      covered: measured.filter((line) => (lines.get(line) ?? 0) > 0 && untaken(line) === 0).length,
+      total: measured.length,
+      scope,
+      untakenBranches: measured.reduce((sum, line) => sum + untaken(line), 0),
+    };
   };
 
   const evidenceFor = (unit: Unit): TestEvidence => {

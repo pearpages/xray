@@ -9,7 +9,8 @@ const VERDICT: Record<Light, string> = { green: "Low risk", yellow: "Medium risk
 function evidenceText(evidence: TestEvidence): string {
   switch (evidence.kind) {
     case "coverage": {
-      const ratio = `${evidence.covered}/${evidence.total} ${evidence.scope}`;
+      const branches = evidence.untakenBranches > 0 ? `, ${evidence.untakenBranches} branch${evidence.untakenBranches === 1 ? "" : "es"} never taken` : "";
+      const ratio = `${evidence.covered}/${evidence.total} ${evidence.scope}${branches}`;
       if (evidence.covered === 0) return `**not covered** (${ratio})`;
       return evidence.covered === evidence.total ? `covered (${ratio})` : `partly covered (${ratio})`;
     }

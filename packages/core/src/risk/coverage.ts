@@ -2,8 +2,24 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, sep } from "node:path";
 import { discoverWorkspace } from "../workspaces.js";
 
-/** Hits per line, per file (root-relative POSIX path). */
-export type Coverage = Map<string, Map<number, number>>;
+export interface FileCoverage {
+  /** Hits per instrumented line. */
+  lines: Map<number, number>;
+  /** Branches per line (lcov BRDA), when the report has them. */
+  branches: Map<number, { taken: number; total: number }>;
+}
+
+/** Per file, root-relative POSIX path. */
+export type Coverage = Map<string, FileCoverage>;
+
+const fileIn = (coverage: Coverage, file: string): FileCoverage => {
+  let entry = coverage.get(file);
+  if (!entry) {
+    entry = { lines: new Map(), branches: new Map() };
+    coverage.set(file, entry);
+  }
+  return entry;
+};
 
 const toPosix = (path: string) => path.split(sep).join("/");
 
@@ -37,9 +53,18 @@ export function parseLcov(text: string, cwd: string, projectDir: string, into: C
     } else if (line.startsWith("DA:") && file) {
       const [lineNumber, hits] = line.slice(3).split(",").map(Number);
       if (lineNumber === undefined || hits === undefined || Number.isNaN(lineNumber)) continue;
-      const lines = into.get(file) ?? new Map<number, number>();
+      const { lines } = fileIn(into, file);
       lines.set(lineNumber, Math.max(lines.get(lineNumber) ?? 0, hits));
-      into.set(file, lines);
+    } else if (line.startsWith("BRDA:") && file) {
+      // BRDA:<line>,<block>,<branch>,<taken>; "-" means the block never ran.
+      const [lineNumber, , , taken] = line.slice(5).split(",");
+      const at = Number(lineNumber);
+      if (Number.isNaN(at)) continue;
+      const { branches } = fileIn(into, file);
+      const branch = branches.get(at) ?? { taken: 0, total: 0 };
+      branch.total++;
+      if (taken !== "-" && Number(taken) > 0) branch.taken++;
+      branches.set(at, branch);
     } else if (line.startsWith("end_of_record")) {
       file = undefined;
     }
