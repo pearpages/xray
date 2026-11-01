@@ -1,7 +1,7 @@
 # 0007. Impact and risk: static test evidence × complexity → traffic light
 
 - **Date:** 2026-11-01
-- **Status:** Proposed
+- **Status:** Accepted
 
 ## Context
 
@@ -65,15 +65,18 @@ and *growing complexity*. `XrayResult.risk` carries every unit's evidence and co
 
 The light is **informational**: it never fails the check.
 
-## Open questions (to settle before Accepted)
+## Questions settled before acceptance
 
-1. **Coverage reports.** Proposed: static evidence only in v1. Alternatives: also read an `lcov`
-   file when the project's CI produces one (cheap to add; none of the projects do today), or have
-   xray run the tests (slow, executes PR code).
-2. **Failing the check.** Proposed: never. Alternative: an opt-in `risk.failOn: "red"` that makes
-   the Action fail on a red PR.
-3. **Defaults.** complexity high 15, jump 3, indirect depth 3: from the spike's numbers (screens at
-   20–59 would always be "high"; most helpers stay under 10). Good starting point?
+Settled 2026-11-01; the user asked for the most convenient option on each, recorded here.
+
+1. ~~Coverage reports?~~ **Static evidence only in v1.** Nothing to set up and no PR code executed.
+   Reading an `lcov` file when a project's CI publishes one is the natural next step and gets its
+   own ADR when a project starts producing one; running the test suites from xray was rejected
+   (minutes per PR, executes PR code).
+2. ~~Failing the check?~~ **Never.** The light is information for the reviewer. An opt-in
+   `risk.failOn` can be added by a later ADR if a team asks for it.
+3. ~~Defaults?~~ **As proposed:** `risk.complexityHigh` 15, `risk.complexityJump` 3,
+   `risk.indirectDepth` 3, all configurable in `xray.config.json`.
 
 ## Consequences
 
