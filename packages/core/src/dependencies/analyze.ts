@@ -1,12 +1,13 @@
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { cruise, type ICruiseResult, type IDependency } from "dependency-cruiser";
 import extractTSConfig from "dependency-cruiser/config-utl/extract-ts-config";
+import ts from "typescript";
 import type { XrayConfig } from "../config.js";
 import type { ChangedFile, ChangeStatus } from "../git.js";
 import { discoverWorkspace, workspaceAliases } from "../workspaces.js";
 
-export type NodeKind = "source" | "test" | "external";
+export type NodeKind = "source" | "test" | "external" | "group";
 
 export interface DependencyNode {
   /** Repo-relative path, or the package name for external nodes. */
@@ -14,6 +15,10 @@ export interface DependencyNode {
   kind: NodeKind;
   /** Set when the file is part of the diff. */
   change?: ChangeStatus;
+  /** A file that only re-exports (`export … from`), e.g. a package's index.ts. */
+  barrel?: boolean;
+  /** For `group` nodes: how many files of the folder import the barrel. */
+  count?: number;
 }
 
 export interface DependencyEdge {
@@ -35,6 +40,15 @@ export interface DependencyAnalysis {
 }
 
 const TEST_FILE = /(^|\/)__tests__\/|\.(test|spec)\.[cm]?[jt]sx?$/;
+
+/** A barrel: a module whose statements are all `export … from "…"` (comments aside). */
+export function isReExportOnly(text: string): boolean {
+  const source = ts.createSourceFile("barrel.ts", text, ts.ScriptTarget.Latest);
+  return (
+    source.statements.length > 0 &&
+    source.statements.every((statement) => ts.isExportDeclaration(statement) && statement.moduleSpecifier !== undefined)
+  );
+}
 
 export function isTestFile(path: string): boolean {
   return TEST_FILE.test(path);
@@ -157,10 +171,20 @@ function dedupeEdges(edges: DependencyEdge[]): DependencyEdge[] {
  * and what imports them). When that exceeds `maxNodes`, neighbours touching
  * the most changed modules are kept first.
  */
+/** Above this many importers, a barrel's importers are shown as one node per folder. */
+export const MAX_BARREL_IMPORTERS = 8;
+
+/**
+ * Keeps the changed modules plus their direct neighbours. A neighbour that is a
+ * barrel re-exporting a changed module also brings its importers (one more hop),
+ * so a change inside a package reaches the code that imports the package; past
+ * MAX_BARREL_IMPORTERS they are grouped per folder.
+ */
 export function selectNeighbourhood(
   graph: Graph,
   changed: ChangedFile[],
   maxNodes: number,
+  isBarrel: (path: string) => boolean = () => false,
 ): Omit<DependencyAnalysis, "warnings"> {
   const changeByPath = new Map(changed.map((file) => [file.path, file.status]));
   const changedInGraph = [...graph.modules].filter((path) => changeByPath.has(path)).sort();
@@ -174,6 +198,34 @@ export function selectNeighbourhood(
       if (!changedSet.has(end)) weight.set(end, (weight.get(end) ?? 0) + 1);
     }
   }
+  // Barrels that re-export a changed module, and who imports them.
+  const barrels = new Set(
+    touching.filter((edge) => changedSet.has(edge.to) && !changedSet.has(edge.from) && isBarrel(edge.from)).map((edge) => edge.from),
+  );
+  const extraEdges: DependencyEdge[] = [];
+  const groups = new Map<string, number>();
+  for (const barrel of barrels) {
+    const importers = graph.edges.filter((edge) => edge.to === barrel && !changedSet.has(edge.from) && edge.from !== barrel);
+    if (importers.length <= MAX_BARREL_IMPORTERS) {
+      for (const edge of importers) {
+        extraEdges.push(edge);
+        // Below direct neighbours in the ranking: they are one hop further.
+        if (!weight.has(edge.from)) weight.set(edge.from, 0.5);
+      }
+      continue;
+    }
+    const byFolder = new Map<string, number>();
+    for (const edge of importers) {
+      const folder = edge.from.includes("/") ? edge.from.slice(0, edge.from.lastIndexOf("/")) : ".";
+      byFolder.set(folder, (byFolder.get(folder) ?? 0) + 1);
+    }
+    for (const [folder, count] of byFolder) {
+      const id = `${folder}/*`;
+      groups.set(id, (groups.get(id) ?? 0) + count);
+      extraEdges.push({ from: id, to: barrel, typeOnly: false, dynamic: false });
+      weight.set(id, Math.max(weight.get(id) ?? 0, 0.5));
+    }
+  }
   const neighbours = [...weight.entries()]
     .sort(([a, wa], [b, wb]) => wb - wa || a.localeCompare(b))
     .map(([path]) => path);
@@ -183,14 +235,16 @@ export function selectNeighbourhood(
   const kept = new Set([...keptChanged, ...keptNeighbours]);
 
   const nodes: DependencyNode[] = [...kept].sort().map((id) => {
+    const count = groups.get(id);
+    if (count !== undefined) return { id, kind: "group", count };
     const change = changeByPath.get(id);
     const kind: NodeKind = !graph.modules.has(id) ? "external" : isTestFile(id) ? "test" : "source";
-    return change ? { id, kind, change } : { id, kind };
+    return { id, kind, ...(change ? { change } : {}), ...(barrels.has(id) ? { barrel: true } : {}) };
   });
 
   return {
     nodes,
-    edges: touching.filter((edge) => kept.has(edge.from) && kept.has(edge.to)),
+    edges: [...touching, ...extraEdges].filter((edge) => kept.has(edge.from) && kept.has(edge.to)),
     outsideGraph,
     omittedNodes:
       neighbours.length - keptNeighbours.length + (changedInGraph.length - keptChanged.length),
@@ -205,5 +259,12 @@ export async function analyzeDependencies(
   const warnings: string[] = [];
   const result = await cruiseProject(cwd, config, warnings);
   const graph = toGraph(result, config.dependencies.includeExternal, repoPathResolver(cwd));
-  return { ...selectNeighbourhood(graph, changed, config.dependencies.maxNodes), warnings };
+  const isBarrel = (path: string) => {
+    try {
+      return isReExportOnly(readFileSync(join(cwd, path), "utf8"));
+    } catch {
+      return false;
+    }
+  };
+  return { ...selectNeighbourhood(graph, changed, config.dependencies.maxNodes, isBarrel), warnings };
 }

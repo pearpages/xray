@@ -7,6 +7,7 @@ const CLASS_DEFS = [
   "classDef renamed fill:#bfdbfe,stroke:#1d4ed8,stroke-width:2px,color:#000",
   "classDef test stroke-dasharray:4 3",
   "classDef external fill:#e5e7eb,stroke:#6b7280,color:#000",
+  "classDef group fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:2 2,color:#000",
 ];
 
 function label(text: string): string {
@@ -39,8 +40,12 @@ export function renderDependencyMermaid(analysis: DependencyAnalysis): string {
     .forEach(([group, nodes], index) => {
       lines.push(`  subgraph g${index}[${label(group)}]`);
       for (const node of nodes) {
+        if (node.kind === "group") {
+          lines.push(`    ${ids.get(node.id)}([${label(`${node.count} files`)}])`);
+          continue;
+        }
         const name = node.kind === "external" ? node.id : basename(node.id);
-        lines.push(`    ${ids.get(node.id)}[${label(name)}]`);
+        lines.push(`    ${ids.get(node.id)}[${label(node.barrel ? `${name} (re-exports)` : name)}]`);
       }
       lines.push("  end");
     });
@@ -87,7 +92,8 @@ export function renderDependencySection(analysis: DependencyAnalysis): string {
       "```",
       "",
       "<sub>🟨 modified · 🟩 added · 🟦 renamed · dashed border = test · " +
-        "dashed arrow = type-only · `lazy` = dynamic import</sub>",
+        "dashed arrow = type-only · `lazy` = dynamic import · `(re-exports)` = a barrel, shown with " +
+        "its importers · rounded = several files of a folder</sub>",
     );
     if (analysis.omittedNodes > 0) {
       out.push(

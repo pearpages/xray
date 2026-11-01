@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { analyzePullRequest, renderMarkdown, resolveConfig } from "../index.js";
-import { packageName, selectNeighbourhood, type Graph } from "./analyze.js";
+import { isReExportOnly, MAX_BARREL_IMPORTERS, packageName, selectNeighbourhood, type Graph } from "./analyze.js";
 
 describe("packageName", () => {
   it("keeps the package part of a specifier", () => {
@@ -115,5 +115,48 @@ describe("analyzePullRequest (git fixture)", () => {
 
   it("fails clearly when the base branch does not exist", async () => {
     await expect(analyzePullRequest({ cwd: repo, base: "nope" })).rejects.toThrow(/fetch-depth: 0/);
+  });
+});
+
+describe("barrels", () => {
+  const edge = (from: string, to: string) => ({ from, to, typeOnly: false, dynamic: false });
+  const isBarrel = (path: string) => path.endsWith("index.ts");
+
+  it("brings a barrel's importers one hop further", () => {
+    const graph: Graph = {
+      modules: new Set(["pkg/cart.ts", "pkg/index.ts", "app/Cart.tsx"]),
+      edges: [edge("pkg/index.ts", "pkg/cart.ts"), edge("app/Cart.tsx", "pkg/index.ts")],
+    };
+    const result = selectNeighbourhood(graph, [{ path: "pkg/cart.ts", status: "modified" }], 60, isBarrel);
+    expect(result.nodes).toEqual([
+      { id: "app/Cart.tsx", kind: "source" },
+      { id: "pkg/cart.ts", kind: "source", change: "modified" },
+      { id: "pkg/index.ts", kind: "source", barrel: true },
+    ]);
+    expect(result.edges).toContainEqual(edge("app/Cart.tsx", "pkg/index.ts"));
+  });
+
+  it("groups a barrel's importers per folder past MAX_BARREL_IMPORTERS", () => {
+    const screens = Array.from({ length: MAX_BARREL_IMPORTERS + 1 }, (_, i) => `app/screens/S${i}.tsx`);
+    const graph: Graph = {
+      modules: new Set(["pkg/cart.ts", "pkg/index.ts", "app/App.tsx", ...screens]),
+      edges: [
+        edge("pkg/index.ts", "pkg/cart.ts"),
+        edge("app/App.tsx", "pkg/index.ts"),
+        ...screens.map((screen) => edge(screen, "pkg/index.ts")),
+      ],
+    };
+    const result = selectNeighbourhood(graph, [{ path: "pkg/cart.ts", status: "modified" }], 60, isBarrel);
+    expect(result.nodes.filter((node) => node.kind === "group")).toEqual([
+      { id: "app/*", kind: "group", count: 1 },
+      { id: "app/screens/*", kind: "group", count: MAX_BARREL_IMPORTERS + 1 },
+    ]);
+    expect(result.edges).toContainEqual(edge("app/screens/*", "pkg/index.ts"));
+  });
+
+  it("recognises a barrel by its statements", () => {
+    expect(isReExportOnly('// the package API\nexport * from "./cart";\nexport { total as sum } from "./total";\n')).toBe(true);
+    expect(isReExportOnly('export * from "./cart";\nexport const extra = 1;\n')).toBe(false);
+    expect(isReExportOnly("")).toBe(false);
   });
 });
