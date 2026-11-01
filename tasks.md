@@ -9,9 +9,12 @@ item, and add a dated line at the top of **Done**.
 ### Later, if needed
 
 - [ ] **Branch coverage**: use lcov `BRDA` data so a changed line with an untested branch isn't "covered" (ADR-0011).
+- [ ] **Big PRs in the dependency diagram**: on futbol-manager's #20 replay (60 changed modules) the diagram is only changed files with 80 left out; group changed modules per folder past `maxNodes`.
+- [ ] **Entry-point candidates**: entry globs make every helper in a screen file a candidate (47 in futbol-manager); offer only components (PascalCase or default exports) in those files.
 
 ## Done
 
+- [x] 2026-11-01: Pilot on pearpages/futbol-manager#22 (draft, replay of #20 on `try/` branches, not to be merged): 84 files, 34 units, 13-feature map written with the skill; xray step 25 s incl. both pnpm builds; comment 24 KB. Findings fixed in v0.2.2: Node 24 actions (setup-node v7, checkout v7), shared units listed once in Interactions, same-named units labelled by package, type comments ignored and long types cut, Dependabot. Workflow lessons now in the README: call Vitest directly (`pnpm test -- …` drops flags) and use `--coverage.reportOnFailure` with a longer `--testTimeout` (instrumented tests timed out and no report was written). With coverage, all 34 units were judged on real coverage; JSX-attribute-only changes fall back to the whole unit's lines.
 - [x] 2026-11-01: v0.2.1, found while preparing the futbol-manager pilot: in a workspace, the bundle analysis builds the one package that is a Vite app (`pnpm --filter @fm/app exec vite build`, output in its `dist/`); per-package bundle changes use raw bytes and one gzip ratio, so untouched packages show 0. futbol-manager PR #20 replay: +2.0 KB gzip in 10 s.
 - [x] 2026-11-01: Released v0.2.0 (barrel importers, lcov coverage, Next.js route handlers); `v0` moved to it.
 - [x] 2026-11-01: Optional tasks done under delegation ([ADR-0011](docs/adr/0011-barrels-coverage-and-routes.md)): barrel importers in the dependency diagram (futbol-manager 15d1220 now reaches 6 folders through `@fm/domain`), lcov coverage of changed lines as risk evidence (checked with a real Vitest report on dummy), Next.js route handlers as endpoints (fixtures only: slotflow has none). 70 tests.
