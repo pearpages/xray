@@ -1,12 +1,17 @@
 import { inlineCode } from "../dependencies/render.js";
 import { splitUnitId } from "../interactions/analyze.js";
-import type { Light, RiskAnalysis, TestEvidence, UnitRisk } from "./analyze.js";
+import { evidenceStrength, type Light, type RiskAnalysis, type TestEvidence, type UnitRisk } from "./analyze.js";
 
 const DOT: Record<Light, string> = { green: "🟢", yellow: "🟡", red: "🔴" };
 const VERDICT: Record<Light, string> = { green: "Low risk", yellow: "Medium risk", red: "High risk" };
 
 function evidenceText(evidence: TestEvidence): string {
   switch (evidence.kind) {
+    case "coverage": {
+      const ratio = `${evidence.covered}/${evidence.total} ${evidence.scope}`;
+      if (evidence.covered === 0) return `**not covered** (${ratio})`;
+      return evidence.covered === evidence.total ? `covered (${ratio})` : `partly covered (${ratio})`;
+    }
     case "direct":
       return `direct (${evidence.tests.length} test file${evidence.tests.length === 1 ? "" : "s"})`;
     case "by-name":
@@ -29,7 +34,7 @@ function complexityText({ complexity }: UnitRisk): string {
 }
 
 function summary(risk: RiskAnalysis): string {
-  const untested = risk.units.filter((unit) => unit.evidence.kind === "none").length;
+  const untested = risk.units.filter((unit) => evidenceStrength(unit.evidence) === "none").length;
   const parts = [
     untested === 0
       ? `a test reaches every changed unit (${risk.units.length})`
@@ -86,9 +91,13 @@ export function renderRiskSection(risk: RiskAnalysis): string {
   }
   out.push(
     "",
-    "<sub>Tests are found statically (a test file uses the unit, is named after its file, or uses " +
-      "a caller); none are run. Complexity is cyclomatic. 🔴 untested and complex or much more " +
-      "complex · 🟡 untested, or only indirectly tested and more complex · 🟢 otherwise.</sub>",
+    "<sub>" +
+      (risk.coverageFiles.length > 0
+        ? `Coverage from ${risk.coverageFiles.map((file) => inlineCode(file)).join(", ")} where it covers the file; `
+        : "") +
+      "otherwise tests are found statically (a test file uses the unit, is named after its file, or uses " +
+      "a caller); xray runs none. Complexity is cyclomatic. 🔴 untested and complex or much more " +
+      "complex · 🟡 untested, or only indirectly or partly tested and more complex · 🟢 otherwise.</sub>",
   );
   return out.join("\n");
 }

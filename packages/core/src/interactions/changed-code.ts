@@ -36,6 +36,8 @@ export interface ChangedCode {
   deleted: string[];
   /** Changed code files (tests, stories and ignored globs excluded). */
   files: ChangedSource[];
+  /** Changed line ranges per file, on the PR side. */
+  changedLines: Map<string, LineRange[]>;
 }
 
 function overlaps(unit: Unit, ranges: LineRange[]): boolean {
@@ -100,5 +102,5 @@ export function loadChangedCode(
   }
 
   const walker = new Walker(loaded.project, loaded.resolveModule, units, loaded.fileOf, ignored);
-  return { loaded, units, walker, ignored, touched, baseOf, deleted, files };
+  return { loaded, units, walker, ignored, touched, baseOf, deleted, files, changedLines };
 }

@@ -39,6 +39,11 @@ export interface RiskConfig {
   complexityJump: number;
   /** How many callers up a test may sit and still count as indirect evidence. */
   indirectDepth: number;
+  /**
+   * lcov reports to read, relative to the analysed root. Default: `coverage/lcov.info` at the
+   * root and in each workspace package, when they exist. The workflow must produce them first.
+   */
+  coverage?: string[];
 }
 
 export interface BundleConfig {
@@ -114,6 +119,7 @@ export function resolveConfig(cwd: string, input: XrayConfigInput = {}): XrayCon
       complexityHigh: input.risk?.complexityHigh ?? 15,
       complexityJump: input.risk?.complexityJump ?? 3,
       indirectDepth: input.risk?.indirectDepth ?? 3,
+      ...(input.risk?.coverage ? { coverage: input.risk.coverage } : {}),
     },
     bundle: {
       enabled: input.bundle?.enabled ?? false,

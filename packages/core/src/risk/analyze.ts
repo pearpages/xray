@@ -6,11 +6,14 @@ import type { InteractionsAnalysis } from "../interactions/analyze.js";
 import type { ChangedCode } from "../interactions/changed-code.js";
 import type { Unit } from "../interactions/units.js";
 import { cyclomaticComplexity } from "./complexity.js";
+import { loadCoverage } from "./coverage.js";
 
 export type Light = "green" | "yellow" | "red";
 
 /** The strongest sign that a test exercises a unit; no test is run to find it. */
 export type TestEvidence =
+  /** From an lcov report: covered lines among the unit's changed lines (or all its lines). */
+  | { kind: "coverage"; covered: number; total: number; scope: "changed lines" | "lines" }
   | { kind: "direct"; tests: string[] }
   | { kind: "by-name"; tests: string[] }
   | { kind: "indirect"; via: string; depth: number; tests: string[] }
@@ -42,6 +45,8 @@ export interface RiskAnalysis {
   untestedFeatures: string[];
   /** Units whose complexity grew, biggest growth first. */
   growing: string[];
+  /** lcov reports read, relative to the analysed root. */
+  coverageFiles: string[];
   skipped?: { reason: "too-many-units"; limit: number };
 }
 
@@ -51,9 +56,16 @@ export function worst(lights: Light[]): Light {
   return lights.reduce<Light>((a, b) => (ORDER[b] > ORDER[a] ? b : a), "green");
 }
 
+/** Coverage counts like the static kinds: all changed lines run = direct, some = indirect, none = none. */
+export function evidenceStrength(evidence: TestEvidence): Exclude<TestEvidence["kind"], "coverage"> {
+  if (evidence.kind !== "coverage") return evidence.kind;
+  if (evidence.covered === 0) return "none";
+  return evidence.covered === evidence.total ? "direct" : "indirect";
+}
+
 /** The ADR-0007 table. */
 export function lightFor(
-  evidence: TestEvidence["kind"],
+  evidence: Exclude<TestEvidence["kind"], "coverage">,
   complexity: UnitRisk["complexity"],
   settings: XrayConfig["risk"],
 ): Light {
@@ -87,7 +99,14 @@ export function analyzeRisk(
   config: XrayConfig,
 ): RiskAnalysis {
   const settings = config.risk;
-  const result: RiskAnalysis = { light: "green", units: [], features: [], untestedFeatures: [], growing: [] };
+  const result: RiskAnalysis = {
+    light: "green",
+    units: [],
+    features: [],
+    untestedFeatures: [],
+    growing: [],
+    coverageFiles: [],
+  };
   if (!code || code.touched.length === 0) return result;
   if (interactions.skipped) {
     result.skipped = interactions.skipped;
@@ -108,7 +127,26 @@ export function analyzeRisk(
     return tests;
   };
 
+  const { coverage, files: coverageFiles } = loadCoverage(cwd, settings.coverage);
+  result.coverageFiles = coverageFiles;
+  /** Covered lines of the unit's changed lines, or of all its lines when no changed line is instrumented. */
+  const coverageOf = (unit: Unit): TestEvidence | undefined => {
+    const lines = coverage?.get(unit.file);
+    if (!lines) return undefined;
+    const from = unit.statement.getStartLineNumber();
+    const to = unit.statement.getEndLineNumber();
+    const inUnit = [...lines.keys()].filter((line) => line >= from && line <= to);
+    const ranges = code.changedLines.get(unit.file) ?? [];
+    const changed = inUnit.filter((line) => ranges.some(([start, end]) => line >= start && line <= end));
+    const scope = changed.length > 0 ? "changed lines" : "lines";
+    const measured = changed.length > 0 ? changed : inUnit;
+    if (measured.length === 0) return undefined;
+    return { kind: "coverage", covered: measured.filter((line) => (lines.get(line) ?? 0) > 0).length, total: measured.length, scope };
+  };
+
   const evidenceFor = (unit: Unit): TestEvidence => {
+    const covered = coverageOf(unit);
+    if (covered) return covered;
     const direct = testsReferencing(unit);
     if (direct.length > 0) return { kind: "direct", tests: direct };
     const named = testsNamedAfter(cwd, unit.file);
@@ -143,7 +181,7 @@ export function analyzeRisk(
       file: unit.file,
       name: unit.name,
       change: before ? "modified" : "added",
-      light: lightFor(evidence.kind, complexity, settings),
+      light: lightFor(evidenceStrength(evidence), complexity, settings),
       evidence,
       complexity,
     });
@@ -157,7 +195,10 @@ export function analyzeRisk(
     units: feature.touched,
   }));
   result.untestedFeatures = result.features
-    .filter((feature) => feature.units.every((id) => byId.get(id)?.evidence.kind === "none"))
+    .filter((feature) => feature.units.every((id) => {
+      const evidence = byId.get(id)?.evidence;
+      return evidence !== undefined && evidenceStrength(evidence) === "none";
+    }))
     .map((feature) => feature.id);
   result.growing = result.units
     .filter((unit) => unit.complexity.before !== undefined && unit.complexity.after > unit.complexity.before)
