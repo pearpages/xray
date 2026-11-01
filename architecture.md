@@ -114,6 +114,7 @@ No state is kept between runs other than the PR comment itself.
   and comment truncation; an integration test that builds a temporary git repo with a feature
   branch and runs `analyzePullRequest` end to end.
 - CI: `.github/workflows/ci.yml` runs `npm ci`, build and tests on pushes to `main` and on PRs.
-- Release: none yet. Consumers reference the Action by git ref; it builds itself on each run
-  instead of shipping a committed `dist/`
-  ([ADR-0003](docs/adr/0003-action-builds-at-runtime.md)).
+- Release: `vX.Y.Z` tags plus a moving `v0` ([ADR-0010](docs/adr/0010-versioning-and-releases.md));
+  consumers use `@v0`. The Action builds itself on each run instead of shipping a committed `dist/`
+  ([ADR-0003](docs/adr/0003-action-builds-at-runtime.md)), and the plugin's skills build the `v0`
+  release.

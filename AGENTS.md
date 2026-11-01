@@ -46,7 +46,11 @@ Node 24 is pinned in `mise.toml` (`mise exec -- <cmd>` if the shell has no defau
 - `npm test -- --run`: run the vitest suite once. Never plain `npm test`, which starts watch mode.
   Tests in `packages/action` import `@xray/core` from `dist`, so build first.
 - `node packages/cli/dist/index.js <base> --cwd <repo>`: run the CLI against another repository
-  (`-f json` for the raw `XrayResult`).
+  (`-f json` for the raw `XrayResult`, `--bundle` to build and compare bundles, `--inventory` for
+  the feature map skill's data).
+- Release, after merging to `main` with CI green
+  ([ADR-0010](docs/adr/0010-versioning-and-releases.md)):
+  `git tag -a vX.Y.Z -m "vX.Y.Z" && git tag -f v0 vX.Y.Z && git push origin vX.Y.Z && git push -f origin v0`.
 
 ## Pitfalls that have bitten before
 

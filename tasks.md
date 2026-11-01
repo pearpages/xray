@@ -5,34 +5,23 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
-- [ ] **Analyses 4 and 5** ([ADR-0008](docs/adr/0008-public-api-analysis.md), [ADR-0009](docs/adr/0009-bundle-size-analysis.md)): built and measured on branch `feat/api-and-bundle`; left: merge to main (release), close pearpages/dummy#6.
 
-### Questions for you
+### Later, if needed
 
-Decisions taken under delegation or waiting on you. Answer any of them in a session; each answer
-updates the ADR it names (or starts one).
-
-1. **Versioning.** Every push to `main` changes every project's PR report today (`@main`). Tag
-   releases (`v0.1.0`, plus a moving `v0`) and point workflows at `@v0`? *Recommended: yes, before
-   adding xray to real projects.* (New ADR.)
-2. **A red light never fails the check** (risk, breaking API, bundle over threshold). Keep it that
-   way, or add an opt-in `failOn` for some of them? *Recommended: keep for now.* (ADR-0007, 0008, 0009.)
-3. **Public API (ADR-0008):** (a) Do any of your projects have route-based endpoints (Express,
-   Next.js route handlers) or OpenAPI in YAML worth covering? (b) List internal app exports too, or
-   only 📦 package exports? *Current: both.* (c) A new required member on a plain type is 🟡 *to
-   review*, not 🔴; agree?
-4. **Bundle size (ADR-0009):** (a) Thresholds 10 KB gzip / 5 %: right for your apps? (b) Which repos
-   should enable `bundle: "true"`? (c) For Vite projects xray runs `vite build --sourcemap hidden`
-   instead of your `build` script (skips the type-check, adds source maps); OK?
-5. **Coverage.** Static test evidence only (ADR-0007). Want a project to publish an lcov report so
-   xray can read real line coverage? If so, which one first?
-6. **Cleanup on GitHub:** delete the merged branches (`feat/interactions`, `feat/skill`,
-   `feat/risk`)? Keep pearpages/dummy#3 open as the demo PR?
-
-- [ ] **Dependencies through barrels** (optional): when a neighbour only re-exports (a package's `index.ts`), also show its importers, so a change inside a shared package reaches the apps in the dependency diagram too.
+- [ ] **Coverage from lcov**: read a project's lcov report when its CI publishes one (ADR-0007 follow-up; none does today).
+- [ ] **Next.js route handlers as endpoints** for analysis 4, when slotflow (the only project with a server framework) adopts xray.
+- [ ] **Dependencies through barrels**: when a neighbour only re-exports (a package's `index.ts`), also show its importers in the dependency diagram.
 
 ## Done
 
+- [x] 2026-11-01: Owner's six questions decided under delegation:
+  1. **Versioning** → yes: `v0.1.0` plus a moving `v0`; README and the skills use `v0` ([ADR-0010](docs/adr/0010-versioning-and-releases.md)).
+  2. **Failing the check** → never, for risk, API and bundle alike; the lights are information (ADR-0007/0008/0009 unchanged).
+  3. **Public API** → (a) no route-based or YAML endpoints yet: of 13 projects only slotflow has a server framework (Next.js) and none has an OpenAPI file; Next.js handlers listed under *Later*. (b) Internal app exports stay listed alongside 📦 package ones. (c) A new required member on a plain type stays 🟡.
+  4. **Bundle** → (a) 10 KB / 5 % kept until real reports suggest otherwise. (b) Enabled on pearpages/dummy as the demo of the recommended setup; no real project runs xray yet, so none is changed. (c) Vite projects keep `vite build --sourcemap hidden` (no type-check, source maps for causes).
+  5. **Coverage** → static evidence until a project publishes lcov (under *Later*).
+  6. **Cleanup** → merged branches deleted from GitHub; pearpages/dummy#3 stays open as the demo PR; #6 closed.
+- [x] 2026-11-01: Analyses 4 and 5 released in v0.1.0 (merged `feat/api-and-bundle`).
 - [x] 2026-11-01: Action measured (P6) on pearpages/dummy#6: default job 12 s (install + build 3.8 s, analysis 1 s: unchanged); with `bundle: "true"` 26 s (analysis 16.5 s for two installs and builds).
 - [x] 2026-11-01: Analysis 4 (public API) and 5 (bundle size, opt-in) built; dummy measured: +49 B gzip in 6 s; 62 tests. Bundle build errors are summarised (error lines, no colours or stack frames).
 - [x] 2026-11-01: `/xray:explain` skill: a reviewer's briefing from a report (PR comment via `gh`, or a local JSON run), checked on pearpages/dummy#3 and futbol-manager. The runner script moved to the plugin root, shared by both skills.

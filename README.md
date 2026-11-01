@@ -52,7 +52,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # needed to find the merge base with the base branch
-      - uses: pearpages/xray@main
+          persist-credentials: false # recommended; required if you enable bundle
+      - uses: pearpages/xray@v0 # or @v0.1.0 to pin, @main for unreleased work
         # with:
         #   working-directory: apps/web
         #   config: xray.config.json
