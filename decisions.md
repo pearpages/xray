@@ -12,7 +12,7 @@ accepted.
 | # | Decision | Status | Date |
 |---|---|---|---|
 | [0001](docs/adr/0001-project-knowledge-files.md) | Project knowledge lives in principles, architecture, decisions, tasks and security | Accepted | 2026-11-01 |
-| [0002](docs/adr/0002-typescript-6-for-dependency-cruiser.md) | Keep `typescript` on 6.x while dependency-cruiser does not support 7 | Proposed | 2026-11-01 |
+| [0002](docs/adr/0002-typescript-6-for-dependency-cruiser.md) | Keep `typescript` on 6.x while dependency-cruiser does not support 7 | Accepted | 2026-11-01 |
 | [0003](docs/adr/0003-action-builds-at-runtime.md) | The composite Action builds xray on each run instead of committing `dist/` | Proposed | 2026-11-01 |
 
 ## Format
