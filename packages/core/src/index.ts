@@ -42,7 +42,7 @@ export function reportSections(result: XrayResult): ReportSection[] {
   return [
     {
       id: "dependencies",
-      title: "🧭 Dependencias",
+      title: "🧭 Dependencies",
       markdown: renderDependencySection(result.dependencies),
     },
   ];

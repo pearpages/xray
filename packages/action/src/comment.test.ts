@@ -11,6 +11,6 @@ describe("fitComment", () => {
     const fitted = fitComment(body);
     expect(fitted.length).toBeLessThanOrEqual(MAX_COMMENT_LENGTH);
     expect(fitted.match(/^```/gm)).toHaveLength(2);
-    expect(fitted).toContain("Informe truncado");
+    expect(fitted).toContain("Report truncated");
   });
 });

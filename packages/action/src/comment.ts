@@ -6,7 +6,7 @@ export const MAX_COMMENT_LENGTH = 65_536;
 export function fitComment(body: string): string {
   if (body.length <= MAX_COMMENT_LENGTH) return body;
   const notice =
-    "\n\n> [!WARNING]\n> Informe truncado: supera el límite de tamaño de los comentarios de GitHub.\n";
+    "\n\n> [!WARNING]\n> Report truncated: it exceeds GitHub's comment size limit.\n";
   // Cut on a line boundary and close any open code fence so the rest still renders.
   let cut = body.slice(0, MAX_COMMENT_LENGTH - notice.length - 8);
   cut = cut.slice(0, cut.lastIndexOf("\n"));

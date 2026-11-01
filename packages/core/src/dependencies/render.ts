@@ -14,7 +14,7 @@ function label(text: string): string {
 }
 
 function groupOf(node: DependencyNode): string {
-  return node.kind === "external" ? "dependencias externas" : dirname(node.id);
+  return node.kind === "external" ? "external dependencies" : dirname(node.id);
 }
 
 function classesOf(node: DependencyNode): string[] {
@@ -56,10 +56,10 @@ export function renderDependencyMermaid(analysis: DependencyAnalysis): string {
 }
 
 const STATUS_LABEL = {
-  added: "añadido",
-  modified: "modificado",
-  deleted: "eliminado",
-  renamed: "renombrado",
+  added: "added",
+  modified: "modified",
+  deleted: "deleted",
+  renamed: "renamed",
 } as const;
 
 export function renderDependencySection(analysis: DependencyAnalysis): string {
@@ -68,24 +68,24 @@ export function renderDependencySection(analysis: DependencyAnalysis): string {
   const out: string[] = [];
 
   if (changed.length === 0) {
-    out.push("Ningún módulo del grafo de dependencias ha cambiado en este PR.");
+    out.push("No module in the dependency graph changed in this PR.");
   } else {
     out.push(
-      `**${changed.length}** módulo(s) cambiado(s) · **${neighbours}** vecino(s) directo(s) · ` +
-        `**${analysis.edges.length}** dependencia(s)`,
+      `**${changed.length}** changed module(s) · **${neighbours}** direct neighbour(s) · ` +
+        `**${analysis.edges.length}** dependenc${analysis.edges.length === 1 ? "y" : "ies"}`,
       "",
       "```mermaid",
       renderDependencyMermaid(analysis),
       "```",
       "",
-      "<sub>🟨 modificado · 🟩 añadido · 🟦 renombrado · borde discontinuo = test · " +
-        "flecha discontinua = solo tipos · `lazy` = import dinámico</sub>",
+      "<sub>🟨 modified · 🟩 added · 🟦 renamed · dashed border = test · " +
+        "dashed arrow = type-only · `lazy` = dynamic import</sub>",
     );
     if (analysis.omittedNodes > 0) {
       out.push(
         "",
-        `> [!NOTE]\n> Se han omitido ${analysis.omittedNodes} nodo(s) para no superar el límite ` +
-          "del diagrama (`dependencies.maxNodes`).",
+        `> [!NOTE]\n> ${analysis.omittedNodes} node(s) left out to stay within the diagram limit ` +
+          "(`dependencies.maxNodes`).",
       );
     }
   }
@@ -98,7 +98,7 @@ export function renderDependencySection(analysis: DependencyAnalysis): string {
     );
     out.push(
       "",
-      `<details><summary>${analysis.outsideGraph.length} archivo(s) cambiado(s) fuera del grafo</summary>`,
+      `<details><summary>${analysis.outsideGraph.length} changed file(s) outside the graph</summary>`,
       "",
       ...items,
       "",

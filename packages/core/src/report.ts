@@ -19,7 +19,7 @@ export function renderReport(meta: ReportMeta, sections: ReportSection[]): strin
     REPORT_MARKER,
     "# 🩻 xray",
     "",
-    `<sub>Comparando \`${meta.head.slice(0, 7)}\` con \`${meta.base}\` ` +
+    `<sub>Comparing \`${meta.head.slice(0, 7)}\` with \`${meta.base}\` ` +
       `(merge-base \`${meta.mergeBase.slice(0, 7)}\`)</sub>`,
   ];
   for (const section of sections) {

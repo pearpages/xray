@@ -62,7 +62,7 @@ async function cruiseProject(
     try {
       tsConfig = extractTSConfig(join(cwd, config.tsConfig));
     } catch (error) {
-      warnings.push(`No se pudo leer ${config.tsConfig}: ${(error as Error).message}`);
+      warnings.push(`Could not read ${config.tsConfig}: ${(error as Error).message}`);
     }
   }
   const result = await cruise(

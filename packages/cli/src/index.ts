@@ -13,15 +13,15 @@ interface CliOptions {
 
 const program = new Command()
   .name("xray")
-  .description("Analiza la rama actual frente a la rama base y genera el informe del PR.")
-  .argument("[base]", "rama base del PR", "main")
-  .option("-C, --cwd <dir>", "raíz del repositorio a analizar", process.cwd())
+  .description("Analyse the current branch against the base branch and produce the PR report.")
+  .argument("[base]", "base branch of the PR", "main")
+  .option("-C, --cwd <dir>", "root of the repository to analyse", process.cwd())
   .option("-f, --format <format>", "markdown | json", "markdown")
-  .option("-o, --out <file>", "escribe el informe en un archivo en vez de stdout")
-  .option("-c, --config <file>", "ruta al config, relativa a --cwd (por defecto xray.config.json)")
+  .option("-o, --out <file>", "write the report to a file instead of stdout")
+  .option("-c, --config <file>", "config path, relative to --cwd (default xray.config.json)")
   .action(async (base: string, options: CliOptions) => {
     if (options.format !== "markdown" && options.format !== "json") {
-      program.error(`Formato desconocido: ${options.format}`);
+      program.error(`Unknown format: ${options.format}`);
     }
     const cwd = resolve(options.cwd);
     const result = await analyzePullRequest({ cwd, base, config: loadConfig(cwd, options.config) });
