@@ -47,5 +47,5 @@ minutes. The target projects are Vite apps (pnpm or npm), none of which emits so
 − Minutes per PR when enabled (two installs and two builds; dummy: 6 s with a warm npm cache).
 − It runs PR code: install scripts and the build. Acceptable for a project's own PRs, same as its CI;
   never enable it on `pull_request_target`.
-− Per-package numbers are estimates (gzip spread by raw bytes), good for ranking causes, not for
+− Per-package numbers are estimates (raw bytes from source maps × one gzip ratio), good for ranking causes, not for
   exact accounting; changes under 64 B are hidden as noise.

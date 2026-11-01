@@ -14,7 +14,7 @@ export interface ChunkDiff {
 
 export interface PackageDiff {
   name: string;
-  /** Gzip-equivalent bytes attributed through source maps. */
+  /** Gzip-equivalent bytes: raw bytes from source maps × the PR build's gzip/raw ratio. */
   before: number;
   after: number;
 }
@@ -88,8 +88,14 @@ export function compareBuilds(before: BuildMeasure, after: BuildMeasure): Pick<B
     .filter((diff) => delta(diff) !== 0 || !diff.before || !diff.after)
     .sort((a, b) => Math.abs(delta(b)) - Math.abs(delta(a)));
   const names = new Set([...(before.packages?.keys() ?? []), ...(after.packages?.keys() ?? [])]);
+  // One gzip/raw ratio for both builds: an unchanged package keeps its raw bytes, so it shows 0.
+  const ratio = after.total.raw > 0 ? after.total.gzip / after.total.raw : 0;
   const packages = [...names]
-    .map((name) => ({ name, before: before.packages?.get(name) ?? 0, after: after.packages?.get(name) ?? 0 }))
+    .map((name) => ({
+      name,
+      before: (before.packages?.get(name) ?? 0) * ratio,
+      after: (after.packages?.get(name) ?? 0) * ratio,
+    }))
     .filter((diff) => Math.round(diff.after - diff.before) !== 0)
     .sort((a, b) => Math.abs(b.after - b.before) - Math.abs(a.after - a.before));
   return { chunks, packages, sourceMaps: Boolean(before.packages && after.packages) };

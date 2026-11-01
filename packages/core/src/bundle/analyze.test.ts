@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resolveConfig } from "../config.js";
 import { analyzePullRequest, renderMarkdown } from "../index.js";
 import { GitFixture } from "../testing/git-fixture.js";
-import { summarizeFailure } from "./build.js";
+import { planBuild, summarizeFailure } from "./build.js";
 import { chunkKey } from "./measure.js";
 
 describe("chunkKey", () => {
@@ -99,5 +99,37 @@ describe("analyzeBundle", () => {
     const result = await analyzePullRequest({ cwd: repo.root, base: "main", config: resolveConfig(repo.root) });
     expect(result.bundle.status).toBe("disabled");
     expect(renderMarkdown(result)).not.toContain("Bundle size");
+  });
+});
+
+describe("planBuild", () => {
+  const settings = resolveConfig("/nonexistent").bundle;
+
+  it("builds the workspace package that is a Vite app, from the root", () => {
+    const repo = (fixture = new GitFixture().write({
+      "pnpm-workspace.yaml": "packages:\n  - packages/*\n",
+      "pnpm-lock.yaml": "lockfileVersion: '9.0'\n",
+      "package.json": JSON.stringify({ name: "root", private: true, scripts: { build: "pnpm -r build" } }),
+      "packages/domain/package.json": JSON.stringify({ name: "@fm/domain" }),
+      "packages/app/package.json": JSON.stringify({ name: "@fm/app", devDependencies: { vite: "8.2.1" } }),
+      "packages/app/index.html": "<!doctype html>",
+    }));
+    expect(planBuild(repo.root, repo.root, settings)).toEqual({
+      install: "pnpm install --frozen-lockfile",
+      build: "pnpm --filter @fm/app exec vite build --sourcemap hidden --emptyOutDir",
+      outDir: "packages/app/dist",
+    });
+  });
+
+  it("asks for config when several packages are Vite apps", () => {
+    const app = (name: string) => JSON.stringify({ name, dependencies: { vite: "8" } });
+    const repo = (fixture = new GitFixture().write({
+      "package.json": JSON.stringify({ name: "root", workspaces: ["apps/*"] }),
+      "apps/web/package.json": app("web"),
+      "apps/web/index.html": "",
+      "apps/admin/package.json": app("admin"),
+      "apps/admin/index.html": "",
+    }));
+    expect(() => planBuild(repo.root, repo.root, settings)).toThrow(/Several Vite apps in this workspace \(admin, web\)/);
   });
 });

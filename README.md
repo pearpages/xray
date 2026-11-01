@@ -114,8 +114,9 @@ Every field is optional:
   `npx vitest run --coverage --coverage.reporter=lcov`; xray itself never runs tests.
 - `bundle.enabled`: measure bundle size (also `--bundle`, or the Action's `bundle: "true"`).
   `bundle.install`, `bundle.build` and `bundle.outDir` override what xray detects: the lockfile's
-  install command, `vite build --sourcemap hidden` for Vite projects or the `build` script, and
-  `dist`/`build`/`out`. `thresholdBytes` / `thresholdPercent` turn the light red on total gzip growth.
+  install command, `vite build --sourcemap hidden` for Vite projects (at a workspace root: in the one
+  package that is a Vite app, i.e. depends on `vite` and has an `index.html`) or the `build` script,
+  and `dist`/`build`/`out`. `thresholdBytes` / `thresholdPercent` turn the light red on total gzip growth.
 
 ## Feature map (`xray.features.json`)
 

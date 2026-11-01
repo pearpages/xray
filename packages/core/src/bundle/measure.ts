@@ -19,7 +19,7 @@ export interface Chunk {
 export interface BuildMeasure {
   chunks: Chunk[];
   total: Sizes;
-  /** Gzip-equivalent bytes per npm package (`(app)` for project code), from source maps. */
+  /** Raw bytes per npm package (`(app)` for project code), from source maps. */
   packages?: Map<string, number>;
 }
 
@@ -60,11 +60,9 @@ export function measure(outDir: string): BuildMeasure {
       mapped = true;
       const code = content.toString("utf8");
       const perSource = bytesPerSource(code, JSON.parse(readFileSync(mapPath, "utf8")) as SourceMapLike);
-      // Spread the chunk's gzip size over its sources in proportion to their raw bytes.
-      const ratio = sizes.raw > 0 ? sizes.gzip / sizes.raw : 0;
       for (const [source, bytes] of perSource) {
         const name = packageOfSource(source) ?? "(app)";
-        packages.set(name, (packages.get(name) ?? 0) + bytes * ratio);
+        packages.set(name, (packages.get(name) ?? 0) + bytes);
       }
     }
   }

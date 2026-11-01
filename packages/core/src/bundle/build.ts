@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { BundleConfig } from "../config.js";
 import { git } from "../git.js";
+import { discoverWorkspace } from "../workspaces.js";
 
 export interface BuildPlan {
   install: string;
@@ -37,19 +38,55 @@ const INSTALL = {
 };
 const EXEC = { pnpm: "pnpm exec", yarn: "yarn", "npm-ci": "npx --no-install", npm: "npx --no-install" };
 const RUN = { pnpm: "pnpm run", yarn: "yarn run", "npm-ci": "npm run", npm: "npm run" };
+/** Runs a binary inside one workspace package, from the root. */
+const EXEC_IN = {
+  pnpm: (name: string) => `pnpm --filter ${name} exec`,
+  yarn: (name: string) => `yarn workspace ${name}`,
+  "npm-ci": (name: string) => `npm exec --workspace ${name} --`,
+  npm: (name: string) => `npm exec --workspace ${name} --`,
+};
+const VITE_FLAGS = "--sourcemap hidden --emptyOutDir";
+
+const usesVite = (manifest: Record<string, unknown>) =>
+  "vite" in { ...(manifest.dependencies as object), ...(manifest.devDependencies as object) };
+
+/** Workspace packages that are Vite apps: they depend on vite and have an index.html. */
+function viteApps(dir: string): { name: string; dir: string }[] {
+  return (discoverWorkspace(dir) ?? []).filter((pkg) => {
+    const manifest = readJson(join(dir, pkg.dir, "package.json")) ?? {};
+    return usesVite(manifest) && existsSync(join(dir, pkg.dir, "index.html"));
+  });
+}
 
 /** What to run, from the config or from the project (lockfile, Vite, `build` script). */
 export function planBuild(dir: string, top: string, config: BundleConfig): BuildPlan {
   const manager = packageManager(dir, top);
   const manifest = readJson(join(dir, "package.json")) ?? {};
-  const deps = { ...(manifest.dependencies as object), ...(manifest.devDependencies as object) };
-  const vite = "vite" in deps;
+  const vite = usesVite(manifest);
+  // A workspace root rarely holds the app: build the one package that is a Vite app.
+  if (!vite && !config.build) {
+    const apps = viteApps(dir);
+    if (apps.length > 1) {
+      throw new BuildError(
+        `Several Vite apps in this workspace (${apps.map((app) => app.name).join(", ")}): ` +
+          "set `bundle.build` and `bundle.outDir` in xray.config.json.",
+      );
+    }
+    const [app] = apps;
+    if (app) {
+      return {
+        install: config.install ?? INSTALL[manager],
+        build: `${EXEC_IN[manager](app.name)} vite build ${VITE_FLAGS}`,
+        outDir: config.outDir ?? `${app.dir}/dist`,
+      };
+    }
+  }
   const outDir =
     config.outDir ?? (vite ? "dist" : (["dist", "build", "out"].find((name) => existsSync(join(dir, name))) ?? "dist"));
   return {
     install: config.install ?? INSTALL[manager],
     // Vite directly: skips the type-check most `build` scripts run first, and emits source maps.
-    build: config.build ?? (vite ? `${EXEC[manager]} vite build --sourcemap hidden --emptyOutDir` : `${RUN[manager]} build`),
+    build: config.build ?? (vite ? `${EXEC[manager]} vite build ${VITE_FLAGS}` : `${RUN[manager]} build`),
     outDir,
   };
 }
