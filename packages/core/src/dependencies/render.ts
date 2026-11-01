@@ -14,8 +14,12 @@ function label(text: string): string {
   return `"${text.replace(/"/g, "#quot;")}"`;
 }
 
+const files = (count: number) => `${count} file${count === 1 ? "" : "s"}`;
+
 function groupOf(node: DependencyNode): string {
-  return node.kind === "external" ? "external dependencies" : dirname(node.id);
+  if (node.kind === "external") return "external dependencies";
+  // Folder nodes (`a/b/*`) group under their parent folder.
+  return node.kind === "group" ? dirname(node.id.slice(0, -2)) : dirname(node.id);
 }
 
 function classesOf(node: DependencyNode): string[] {
@@ -41,7 +45,11 @@ export function renderDependencyMermaid(analysis: DependencyAnalysis): string {
       lines.push(`  subgraph g${index}[${label(group)}]`);
       for (const node of nodes) {
         if (node.kind === "group") {
-          lines.push(`    ${ids.get(node.id)}([${label(`${node.count} files`)}])`);
+          const text =
+            analysis.level === "folder"
+              ? `${node.id.slice(0, -2).split("/").pop()}: ${node.changedCount ? `${node.changedCount} changed of ` : ""}${files(node.count ?? 0)}`
+              : files(node.count ?? 0);
+          lines.push(`    ${ids.get(node.id)}([${label(text)}])`);
           continue;
         }
         const name = node.kind === "external" ? node.id : basename(node.id);
@@ -84,8 +92,13 @@ export function renderDependencySection(analysis: DependencyAnalysis): string {
     out.push("No module in the dependency graph changed in this PR.");
   } else {
     out.push(
-      `**${changed.length}** changed module(s) · **${neighbours}** direct neighbour(s) · ` +
-        `**${analysis.edges.length}** dependenc${analysis.edges.length === 1 ? "y" : "ies"}`,
+      (analysis.level === "folder"
+        ? `**Folder view**: the PR changes too many modules to draw one by one. ` +
+          `**${analysis.nodes.reduce((sum, node) => sum + (node.changedCount ?? 0), 0)}** changed module(s) in ` +
+          `**${changed.length}** folder(s), next to **${neighbours}** neighbouring folder(s) · ` +
+          `**${analysis.edges.length}** folder dependenc${analysis.edges.length === 1 ? "y" : "ies"}`
+        : `**${changed.length}** changed module(s) · **${neighbours}** direct neighbour(s) · ` +
+          `**${analysis.edges.length}** dependenc${analysis.edges.length === 1 ? "y" : "ies"}`),
       "",
       "```mermaid",
       renderDependencyMermaid(analysis),

@@ -39,15 +39,40 @@ describe("selectNeighbourhood", () => {
   });
 
   it("drops the least connected neighbours past maxNodes", () => {
+    const wide: Graph = {
+      modules: new Set(["a.ts", "b.ts", "c.ts", "d.ts", "e.ts"]),
+      edges: [
+        { from: "a.ts", to: "b.ts", typeOnly: false, dynamic: false },
+        { from: "c.ts", to: "b.ts", typeOnly: false, dynamic: false },
+        { from: "a.ts", to: "d.ts", typeOnly: false, dynamic: false },
+        { from: "a.ts", to: "e.ts", typeOnly: false, dynamic: false },
+      ],
+    };
     const changed = [
       { path: "a.ts", status: "modified" as const },
       { path: "c.ts", status: "modified" as const },
-      { path: "d.ts", status: "modified" as const },
     ];
-    const result = selectNeighbourhood(graph, changed, 4);
-    // b.ts touches all three changed modules, e.ts only one.
+    const result = selectNeighbourhood(wide, changed, 4);
+    // b.ts touches both changed modules; d.ts and e.ts one each, and only one of them fits.
+    expect(result.level).toBe("file");
     expect(result.nodes.map((node) => node.id)).toEqual(["a.ts", "b.ts", "c.ts", "d.ts"]);
     expect(result.omittedNodes).toBe(1);
+  });
+
+  it("switches to folders when the changed modules alone would fill half the diagram", () => {
+    const edge = (from: string, to: string) => ({ from, to, typeOnly: false, dynamic: false });
+    const big: Graph = {
+      modules: new Set(["ui/A.tsx", "ui/B.tsx", "ui/C.tsx", "lib/x.ts", "lib/y.ts"]),
+      edges: [edge("ui/A.tsx", "lib/x.ts"), edge("ui/B.tsx", "lib/x.ts"), edge("ui/C.tsx", "lib/y.ts")],
+    };
+    const changed = ["ui/A.tsx", "ui/B.tsx", "ui/C.tsx"].map((path) => ({ path, status: "modified" as const }));
+    const result = selectNeighbourhood(big, changed, 4);
+    expect(result.level).toBe("folder");
+    expect(result.nodes).toEqual([
+      { id: "lib/*", kind: "group", count: 2, changedCount: 0 },
+      { id: "ui/*", kind: "group", count: 3, changedCount: 3, change: "modified" },
+    ]);
+    expect(result.edges).toEqual([edge("ui/*", "lib/*")]);
   });
 });
 
