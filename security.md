@@ -16,7 +16,8 @@ sees the report. Never open a public issue for an unfixed vulnerability.
 - **Input is untrusted PR content.** xray reads the PR's files, paths and `tsconfig.json`, but only
   parses them statically (git, dependency-cruiser, ts-morph). It never runs the analysed project's
   code, scripts or package installs; base versions of files are read with `git show`, not checked
-  out. Workspace `package.json` files and `pnpm-workspace.yaml` are read as data (JSON, and a
+  out. Test evidence for analysis 3 is found by reading test files, never by running them.
+  Workspace `package.json` files and `pnpm-workspace.yaml` are read as data (JSON, and a
   minimal line parser for the YAML) to map package names to folders. Analyses that need to execute the project (planned: tests coverage,
   bundle builds) change this and must be reviewed here first.
 - **Write token in CI.** The Action uses `GITHUB_TOKEN` with `pull-requests: write` to create or

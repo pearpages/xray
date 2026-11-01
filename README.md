@@ -82,7 +82,8 @@ Every field is optional:
     "maxDiagrams": 5,
     "maxTouchedUnits": 40,
     "featureMap": "xray.features.json"
-  }
+  },
+  "risk": { "complexityHigh": 15, "complexityJump": 3, "indirectDepth": 3 }
 }
 ```
 
@@ -100,7 +101,10 @@ Every field is optional:
 - `interactions.hubCallers`: without a feature map, a unit with more callers than this (a store hook,
   a shared layout) ends the walk and is shown once as a shared feature.
 - `interactions.maxDiagrams` / `maxTouchedUnits`: limits that keep the comment readable; past
-  `maxTouchedUnits` only the list of changed units is shown.
+  `maxTouchedUnits` only the list of changed units is shown, and risk is not assessed.
+- `risk.complexityHigh` / `complexityJump`: an untested unit at or above this complexity, or whose
+  complexity grew by at least this much, is red.
+- `risk.indirectDepth`: how many callers up a test may sit and still count as evidence.
 
 ## Feature map (`xray.features.json`)
 
@@ -166,7 +170,11 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
    follows who renders, calls, uses, lazy-loads, mounts or reads them up to entry points, and what they use
    one level down. One Mermaid sequence diagram per feature, named by the feature map when there is
    one. Works across workspace packages.
-3. **Impact and risk** — coverage × complexity → traffic light.
+3. **Impact and risk** ✅ — for each changed unit, the strongest test evidence (a test uses it, a
+   test file is named after its file, or a test uses a caller) and its complexity before and after.
+   A traffic light per unit, per feature and for the PR, plus *features without tests* and *growing
+   complexity*. No test is run; it never fails the check
+   ([ADR-0007](docs/adr/0007-impact-and-risk-analysis.md)).
 4. **Public API / contracts** — diff of exports and endpoints, compatible/breaking, affected usages.
 5. **Bundle size** — build base and PR, gzip/brotli chunks, configurable threshold and cause.
 

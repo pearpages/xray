@@ -3,8 +3,11 @@ import { analyzeDependencies, type DependencyAnalysis } from "./dependencies/ana
 import { renderDependencySection } from "./dependencies/render.js";
 import { getChangedFiles, getChangedLines, git, resolveMergeBase, type ChangedFile } from "./git.js";
 import { analyzeInteractions, type InteractionsAnalysis } from "./interactions/analyze.js";
+import { loadChangedCode } from "./interactions/changed-code.js";
 import { renderInteractionsSection } from "./interactions/render.js";
 import { renderReport, type ReportMeta, type ReportSection } from "./report.js";
+import { analyzeRisk, type RiskAnalysis } from "./risk/analyze.js";
+import { renderRiskSection } from "./risk/render.js";
 
 export * from "./config.js";
 export * from "./git.js";
@@ -16,6 +19,8 @@ export * from "./interactions/features.js";
 export * from "./interactions/inventory.js";
 export * from "./interactions/render.js";
 export type { Interaction, RelationKind } from "./interactions/walk.js";
+export * from "./risk/analyze.js";
+export * from "./risk/render.js";
 
 export interface AnalyzeOptions {
   cwd: string;
@@ -36,6 +41,7 @@ export interface XrayResult {
   changed: ChangedFile[];
   dependencies: DependencyAnalysis;
   interactions: InteractionsAnalysis;
+  risk: RiskAnalysis;
   /** Kept so renderers can apply the same limits the analyses used. */
   config: XrayConfig;
 }
@@ -46,17 +52,15 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<XrayR
   const mergeBase = resolveMergeBase(cwd, base);
   const head = options.head ?? git(cwd, ["rev-parse", "HEAD"]);
   const changed = getChangedFiles(cwd, mergeBase);
+  // Loaded once, shared by the ts-morph analyses.
+  const code = loadChangedCode(cwd, changed, getChangedLines(cwd, mergeBase), mergeBase, config);
+  const interactions = analyzeInteractions(cwd, code, config);
   return {
     meta: { base, mergeBase, head },
     changed,
     dependencies: await analyzeDependencies(cwd, changed, config),
-    interactions: await analyzeInteractions(
-      cwd,
-      changed,
-      getChangedLines(cwd, mergeBase),
-      mergeBase,
-      config,
-    ),
+    interactions,
+    risk: analyzeRisk(cwd, code, interactions, config),
     config,
   };
 }
@@ -75,6 +79,11 @@ export function reportSections(result: XrayResult): ReportSection[] {
         result.interactions,
         result.config.interactions.maxDiagrams,
       ),
+    },
+    {
+      id: "risk",
+      title: "🚦 Impact and risk",
+      markdown: renderRiskSection(result.risk),
     },
   ];
 }

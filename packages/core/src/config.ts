@@ -32,6 +32,15 @@ export interface InteractionsConfig {
   featureMap: string;
 }
 
+export interface RiskConfig {
+  /** Complexity at or above which an untested unit is red. */
+  complexityHigh: number;
+  /** Complexity growth at or above which an untested unit is red. */
+  complexityJump: number;
+  /** How many callers up a test may sit and still count as indirect evidence. */
+  indirectDepth: number;
+}
+
 export interface XrayConfig {
   /** Folders dependency-cruiser scans, relative to the repo root. */
   roots: string[];
@@ -41,6 +50,7 @@ export interface XrayConfig {
   exclude: string[];
   dependencies: DependenciesConfig;
   interactions: InteractionsConfig;
+  risk: RiskConfig;
 }
 
 export const CONFIG_FILE = "xray.config.json";
@@ -54,9 +64,10 @@ export const DEFAULT_ENTRY_GLOBS = [
   "**/pages/**",
 ];
 
-export type XrayConfigInput = Partial<Omit<XrayConfig, "dependencies" | "interactions">> & {
+export type XrayConfigInput = Partial<Omit<XrayConfig, "dependencies" | "interactions" | "risk">> & {
   dependencies?: Partial<DependenciesConfig>;
   interactions?: Partial<InteractionsConfig>;
+  risk?: Partial<RiskConfig>;
 };
 
 export function resolveConfig(cwd: string, input: XrayConfigInput = {}): XrayConfig {
@@ -79,6 +90,11 @@ export function resolveConfig(cwd: string, input: XrayConfigInput = {}): XrayCon
       maxDiagrams: input.interactions?.maxDiagrams ?? 5,
       maxTouchedUnits: input.interactions?.maxTouchedUnits ?? 40,
       featureMap: input.interactions?.featureMap ?? "xray.features.json",
+    },
+    risk: {
+      complexityHigh: input.risk?.complexityHigh ?? 15,
+      complexityJump: input.risk?.complexityJump ?? 3,
+      indirectDepth: input.risk?.indirectDepth ?? 3,
     },
   };
 }

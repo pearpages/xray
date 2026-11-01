@@ -28,12 +28,14 @@ flowchart LR
     git["git.ts<br/>merge base, changed files"]
     config["config.ts<br/>xray.config.json"]
     deps["dependencies/<br/>analyze.ts · render.ts"]
-    inter["interactions/<br/>project · units · walk · features · render"]
+    inter["interactions/<br/>changed-code · project · units · walk · features · render"]
+    risk["risk/<br/>complexity · analyze · render"]
     report["report.ts<br/>sections → Markdown"]
   end
   core --- core_internals
   deps --> depcruise[("dependency-cruiser")]
   inter --> tsmorph[("ts-morph")]
+  risk --> inter
 ```
 
 | Path | Owns |
@@ -43,6 +45,8 @@ flowchart LR
 | `packages/core/src/dependencies/` | Analysis 1: cruise the project, keep changed modules + direct neighbours, render the Mermaid flowchart |
 | `packages/core/src/workspaces.ts` | Workspace discovery (`pnpm-workspace.yaml`, `workspaces`) and mapping package names and subpath exports to files, for both analyses (CI has no `node_modules`) |
 | `packages/core/src/interactions/project.ts` | Loading the ts-morph project: the root tsconfig, or every workspace package at a workspace root, with workspace package names resolved to source |
+| `packages/core/src/interactions/changed-code.ts` | Loading the PR's code once for the ts-morph analyses: the project, the touched units, their base versions and removed units |
+| `packages/core/src/risk/` | Analysis 3: test evidence per touched unit (direct, by name, indirect), cyclomatic complexity before/after, traffic lights per unit, feature and PR |
 | `packages/core/src/interactions/units.ts` | Units: top-level functions, components, hooks, classes and lookup tables, found per file and by enclosing node |
 | `packages/core/src/interactions/walk.ts` | Classifying references (renders, uses, calls, lazy-loads, mounts, reads) and walking callers up and callees down |
 | `packages/core/src/interactions/features.ts`, `analyze.ts` | The feature map, and grouping touched units into features (map features, entry points, shared hubs) |
@@ -76,8 +80,12 @@ flowchart LR
    or nothing else using it) and callees down
    `depthDown` levels. Touched units are grouped into features: the map's, or one per entry point.
    Tests and stories never count as callers.
-5. `reportSections` renders each analysis to a section; `renderReport` adds the marker and header.
-6. In CI, the Action runs the CLI with `--head` set to the PR's head commit (the checkout itself is
+5. `analyzeRisk` reuses that loaded code and the Interactions features: for each touched unit it
+   looks for test files referencing it, named after its file, or referencing a caller up to
+   `risk.indirectDepth` levels; counts complexity on both versions; and lights units, features and
+   the PR ([ADR-0007](docs/adr/0007-impact-and-risk-analysis.md)). No tests are run.
+6. `reportSections` renders each analysis to a section; `renderReport` adds the marker and header.
+7. In CI, the Action runs the CLI with `--head` set to the PR's head commit (the checkout itself is
    GitHub's temporary merge commit), writes the report to `$RUNNER_TEMP`, appends it to the job
    summary, and the comment script PATCHes the existing comment carrying the marker or POSTs a new one. A 403/404
    from the API (read-only token on fork PRs) is a warning, not a failure.

@@ -1,12 +1,9 @@
-import { join, matchesGlob } from "node:path";
-import { Project } from "ts-morph";
+import { matchesGlob } from "node:path";
 import type { XrayConfig } from "../config.js";
-import { isTestFile } from "../dependencies/analyze.js";
-import { showFile, type ChangedFile, type LineRange } from "../git.js";
+import type { ChangedCode } from "./changed-code.js";
 import { featuresFor, loadFeatureMap, type FeatureDefinition } from "./features.js";
-import { loadProject } from "./project.js";
-import { unitsOf, UnitIndex, type Unit } from "./units.js";
-import { walkDown, walkUp, Walker, type DownWalk, type Interaction, type UpWalk } from "./walk.js";
+import type { Unit } from "./units.js";
+import { walkDown, walkUp, type DownWalk, type Interaction, type UpWalk } from "./walk.js";
 
 export interface InteractionUnit {
   id: string;
@@ -46,33 +43,9 @@ export interface InteractionsAnalysis {
   warnings: string[];
 }
 
-const CODE_FILE = /\.(c|m)?[jt]sx?$/;
-const STORY_FILE = /\.stories\.[cm]?[jt]sx?$/;
-
 export function splitUnitId(id: string): { file: string; name: string } {
   const at = id.lastIndexOf("#");
   return { file: id.slice(0, at), name: id.slice(at + 1) };
-}
-
-function overlaps(unit: Unit, ranges: LineRange[]): boolean {
-  const from = unit.statement.getStartLineNumber();
-  const to = unit.statement.getEndLineNumber();
-  return ranges.some(([start, end]) => start <= to && end >= from);
-}
-
-/** Unit names per file on the base, parsed from `git show` without touching the working tree. */
-function baseUnitNames(cwd: string, mergeBase: string, files: ChangedFile[]): Map<string, Set<string>> {
-  const scratch = new Project({ useInMemoryFileSystem: true, compilerOptions: { allowJs: true } });
-  const names = new Map<string, Set<string>>();
-  for (const file of files) {
-    if (file.status === "added") continue;
-    const path = file.previousPath ?? file.path;
-    const text = showFile(cwd, mergeBase, path);
-    if (text === undefined) continue;
-    const sourceFile = scratch.createSourceFile(`/${path}`, text, { overwrite: true });
-    names.set(file.path, new Set(unitsOf(sourceFile, path).map((unit) => unit.name)));
-  }
-  return names;
 }
 
 /** Edges of an upward walk that lie on a path starting at one of `starts`. */
@@ -103,17 +76,12 @@ interface FeatureDraft {
   sharedBy?: string[];
 }
 
-export async function analyzeInteractions(
+export function analyzeInteractions(
   cwd: string,
-  changed: ChangedFile[],
-  changedLines: Map<string, LineRange[]>,
-  mergeBase: string,
+  code: ChangedCode | undefined,
   config: XrayConfig,
-): Promise<InteractionsAnalysis> {
+): InteractionsAnalysis {
   const settings = config.interactions;
-  const ignored = (file: string) =>
-    isTestFile(file) || STORY_FILE.test(file) || settings.ignore.some((glob) => matchesGlob(file, glob));
-  const codeChanges = changed.filter((file) => CODE_FILE.test(file.path) && !ignored(file.path));
   const result: InteractionsAnalysis = {
     featureMap: "missing",
     units: {},
@@ -123,33 +91,18 @@ export async function analyzeInteractions(
     touched: [],
     warnings: [],
   };
-  if (codeChanges.length === 0) return result;
+  if (!code) return result;
 
-  const loaded = loadProject(cwd, config);
-  result.warnings.push(...loaded.warnings);
-  const units = new UnitIndex(loaded.fileOf);
-  const base = baseUnitNames(cwd, mergeBase, codeChanges);
-
-  const touched: Unit[] = [];
-  for (const file of codeChanges) {
-    const before = base.get(file.path);
-    const sourceFile =
-      file.status === "deleted" ? undefined : loaded.project.getSourceFile(join(cwd, file.path));
-    const now = sourceFile ? units.of(sourceFile) : [];
-    const nowNames = new Set(now.map((unit) => unit.name));
-    for (const name of before ?? []) {
-      if (!nowNames.has(name)) result.deleted.push(`${file.previousPath ?? file.path}#${name}`);
-    }
-    for (const unit of now) {
-      if (!overlaps(unit, changedLines.get(file.path) ?? [])) continue;
-      touched.push(unit);
-      result.units[unit.id] = {
-        id: unit.id,
-        file: unit.file,
-        name: unit.name,
-        change: before?.has(unit.name) ? "modified" : "added",
-      };
-    }
+  const { touched, walker } = code;
+  result.warnings.push(...code.loaded.warnings);
+  result.deleted = code.deleted;
+  for (const unit of touched) {
+    result.units[unit.id] = {
+      id: unit.id,
+      file: unit.file,
+      name: unit.name,
+      change: code.baseOf.has(unit.id) ? "modified" : "added",
+    };
   }
   result.touched = touched.map((unit) => unit.id);
 
@@ -167,7 +120,6 @@ export async function analyzeInteractions(
   const isEntry = (unit: Unit) =>
     mapEntries.has(unit.id) || settings.entryGlobs.some((glob) => matchesGlob(unit.file, glob));
 
-  const walker = new Walker(loaded.project, loaded.resolveModule, units, loaded.fileOf, ignored);
   const drafts = new Map<string, FeatureDraft>();
   type DraftHead = Omit<FeatureDraft, "entryPoints" | "touched" | "interactions" | "hiddenCallees">;
   const draftFor = (key: string, make: () => DraftHead) => {
