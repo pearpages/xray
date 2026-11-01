@@ -376,6 +376,14 @@ export function selectNeighbourhood(
   };
 }
 
+/**
+ * The whole project's module graph (aliases, workspaces and per-package tsconfigs resolved),
+ * for tools that need more than a PR's neighbourhood, like the quality report.
+ */
+export async function buildDependencyGraph(cwd: string, config: XrayConfig): Promise<Graph> {
+  return toGraph(await cruiseProject(cwd, config), config.dependencies.includeExternal, repoPathResolver(cwd));
+}
+
 export async function analyzeDependencies(
   cwd: string,
   changed: ChangedFile[],

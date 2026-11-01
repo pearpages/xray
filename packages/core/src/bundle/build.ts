@@ -20,7 +20,13 @@ function readJson(file: string): Record<string, unknown> | undefined {
   }
 }
 
-/** Looks for a lockfile from `dir` up to `top` (monorepos keep it at the root). */
+export type PackageManager = "pnpm" | "yarn" | "npm-ci" | "npm";
+
+/** The package manager a lockfile names: from `dir` up to `top` (monorepos keep it at the root). */
+export function detectPackageManager(dir: string, top: string): PackageManager {
+  return packageManager(dir, top);
+}
+
 function packageManager(dir: string, top: string): "pnpm" | "yarn" | "npm-ci" | "npm" {
   for (let current = dir; ; current = join(current, "..")) {
     if (existsSync(join(current, "pnpm-lock.yaml"))) return "pnpm";
