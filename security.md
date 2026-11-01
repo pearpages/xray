@@ -31,11 +31,12 @@ sees the report. Never open a public issue for an unfixed vulnerability.
   Mermaid labels are quoted and `"` is escaped; in Markdown, file names are always inside a code
   span whose fence is longer than any backtick run in the name, so they cannot inject Markdown.
 
-- **The Claude Code skill** runs on the user's machine. Its script clones `pearpages/xray` (or
+- **The Claude Code skills** run on the user's machine. Its script clones `pearpages/xray` (or
   `XRAY_REPO`) into the plugin's data folder, runs `npm ci` and the build there, and runs the CLI's
-  read-only `--inventory`. That is the same trust as installing the plugin. The skill's allowed
-  tools are that script plus Read, Grep and Glob; it writes only `xray.features.json`, and the user
-  reviews and commits it.
+  read-only modes (`--inventory`, `--format json`). That is the same trust as installing the plugin.
+  `features` may run that script plus Read, Grep and Glob, and writes only `xray.features.json`
+  for the user to review and commit. `explain` may also run read-only `gh pr view`/`gh pr diff`
+  and `git diff`; it writes nothing and never posts to the PR.
 
 ## Secrets
 

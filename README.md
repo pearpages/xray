@@ -131,19 +131,25 @@ Optional. It names the product's features so diagrams say "Cart" instead of a co
   code. The report lists changed code no feature covers, which is the cue to run the skill again.
 - Without it, every entry point reached is its own feature and the section says the map is missing.
 
-### The xray skill for Claude Code
+### The xray skills for Claude Code
 
-Install the plugin from this repository, then ask Claude to create the feature map (or run
-`/xray:features`) from your project's root:
+Install the plugin from this repository:
 
 ```
 /plugin install xray --marketplace pearpages/xray
 ```
 
 On older Claude Code versions: `/plugin marketplace add pearpages/xray`, then
-`/plugin install xray@xray`. The skill needs Node.js 22+, git and npm: on first use it downloads and
-builds xray into the plugin's data folder (about a minute), then reuses that build. It reads your
-code, writes `xray.features.json`, checks it, and leaves it for you to review and commit.
+`/plugin install xray@xray`. The skills need Node.js 22+, git and npm: on first use they download and
+build xray into the plugin's data folder (about a minute), then reuse that build.
+
+- **`/xray:features`** (or "create the xray feature map"): reads your code, writes
+  `xray.features.json`, checks it, and leaves it for you to review and commit.
+- **`/xray:explain`** (or "explain this xray report", "is this PR risky?"): turns a PR's report
+  into a reviewer's briefing: what the PR does for users, where it reaches, and for every 🔴/🟡
+  unit a concrete next step (which test to add and which case it must cover), read from the diff
+  and from what the existing tests actually check. It reads the report from the PR comment, or runs
+  xray locally when the branch is checked out; it never posts to the PR.
 
 To audit a map yourself, `xray --inventory` prints the entry point candidates, the map's status,
 entry points that no longer exist and pages no feature claims.
@@ -178,7 +184,8 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
 4. **Public API / contracts** — diff of exports and endpoints, compatible/breaking, affected usages.
 5. **Bundle size** — build base and PR, gzip/brotli chunks, configurable threshold and cause.
 
-Claude skill: ✅ writes and updates the feature map. Next: explaining the diagrams and risks.
+Claude skills: ✅ `/xray:features` writes and updates the feature map; ✅ `/xray:explain` explains
+a report and its risks.
 
 ## Development
 

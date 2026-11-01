@@ -2,7 +2,7 @@
 name: features
 description: Create or update xray's feature map (xray.features.json), which names a project's user-facing features for the Interactions section of xray PR reports. Use when asked to create, update or fix the feature map, when an xray report says the map is missing, or when it lists changed code not in the feature map.
 argument-hint: "[project root, default: current directory]"
-allowed-tools: Bash(${CLAUDE_SKILL_DIR}/scripts/xray.sh *) Read Grep Glob
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/xray.sh *) Read Grep Glob
 ---
 
 # xray feature map
@@ -16,7 +16,7 @@ the team talks about it. xray reads the map; this skill writes it and the team r
 xray runs from a cached build. The first call clones and builds it, which takes about a minute:
 
 ```bash
-"${CLAUDE_SKILL_DIR}/scripts/xray.sh" "${CLAUDE_PLUGIN_DATA}" --inventory -C <root>
+"${CLAUDE_PLUGIN_ROOT}/scripts/xray.sh" "${CLAUDE_PLUGIN_DATA}" --inventory -C <root>
 ```
 
 It prints the **inventory** as JSON:
