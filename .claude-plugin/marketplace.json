@@ -1,0 +1,12 @@
+{
+  "name": "xray",
+  "description": "Claude Code skills for xray, the pull request analyser for TypeScript/React projects.",
+  "owner": { "name": "pearpages" },
+  "plugins": [
+    {
+      "name": "xray",
+      "source": "./plugins/xray",
+      "description": "Create and update xray's feature map so PR reports name your product's features."
+    }
+  ]
+}

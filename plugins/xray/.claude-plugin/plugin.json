@@ -1,0 +1,9 @@
+{
+  "name": "xray",
+  "description": "Create and update xray's feature map (xray.features.json) so PR reports name your product's features.",
+  "author": { "name": "pearpages" },
+  "homepage": "https://github.com/pearpages/xray",
+  "repository": "https://github.com/pearpages/xray",
+  "license": "MIT",
+  "keywords": ["xray", "pull-requests", "react", "typescript", "feature-map"]
+}
