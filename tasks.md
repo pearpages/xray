@@ -5,7 +5,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
-- [ ] **Analysis 2 — interactions** (design: [ADR-0004](docs/adr/0004-interactions-analysis.md), Proposed — 2 open questions): ts-morph finds functions/components touched by the diff, walks references up to entry points (routes, components, handlers) and 1-2 levels down → Mermaid sequence diagrams per feature, using a versioned feature map JSON (generated once with Claude, updated incrementally).
+- [ ] **Analysis 2 — interactions** (design: [ADR-0004](docs/adr/0004-interactions-analysis.md), Proposed — 1 open question): ts-morph finds functions/components touched by the diff, walks references up to entry points (routes, components, handlers) and 1-2 levels down → Mermaid sequence diagrams per feature, using a versioned feature map JSON (generated once with Claude, updated incrementally).
 - [ ] **Analysis 3 — impact and risk**: cross changes with test coverage and complexity → traffic light; warn about features without tests or with growing complexity.
 - [ ] **Analysis 4 — public API / contracts**: diff exports (types, functions, props) between base and PR with ts-morph, and endpoints (OpenAPI or routes) → compatible/breaking, list affected usages.
 - [ ] **Analysis 5 — bundle size**: build base and PR, compare chunks (gzip/brotli), flag over a configurable threshold and name the causing dependency/import.
@@ -13,6 +13,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Done
 
+- [x] 2026-11-01: ADR-0004 question 2 settled: without a feature map, draw per entry point and warn that the map is missing.
 - [x] 2026-11-01: ADR-0004 question 1 settled: the feature map is written by the Claude skill only; xray never calls an AI API.
 - [x] 2026-11-01: Interactions design proposed (ADR-0004) after a ts-morph spike on dummy and futbol-manager.
 - [x] 2026-11-01: ADR-0003 accepted (Action builds on every run, ~4 s); new principle P6: each new analysis re-measures the Action before shipping.

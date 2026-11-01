@@ -87,7 +87,14 @@ sees files outside the scanned roots. ts-morph took ~0.5 s against ~0.17 s.
   API, so CI stays offline, deterministic and free.
 - "Updated incrementally": when a PR touches units or entry points no feature covers, the section
   lists them under *Not in the feature map* so the skill (or a person) can add them.
-- **Without a map**, each entry point reached is its own feature, named after the unit.
+- **Without a map**, each entry point reached is its own feature, named after the unit, and the
+  section opens with a warning so readers know why the names are technical and how to fix it:
+
+  ```md
+  > [!WARNING]
+  > No `xray.features.json` found: features are named after the code's entry points.
+  > Run the xray skill in Claude Code to create the feature map and get named features.
+  ```
 
 ### Output
 
@@ -123,8 +130,9 @@ sequenceDiagram
    map*). Calling the Claude API from xray was rejected: it needs a secret in every consumer repo,
    costs per PR, doesn't work on fork PRs, and makes reports vary between runs. An opt-in API step
    could be a future ADR.
-2. **No map:** draw diagrams per entry point (proposed), or show only the table plus a hint to
-   create the map?
+2. ~~No map?~~ **Decided 2026-11-01: draw per entry point, with a warning** that the map is
+   missing and a reminder to run the skill (see *Feature map*). Showing only a table until the map
+   exists was rejected: the section would be much less useful until someone runs the skill.
 3. **Monorepos** (futbol-manager's `packages/*`): v1 analyses one tsconfig (the Action's
    `working-directory`); references into other workspace packages stop there. Good enough?
 
