@@ -68,13 +68,62 @@ export function parseNameStatus(output: string): ChangedFile[] {
  * Files changed between the merge base and the working tree, so a local run
  * also sees uncommitted and untracked work. In CI the tree is clean and this
  * is the same as diffing against HEAD.
+ *
+ * Paths are relative to `cwd` and only cover files under it (`--relative`),
+ * so a run from a monorepo package matches the analysers' own paths.
  */
 export function getChangedFiles(cwd: string, mergeBase: string): ChangedFile[] {
-  const tracked = parseNameStatus(git(cwd, ["diff", "--name-status", "-M", mergeBase]));
-  const untracked = git(cwd, ["ls-files", "--others", "--exclude-standard"])
-    .split("\n")
-    .filter(Boolean)
-    .map((path): ChangedFile => ({ path, status: "added" }));
+  const tracked = parseNameStatus(
+    git(cwd, ["diff", "--name-status", "-M", "--relative", mergeBase]),
+  );
   const seen = new Set(tracked.map((file) => file.path));
+  const untracked = untrackedFiles(cwd).map((path): ChangedFile => ({ path, status: "added" }));
   return [...tracked, ...untracked.filter((file) => !seen.has(file.path))];
+}
+
+function untrackedFiles(cwd: string): string[] {
+  return git(cwd, ["ls-files", "--others", "--exclude-standard"]).split("\n").filter(Boolean);
+}
+
+/** Inclusive line ranges, on the new side of the diff. */
+export type LineRange = [from: number, to: number];
+
+export function parseChangedLines(diff: string): Map<string, LineRange[]> {
+  const ranges = new Map<string, LineRange[]>();
+  let file: string | undefined;
+  for (const line of diff.split("\n")) {
+    if (line.startsWith("+++ ")) {
+      file = line === "+++ /dev/null" ? undefined : line.slice("+++ b/".length);
+      continue;
+    }
+    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(line);
+    if (!hunk || !file) continue;
+    const start = Number(hunk[1]);
+    const count = hunk[2] === undefined ? 1 : Number(hunk[2]);
+    if (count > 0) ranges.set(file, [...(ranges.get(file) ?? []), [start, start + count - 1]]);
+  }
+  return ranges;
+}
+
+/**
+ * Lines added or changed since the merge base, per file (same scope and paths
+ * as `getChangedFiles`). Untracked files count as entirely changed.
+ */
+export function getChangedLines(cwd: string, mergeBase: string): Map<string, LineRange[]> {
+  // Explicit prefixes: a user's diff.noprefix setting would otherwise break the parsing.
+  const args = ["diff", "-U0", "--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/"];
+  const ranges = parseChangedLines(git(cwd, [...args, "-M", "--relative", mergeBase]));
+  for (const path of untrackedFiles(cwd)) {
+    if (!ranges.has(path)) ranges.set(path, [[1, Number.MAX_SAFE_INTEGER]]);
+  }
+  return ranges;
+}
+
+/** File contents at a commit, or undefined when the file did not exist there. */
+export function showFile(cwd: string, commit: string, path: string): string | undefined {
+  try {
+    return git(cwd, ["show", `${commit}:./${path}`]);
+  } catch {
+    return undefined;
+  }
 }

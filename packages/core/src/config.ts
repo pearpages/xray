@@ -8,6 +8,22 @@ export interface DependenciesConfig {
   includeExternal: boolean;
 }
 
+export interface InteractionsConfig {
+  /** Globs (relative to the analysed root) whose units are entry points. */
+  entryGlobs: string[];
+  /** Globs of files left out of the walk, on top of tests and stories. */
+  ignore: string[];
+  /** How many callers up to follow before giving up on reaching an entry point. */
+  depthUp: number;
+  /** How many levels of callees to show below each touched unit. */
+  depthDown: number;
+  maxDiagrams: number;
+  /** Above this many touched units, only the table is shown (diagrams would not be readable). */
+  maxTouchedUnits: number;
+  /** Feature map path, relative to the analysed root. */
+  featureMap: string;
+}
+
 export interface XrayConfig {
   /** Folders dependency-cruiser scans, relative to the repo root. */
   roots: string[];
@@ -16,14 +32,23 @@ export interface XrayConfig {
   /** Regular expressions of paths to leave out of the graph. */
   exclude: string[];
   dependencies: DependenciesConfig;
+  interactions: InteractionsConfig;
 }
 
 export const CONFIG_FILE = "xray.config.json";
 
 const DEFAULT_EXCLUDE = ["(^|/)node_modules/", "(^|/)(dist|build|coverage|\\.next)/"];
 
-export type XrayConfigInput = Partial<Omit<XrayConfig, "dependencies">> & {
+export const DEFAULT_ENTRY_GLOBS = [
+  "**/src/main.{ts,tsx,js,jsx}",
+  "**/src/{pages,routes,screens,views}/**",
+  "**/app/**/{page,layout,route}.{ts,tsx,js,jsx}",
+  "**/pages/**",
+];
+
+export type XrayConfigInput = Partial<Omit<XrayConfig, "dependencies" | "interactions">> & {
   dependencies?: Partial<DependenciesConfig>;
+  interactions?: Partial<InteractionsConfig>;
 };
 
 export function resolveConfig(cwd: string, input: XrayConfigInput = {}): XrayConfig {
@@ -35,6 +60,15 @@ export function resolveConfig(cwd: string, input: XrayConfigInput = {}): XrayCon
     dependencies: {
       maxNodes: input.dependencies?.maxNodes ?? 60,
       includeExternal: input.dependencies?.includeExternal ?? false,
+    },
+    interactions: {
+      entryGlobs: input.interactions?.entryGlobs ?? DEFAULT_ENTRY_GLOBS,
+      ignore: input.interactions?.ignore ?? [],
+      depthUp: input.interactions?.depthUp ?? 6,
+      depthDown: input.interactions?.depthDown ?? 2,
+      maxDiagrams: input.interactions?.maxDiagrams ?? 5,
+      maxTouchedUnits: input.interactions?.maxTouchedUnits ?? 40,
+      featureMap: input.interactions?.featureMap ?? "xray.features.json",
     },
   };
 }
