@@ -11,6 +11,7 @@ interface CliOptions {
   config?: string;
   head?: string;
   inventory?: boolean;
+  bundle?: boolean;
 }
 
 const program = new Command()
@@ -22,6 +23,7 @@ const program = new Command()
   .option("-o, --out <file>", "write the report to a file instead of stdout")
   .option("-c, --config <file>", "config path, relative to --cwd (default xray.config.json)")
   .option("--head <sha>", "commit to report as the PR head (default HEAD)")
+  .option("--bundle", "also install and build the base and the PR to compare bundle sizes (runs the project's scripts)")
   .option(
     "--inventory",
     "print entry point candidates and feature map checks as JSON (for the feature map skill; ignores base)",
@@ -37,12 +39,9 @@ const program = new Command()
       else process.stdout.write(output);
       return;
     }
-    const result = await analyzePullRequest({
-      cwd,
-      base,
-      config: loadConfig(cwd, options.config),
-      head: options.head,
-    });
+    const config = loadConfig(cwd, options.config);
+    if (options.bundle) config.bundle.enabled = true;
+    const result = await analyzePullRequest({ cwd, base, config, head: options.head });
     const output =
       options.format === "json" ? `${JSON.stringify(result, null, 2)}\n` : renderMarkdown(result);
     if (options.out) writeFileSync(options.out, output);

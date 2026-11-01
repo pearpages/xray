@@ -17,6 +17,12 @@ inputs:
     description: Path to the xray config, relative to working-directory. Defaults to xray.config.json.
     required: false
     default: ""
+  bundle:
+    description: >-
+      Also measure bundle size: installs dependencies and runs the build on the base and on the PR
+      (minutes, and it runs the project's scripts). Set to "true" to enable.
+    required: false
+    default: "false"
   comment:
     description: Publish the report as a PR comment. Set to "false" to only produce the file.
     required: false
@@ -54,12 +60,18 @@ runs:
         XRAY_CONFIG: ${{ inputs.config }}
         # A PR checkout is GitHub's temporary merge commit; report the PR's own head instead.
         XRAY_HEAD: ${{ github.event.pull_request.head.sha }}
+        XRAY_BUNDLE: ${{ inputs.bundle }}
         XRAY_CLI: ${{ github.action_path }}/packages/cli/dist/index.js
       run: |
         report="$RUNNER_TEMP/xray-report.md"
         args=("$XRAY_BASE" --out "$report")
         if [ -n "$XRAY_CONFIG" ]; then args+=(--config "$XRAY_CONFIG"); fi
         if [ -n "$XRAY_HEAD" ]; then args+=(--head "$XRAY_HEAD"); fi
+        if [ "$XRAY_BUNDLE" = "true" ]; then
+          # pnpm and yarn projects: corepack provides the version their package.json pins.
+          corepack enable >/dev/null 2>&1 || true
+          args+=(--bundle)
+        fi
         node "$XRAY_CLI" "${args[@]}"
         cat "$report" >> "$GITHUB_STEP_SUMMARY"
         echo "report-path=$report" >> "$GITHUB_OUTPUT"

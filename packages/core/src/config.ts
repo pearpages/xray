@@ -41,6 +41,23 @@ export interface RiskConfig {
   indirectDepth: number;
 }
 
+export interface BundleConfig {
+  /** Off by default: it installs dependencies and runs the build, on the base and on the PR. */
+  enabled: boolean;
+  /** Install command; default from the lockfile (`pnpm install --frozen-lockfile`, `npm ci`, …). */
+  install?: string;
+  /** Build command; default `vite build --sourcemap hidden` for Vite projects, else the `build` script. */
+  build?: string;
+  /** Build output folder, relative to the analysed root; default `dist`, then `build`, then `out`. */
+  outDir?: string;
+  /** Total gzip growth (bytes) that turns the light red. */
+  thresholdBytes: number;
+  /** Total gzip growth (percent) that turns the light red. */
+  thresholdPercent: number;
+  /** Per command. */
+  timeoutMinutes: number;
+}
+
 export interface XrayConfig {
   /** Folders dependency-cruiser scans, relative to the repo root. */
   roots: string[];
@@ -51,6 +68,7 @@ export interface XrayConfig {
   dependencies: DependenciesConfig;
   interactions: InteractionsConfig;
   risk: RiskConfig;
+  bundle: BundleConfig;
 }
 
 export const CONFIG_FILE = "xray.config.json";
@@ -64,7 +82,8 @@ export const DEFAULT_ENTRY_GLOBS = [
   "**/pages/**",
 ];
 
-export type XrayConfigInput = Partial<Omit<XrayConfig, "dependencies" | "interactions" | "risk">> & {
+export type XrayConfigInput = Partial<Omit<XrayConfig, "dependencies" | "interactions" | "risk" | "bundle">> & {
+  bundle?: Partial<BundleConfig>;
   dependencies?: Partial<DependenciesConfig>;
   interactions?: Partial<InteractionsConfig>;
   risk?: Partial<RiskConfig>;
@@ -95,6 +114,15 @@ export function resolveConfig(cwd: string, input: XrayConfigInput = {}): XrayCon
       complexityHigh: input.risk?.complexityHigh ?? 15,
       complexityJump: input.risk?.complexityJump ?? 3,
       indirectDepth: input.risk?.indirectDepth ?? 3,
+    },
+    bundle: {
+      enabled: input.bundle?.enabled ?? false,
+      ...(input.bundle?.install ? { install: input.bundle.install } : {}),
+      ...(input.bundle?.build ? { build: input.bundle.build } : {}),
+      ...(input.bundle?.outDir ? { outDir: input.bundle.outDir } : {}),
+      thresholdBytes: input.bundle?.thresholdBytes ?? 10_240,
+      thresholdPercent: input.bundle?.thresholdPercent ?? 5,
+      timeoutMinutes: input.bundle?.timeoutMinutes ?? 10,
     },
   };
 }

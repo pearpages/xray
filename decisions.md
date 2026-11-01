@@ -19,6 +19,7 @@ accepted.
 | [0006](docs/adr/0006-feature-map-skill-plugin.md) | The feature map skill ships as a Claude Code plugin from this repo | Accepted | 2026-11-01 |
 | [0007](docs/adr/0007-impact-and-risk-analysis.md) | Impact and risk: static test evidence × complexity → traffic light | Accepted | 2026-11-01 |
 | [0008](docs/adr/0008-public-api-analysis.md) | Public API: syntactic export diff, usages through barrels, OpenAPI JSON | Accepted (delegated) | 2026-11-01 |
+| [0009](docs/adr/0009-bundle-size-analysis.md) | Bundle size: opt-in builds of base and PR in throwaway worktrees | Accepted (delegated) | 2026-11-01 |
 
 ## Format
 

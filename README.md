@@ -29,6 +29,7 @@ xray [base]            base branch of the PR (default main; also tries origin/<b
   -f, --format <fmt>   markdown | json
   -o, --out <file>     write the report to a file
   -c, --config <file>  config, relative to --cwd (default xray.config.json)
+  --bundle             also install and build base and PR to compare bundle sizes
   --inventory          print entry point candidates and feature map checks as JSON (ignores base)
   --head <sha>         commit to report as the PR head (default HEAD; the Action passes the PR's head)
 ```
@@ -56,6 +57,7 @@ jobs:
         #   working-directory: apps/web
         #   config: xray.config.json
         #   comment: "false"   # only produce the report (it also goes to the job summary)
+        #   bundle: "true"     # also measure bundle size (runs install + build twice; see below)
 ```
 
 The report is also appended to the *job summary* and exposed as the `report-path` output.
@@ -83,7 +85,8 @@ Every field is optional:
     "maxTouchedUnits": 40,
     "featureMap": "xray.features.json"
   },
-  "risk": { "complexityHigh": 15, "complexityJump": 3, "indirectDepth": 3 }
+  "risk": { "complexityHigh": 15, "complexityJump": 3, "indirectDepth": 3 },
+  "bundle": { "enabled": false, "thresholdBytes": 10240, "thresholdPercent": 5, "timeoutMinutes": 10 }
 }
 ```
 
@@ -105,6 +108,10 @@ Every field is optional:
 - `risk.complexityHigh` / `complexityJump`: an untested unit at or above this complexity, or whose
   complexity grew by at least this much, is red.
 - `risk.indirectDepth`: how many callers up a test may sit and still count as evidence.
+- `bundle.enabled`: measure bundle size (also `--bundle`, or the Action's `bundle: "true"`).
+  `bundle.install`, `bundle.build` and `bundle.outDir` override what xray detects: the lockfile's
+  install command, `vite build --sourcemap hidden` for Vite projects or the `build` script, and
+  `dist`/`build`/`out`. `thresholdBytes` / `thresholdPercent` turn the light red on total gzip growth.
 
 ## Feature map (`xray.features.json`)
 
@@ -164,7 +171,9 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
   Neighbours are direct: when a package is imported through its `index.ts`, a change deeper in that
   package shows the `index.ts`, not the apps behind it.
 - **Interactions** analyses every package with a `tsconfig.json` together, so a change in a shared
-  package is followed into the screens that use it.
+  package is followed into the screens that use it. They share the root's compiler options: a
+  package's own `paths` aliases (`@/…` inside one package) are not applied; relative imports and
+  workspace package names are.
 
 ## Analyses
 
@@ -181,8 +190,16 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
    A traffic light per unit, per feature and for the PR, plus *features without tests* and *growing
    complexity*. No test is run; it never fails the check
    ([ADR-0007](docs/adr/0007-impact-and-risk-analysis.md)).
-4. **Public API / contracts** — diff of exports and endpoints, compatible/breaking, affected usages.
-5. **Bundle size** — build base and PR, gzip/brotli chunks, configurable threshold and cause.
+4. **Public API** ✅ — exports of every changed file, base vs PR, read from the source text
+   (parameters, props, members, re-exports): 🔴 breaking, 🟡 to review, 🟢 compatible, with the
+   files that use them (through package barrels too) and 📦 on what workspace packages expose.
+   Changed OpenAPI JSON specs are compared by method and path
+   ([ADR-0008](docs/adr/0008-public-api-analysis.md)).
+5. **Bundle size** ✅ (opt-in) — installs and builds the base and the PR in throwaway worktrees,
+   compares chunks raw/gzip/brotli, flags growth over the threshold, and names the cause: per
+   package from source maps, plus dependency changes. It runs your project's scripts: enable it with
+   `bundle: "true"` and check out with `persist-credentials: false`
+   ([ADR-0009](docs/adr/0009-bundle-size-analysis.md)).
 
 Claude skills: ✅ `/xray:features` writes and updates the feature map; ✅ `/xray:explain` explains
 a report and its risks.

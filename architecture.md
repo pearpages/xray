@@ -30,12 +30,16 @@ flowchart LR
     deps["dependencies/<br/>analyze.ts · render.ts"]
     inter["interactions/<br/>changed-code · project · units · walk · features · render"]
     risk["risk/<br/>complexity · analyze · render"]
+    api["api/<br/>exports · compare · usages · analyze · render"]
+    bundle["bundle/<br/>build · measure · sourcemap · analyze · render"]
     report["report.ts<br/>sections → Markdown"]
   end
   core --- core_internals
   deps --> depcruise[("dependency-cruiser")]
   inter --> tsmorph[("ts-morph")]
   risk --> inter
+  api --> inter
+  bundle --> npmbuild[("project's install + build<br/>(opt-in)")]
 ```
 
 | Path | Owns |
@@ -46,6 +50,8 @@ flowchart LR
 | `packages/core/src/workspaces.ts` | Workspace discovery (`pnpm-workspace.yaml`, `workspaces`) and mapping package names and subpath exports to files, for both analyses (CI has no `node_modules`) |
 | `packages/core/src/interactions/project.ts` | Loading the ts-morph project: the root tsconfig, or every workspace package at a workspace root, with workspace package names resolved to source |
 | `packages/core/src/interactions/changed-code.ts` | Loading the PR's code once for the ts-morph analyses: the project, the touched units, their base versions and removed units |
+| `packages/core/src/api/` | Analysis 4: export shapes from the source text, base vs PR compatibility, usages through barrels, OpenAPI JSON operations |
+| `packages/core/src/bundle/` | Analysis 5 (opt-in): worktrees, install and build commands, chunk sizes, source-map attribution per package, dependency changes |
 | `packages/core/src/risk/` | Analysis 3: test evidence per touched unit (direct, by name, indirect), cyclomatic complexity before/after, traffic lights per unit, feature and PR |
 | `packages/core/src/interactions/units.ts` | Units: top-level functions, components, hooks, classes and lookup tables, found per file and by enclosing node |
 | `packages/core/src/interactions/walk.ts` | Classifying references (renders, uses, calls, lazy-loads, mounts, reads) and walking callers up and callees down |
@@ -84,8 +90,15 @@ flowchart LR
    looks for test files referencing it, named after its file, or referencing a caller up to
    `risk.indirectDepth` levels; counts complexity on both versions; and lights units, features and
    the PR ([ADR-0007](docs/adr/0007-impact-and-risk-analysis.md)). No tests are run.
-6. `reportSections` renders each analysis to a section; `renderReport` adds the marker and header.
-7. In CI, the Action runs the CLI with `--head` set to the PR's head commit (the checkout itself is
+6. `analyzeApi` compares the exports of every changed file (both versions, from the shared
+   model), marks those reachable from a workspace package entry, and finds their importers in
+   one pass over the project's imports, following barrels. Changed OpenAPI JSON files are compared
+   by `METHOD path`.
+7. `analyzeBundle` (only when enabled) checks out the merge base and `HEAD` in throwaway worktrees,
+   installs and builds each, measures the output, compares chunks by hash-less name, and attributes
+   bytes to packages through source maps ([ADR-0009](docs/adr/0009-bundle-size-analysis.md)).
+8. `reportSections` renders each analysis to a section; `renderReport` adds the marker and header.
+9. In CI, the Action runs the CLI with `--head` set to the PR's head commit (the checkout itself is
    GitHub's temporary merge commit), writes the report to `$RUNNER_TEMP`, appends it to the job
    summary, and the comment script PATCHes the existing comment carrying the marker or POSTs a new one. A 403/404
    from the API (read-only token on fork PRs) is a warning, not a failure.

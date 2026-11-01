@@ -5,12 +5,35 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
+- [ ] **Analyses 4 and 5** ([ADR-0008](docs/adr/0008-public-api-analysis.md), [ADR-0009](docs/adr/0009-bundle-size-analysis.md)): built on branch `feat/api-and-bundle`; left: measure the Action on dummy (P6, with and without `bundle: "true"`), merge to main.
+
+### Questions for you
+
+Decisions taken under delegation or waiting on you. Answer any of them in a session; each answer
+updates the ADR it names (or starts one).
+
+1. **Versioning.** Every push to `main` changes every project's PR report today (`@main`). Tag
+   releases (`v0.1.0`, plus a moving `v0`) and point workflows at `@v0`? *Recommended: yes, before
+   adding xray to real projects.* (New ADR.)
+2. **A red light never fails the check** (risk, breaking API, bundle over threshold). Keep it that
+   way, or add an opt-in `failOn` for some of them? *Recommended: keep for now.* (ADR-0007, 0008, 0009.)
+3. **Public API (ADR-0008):** (a) Do any of your projects have route-based endpoints (Express,
+   Next.js route handlers) or OpenAPI in YAML worth covering? (b) List internal app exports too, or
+   only 📦 package exports? *Current: both.* (c) A new required member on a plain type is 🟡 *to
+   review*, not 🔴; agree?
+4. **Bundle size (ADR-0009):** (a) Thresholds 10 KB gzip / 5 %: right for your apps? (b) Which repos
+   should enable `bundle: "true"`? (c) For Vite projects xray runs `vite build --sourcemap hidden`
+   instead of your `build` script (skips the type-check, adds source maps); OK?
+5. **Coverage.** Static test evidence only (ADR-0007). Want a project to publish an lcov report so
+   xray can read real line coverage? If so, which one first?
+6. **Cleanup on GitHub:** delete the merged branches (`feat/interactions`, `feat/skill`,
+   `feat/risk`)? Keep pearpages/dummy#3 open as the demo PR?
+
 - [ ] **Dependencies through barrels** (optional): when a neighbour only re-exports (a package's `index.ts`), also show its importers, so a change inside a shared package reaches the apps in the dependency diagram too.
-- [ ] **Analysis 4 — public API / contracts**: diff exports (types, functions, props) between base and PR with ts-morph, and endpoints (OpenAPI or routes) → compatible/breaking, list affected usages.
-- [ ] **Analysis 5 — bundle size**: build base and PR, compare chunks (gzip/brotli), flag over a configurable threshold and name the causing dependency/import.
 
 ## Done
 
+- [x] 2026-11-01: Analysis 4 (public API) and 5 (bundle size, opt-in) built; dummy measured: +49 B gzip in 6 s; 62 tests. Bundle build errors are summarised (error lines, no colours or stack frames).
 - [x] 2026-11-01: `/xray:explain` skill: a reviewer's briefing from a report (PR comment via `gh`, or a local JSON run), checked on pearpages/dummy#3 and futbol-manager. The runner script moved to the plugin root, shared by both skills.
 - [x] 2026-11-01: Analysis 3 (impact and risk) released: merged `feat/risk` into main ([ADR-0007](docs/adr/0007-impact-and-risk-analysis.md)).
 - [x] 2026-11-01: Action measured with impact and risk (P6) on pearpages/dummy#5: job 14 s (was 13 s), install + build 4.5 s (was 3.5 s), analysis 1.5 s (was 0.9 s). No new dependencies.

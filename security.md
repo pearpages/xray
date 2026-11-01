@@ -15,11 +15,17 @@ sees the report. Never open a public issue for an unfixed vulnerability.
 
 - **Input is untrusted PR content.** xray reads the PR's files, paths and `tsconfig.json`, but only
   parses them statically (git, dependency-cruiser, ts-morph). It never runs the analysed project's
-  code, scripts or package installs; base versions of files are read with `git show`, not checked
-  out. Test evidence for analysis 3 is found by reading test files, never by running them.
-  Workspace `package.json` files and `pnpm-workspace.yaml` are read as data (JSON, and a
-  minimal line parser for the YAML) to map package names to folders. Analyses that need to execute the project (planned: tests coverage,
-  bundle builds) change this and must be reviewed here first.
+  code, scripts or package installs, **except in the opt-in bundle analysis** (next item). Base
+  versions of files are read with `git show`, not checked out. Test evidence for analysis 3 comes
+  from reading test files, never from running them. Workspace `package.json` files and
+  `pnpm-workspace.yaml` are read as data (JSON, and a minimal line parser for the YAML). Any new
+  analysis that executes the project must be reviewed here first, as the bundle analysis was.
+- **Bundle analysis runs PR code (opt-in).** With `--bundle` / `bundle: "true"`, xray installs the
+  project's dependencies (their install scripts run) and runs its build, on the base and on the PR,
+  in throwaway git worktrees ([ADR-0009](docs/adr/0009-bundle-size-analysis.md)). That is the same
+  exposure as the project's own CI. Rules: enable it only on `pull_request` (never
+  `pull_request_target`); check out with `persist-credentials: false` so the build can't read the
+  checkout's token; the GitHub token is only given to the comment step, after the builds.
 - **Write token in CI.** The Action uses `GITHUB_TOKEN` with `pull-requests: write` to create or
   update one comment, via the REST API at `GITHUB_API_URL`. It is meant for `pull_request` events,
   where fork PRs get a read-only token (the comment step then only warns; the report stays in the

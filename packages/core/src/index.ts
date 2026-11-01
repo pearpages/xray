@@ -1,5 +1,7 @@
 import { analyzeApi, type ApiAnalysis } from "./api/analyze.js";
 import { renderApiSection } from "./api/render.js";
+import { analyzeBundle, type BundleAnalysis } from "./bundle/analyze.js";
+import { renderBundleSection } from "./bundle/render.js";
 import { loadConfig, type XrayConfig } from "./config.js";
 import { analyzeDependencies, type DependencyAnalysis } from "./dependencies/analyze.js";
 import { renderDependencySection } from "./dependencies/render.js";
@@ -25,6 +27,9 @@ export * from "./api/analyze.js";
 export * from "./api/compare.js";
 export * from "./api/exports.js";
 export * from "./api/render.js";
+export * from "./bundle/analyze.js";
+export * from "./bundle/measure.js";
+export * from "./bundle/render.js";
 export * from "./risk/analyze.js";
 export * from "./risk/render.js";
 
@@ -49,6 +54,7 @@ export interface XrayResult {
   interactions: InteractionsAnalysis;
   risk: RiskAnalysis;
   api: ApiAnalysis;
+  bundle: BundleAnalysis;
   /** Kept so renderers can apply the same limits the analyses used. */
   config: XrayConfig;
 }
@@ -69,12 +75,13 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<XrayR
     interactions,
     risk: analyzeRisk(cwd, code, interactions, config),
     api: analyzeApi(cwd, mergeBase, changed, code),
+    bundle: analyzeBundle(cwd, mergeBase, changed, config),
     config,
   };
 }
 
 export function reportSections(result: XrayResult): ReportSection[] {
-  return [
+  const sections: ReportSection[] = [
     {
       id: "dependencies",
       title: "🧭 Dependencies",
@@ -99,6 +106,11 @@ export function reportSections(result: XrayResult): ReportSection[] {
       markdown: renderApiSection(result.api),
     },
   ];
+  // Opt-in: no section at all when the bundle wasn't measured.
+  if (result.bundle.status !== "disabled") {
+    sections.push({ id: "bundle", title: "📦 Bundle size", markdown: renderBundleSection(result.bundle) });
+  }
+  return sections;
 }
 
 export function renderMarkdown(result: XrayResult): string {
