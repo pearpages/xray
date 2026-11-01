@@ -1,37 +1,37 @@
 # 🩻 xray
 
-Análisis de Pull Requests para proyectos TypeScript/React. Compara la rama actual con la rama base y
-genera un informe en Markdown (con diagramas Mermaid) que una GitHub Action publica como **un único
-comentario** en el PR, actualizado en cada push.
+Pull request analysis for TypeScript/React projects. It compares the current branch with the base
+branch and produces a Markdown report (with Mermaid diagrams) that a GitHub Action publishes as **a
+single comment** on the PR, updated on every push.
 
-## Estructura
+## Structure
 
-| Paquete                            | Qué es                                                                                    |
-| ---------------------------------- | ----------------------------------------------------------------------------------------- |
-| [`packages/core`](packages/core)   | Núcleo reutilizable: diff de git, análisis y render. Devuelve datos (`XrayResult`) y Markdown. |
-| [`packages/cli`](packages/cli)     | CLI `xray [base]`, un único comando.                                                      |
-| [`packages/action`](packages/action) | Publica o actualiza el comentario del PR (busca el marcador `<!-- xray:report -->`).     |
-| [`action.yml`](action.yml)         | GitHub Action compuesta que construye xray, ejecuta el CLI y comenta.                     |
+| Package                              | What it is                                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| [`packages/core`](packages/core)     | Reusable core: git diff, analyses and rendering. Returns data (`XrayResult`) and Markdown.  |
+| [`packages/cli`](packages/cli)       | The `xray [base]` CLI, a single command.                                                    |
+| [`packages/action`](packages/action) | Creates or updates the PR comment (found by the `<!-- xray:report -->` marker).             |
+| [`action.yml`](action.yml)           | Composite GitHub Action that builds xray, runs the CLI and comments.                        |
 
-El núcleo no sabe nada de GitHub ni de la CLI: la futura herramienta de calidad de proyecto puede
-llamar a `analyzePullRequest()` y usar el JSON directamente.
+The core knows nothing about GitHub or the CLI: the upcoming project-quality tool can call
+`analyzePullRequest()` and use the JSON directly.
 
 ## CLI
 
 ```bash
 npm ci && npm run build
-node packages/cli/dist/index.js main --cwd ../mi-proyecto
+node packages/cli/dist/index.js main --cwd ../my-project
 ```
 
 ```
-xray [base]            rama base del PR (por defecto main; también prueba origin/<base>)
-  -C, --cwd <dir>      raíz del repositorio a analizar
+xray [base]            base branch of the PR (default main; also tries origin/<base>)
+  -C, --cwd <dir>      root of the repository to analyse
   -f, --format <fmt>   markdown | json
-  -o, --out <file>     escribe el informe en un archivo
-  -c, --config <file>  config, relativo a --cwd (por defecto xray.config.json)
+  -o, --out <file>     write the report to a file
+  -c, --config <file>  config, relative to --cwd (default xray.config.json)
 ```
 
-En local el diff incluye también los cambios sin commitear y los archivos nuevos sin seguimiento.
+When run locally, the diff also includes uncommitted changes and new untracked files.
 
 ## GitHub Action
 
@@ -48,20 +48,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # necesario para calcular el merge-base con la rama base
+          fetch-depth: 0 # needed to find the merge base with the base branch
       - uses: pearpages/xray@main
         # with:
         #   working-directory: apps/web
         #   config: xray.config.json
-        #   comment: "false"   # solo genera el informe (también va al job summary)
+        #   comment: "false"   # only produce the report (it also goes to the job summary)
 ```
 
-El informe también se añade al *job summary* y queda disponible en el output `report-path`.
-En PRs desde forks el `GITHUB_TOKEN` es de solo lectura y el comentario fallará.
+The report is also appended to the *job summary* and exposed as the `report-path` output.
+On PRs from forks `GITHUB_TOKEN` is read-only, so the comment will fail.
 
-## Configuración (`xray.config.json`)
+## Configuration (`xray.config.json`)
 
-Todos los campos son opcionales:
+Every field is optional:
 
 ```json
 {
@@ -72,28 +72,27 @@ Todos los campos son opcionales:
 }
 ```
 
-- `roots`: carpetas que recorre dependency-cruiser (por defecto `src` si existe, si no `.`).
-- `tsConfig`: se usa para resolver alias (`@/…`); por defecto `tsconfig.json` si existe.
-- `dependencies.maxNodes`: límite de nodos del diagrama; se priorizan los vecinos conectados a más
-  módulos cambiados y se indica cuántos se omiten.
-- `dependencies.includeExternal`: muestra paquetes npm y módulos de Node como vecinos.
+- `roots`: folders dependency-cruiser scans (default `src` if it exists, otherwise `.`).
+- `tsConfig`: used to resolve aliases (`@/…`); defaults to `tsconfig.json` if it exists.
+- `dependencies.maxNodes`: node limit for the diagram; neighbours connected to more changed modules
+  are kept first, and the report says how many were left out.
+- `dependencies.includeExternal`: show npm packages and Node modules as neighbours.
 
-## Análisis
+## Analyses
 
-1. **Dependencias** ✅ — archivos cambiados (`git diff` contra el merge-base) más sus vecinos directos
-   (lo que importan y lo que los importa) según dependency-cruiser, en un diagrama Mermaid agrupado por
-   carpeta con los módulos cambiados resaltados. Distingue imports de solo tipos, imports dinámicos y
-   tests.
-2. **Interacciones** — ts-morph: funciones/componentes tocados → referencias hacia arriba hasta puntos de
-   entrada y 1-2 niveles hacia abajo → diagramas de secuencia por funcionalidad, con un mapa de
-   funcionalidades versionado en el repo.
-3. **Impacto y riesgo** — cobertura × complejidad → semáforo.
-4. **API pública / contratos** — diff de exports y endpoints, compatible/rompedor, usos afectados.
-5. **Bundle size** — build de base y PR, chunks gzip/brotli, umbral configurable y causa.
+1. **Dependencies** ✅ — changed files (`git diff` against the merge base) plus their direct
+   neighbours (what they import and what imports them) according to dependency-cruiser, in a Mermaid
+   diagram grouped by folder with the changed modules highlighted. Distinguishes type-only imports,
+   dynamic imports and tests.
+2. **Interactions** — ts-morph: touched functions/components → references up to entry points and 1-2
+   levels down → sequence diagrams per feature, using a feature map versioned in the repo.
+3. **Impact and risk** — coverage × complexity → traffic light.
+4. **Public API / contracts** — diff of exports and endpoints, compatible/breaking, affected usages.
+5. **Bundle size** — build base and PR, gzip/brotli chunks, configurable threshold and cause.
 
-Después: un skill de Claude sobre el CLI que explique diagramas y riesgos.
+Next: a Claude skill on top of the CLI that explains the diagrams and risks.
 
-## Desarrollo
+## Development
 
 ```bash
 npm ci
@@ -101,5 +100,9 @@ npm run build
 npm test -- --run
 ```
 
-Node 24 (fijado en `mise.toml`). `typescript` está en la serie 6: dependency-cruiser aún no admite
-TypeScript 7 (`>=2 <7`) y sin él no analiza `.ts`/`.tsx`.
+Node 24 (pinned in `mise.toml`). `typescript` stays on the 6.x series: dependency-cruiser does not
+support TypeScript 7 yet (`>=2 <7`), and without it it does not analyse `.ts`/`.tsx` files.
+
+## License
+
+[MIT](LICENSE)
