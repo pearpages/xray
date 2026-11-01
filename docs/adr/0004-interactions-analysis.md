@@ -119,8 +119,10 @@ sequenceDiagram
 
 ## Open questions (to settle before Accepted)
 
-1. **Who generates the feature map?** Proposed: the Claude skill only. Alternative: an opt-in CLI
-   step calling the Claude API with a key in CI.
+1. ~~Who generates the feature map?~~ **Decided 2026-11-01: the Claude skill only** (see *Feature
+   map*). Calling the Claude API from xray was rejected: it needs a secret in every consumer repo,
+   costs per PR, doesn't work on fork PRs, and makes reports vary between runs. An opt-in API step
+   could be a future ADR.
 2. **No map:** draw diagrams per entry point (proposed), or show only the table plus a hint to
    create the map?
 3. **Monorepos** (futbol-manager's `packages/*`): v1 analyses one tsconfig (the Action's
