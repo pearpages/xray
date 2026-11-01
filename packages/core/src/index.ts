@@ -16,6 +16,11 @@ export interface AnalyzeOptions {
   base: string;
   /** Overrides `xray.config.json`. */
   config?: XrayConfig;
+  /**
+   * Commit reported as the PR head. Defaults to HEAD. CI checkouts of a PR
+   * sit on a temporary merge commit, so the caller passes the PR's real head.
+   */
+  head?: string;
 }
 
 /** Everything xray knows about a PR, as data. Renderers turn it into Markdown. */
@@ -29,7 +34,7 @@ export async function analyzePullRequest(options: AnalyzeOptions): Promise<XrayR
   const { cwd, base } = options;
   const config = options.config ?? loadConfig(cwd);
   const mergeBase = resolveMergeBase(cwd, base);
-  const head = git(cwd, ["rev-parse", "HEAD"]);
+  const head = options.head ?? git(cwd, ["rev-parse", "HEAD"]);
   const changed = getChangedFiles(cwd, mergeBase);
   return {
     meta: { base, mergeBase, head },

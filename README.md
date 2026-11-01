@@ -29,6 +29,7 @@ xray [base]            base branch of the PR (default main; also tries origin/<b
   -f, --format <fmt>   markdown | json
   -o, --out <file>     write the report to a file
   -c, --config <file>  config, relative to --cwd (default xray.config.json)
+  --head <sha>         commit to report as the PR head (default HEAD; the Action passes the PR's head)
 ```
 
 When run locally, the diff also includes uncommitted changes and new untracked files.

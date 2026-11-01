@@ -57,8 +57,9 @@ flowchart LR
    them, only edges touching a changed module, capped at `maxNodes` (neighbours touching more
    changed modules win). Changed files that are not graph modules go to `outsideGraph`.
 4. `reportSections` renders each analysis to a section; `renderReport` adds the marker and header.
-5. In CI, the Action writes the report to `$RUNNER_TEMP`, appends it to the job summary, and the
-   comment script PATCHes the existing comment carrying the marker or POSTs a new one.
+5. In CI, the Action runs the CLI with `--head` set to the PR's head commit (the checkout itself is
+   GitHub's temporary merge commit), writes the report to `$RUNNER_TEMP`, appends it to the job
+   summary, and the comment script PATCHes the existing comment carrying the marker or POSTs a new one.
 
 No state is kept between runs other than the PR comment itself.
 

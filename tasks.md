@@ -21,6 +21,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Done
 
+- [x] 2026-11-01: Report header shows the PR's head commit in CI, not GitHub's temporary merge commit (`--head`).
 - [x] 2026-11-01: Report, CLI and README text switched from Spanish to English.
 - [x] 2026-11-01: README names the MIT license.
 - [x] 2026-11-01: Scaffolded project knowledge files — 11 created (incl. 3 ADRs and LICENSE), 0 fixed, 5 follow-ups.

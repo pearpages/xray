@@ -107,6 +107,12 @@ describe("analyzePullRequest (git fixture)", () => {
     expect(markdown).not.toContain("Unrelated");
   });
 
+  it("reports the given head instead of HEAD", async () => {
+    const result = await analyzePullRequest({ cwd: repo, base: "main", head: "abc1234def" });
+    expect(result.meta.head).toBe("abc1234def");
+    expect(renderMarkdown(result)).toContain("Comparing `abc1234` with `main`");
+  });
+
   it("fails clearly when the base branch does not exist", async () => {
     await expect(analyzePullRequest({ cwd: repo, base: "nope" })).rejects.toThrow(/fetch-depth: 0/);
   });

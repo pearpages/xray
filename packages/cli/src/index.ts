@@ -9,6 +9,7 @@ interface CliOptions {
   format: "markdown" | "json";
   out?: string;
   config?: string;
+  head?: string;
 }
 
 const program = new Command()
@@ -19,12 +20,18 @@ const program = new Command()
   .option("-f, --format <format>", "markdown | json", "markdown")
   .option("-o, --out <file>", "write the report to a file instead of stdout")
   .option("-c, --config <file>", "config path, relative to --cwd (default xray.config.json)")
+  .option("--head <sha>", "commit to report as the PR head (default HEAD)")
   .action(async (base: string, options: CliOptions) => {
     if (options.format !== "markdown" && options.format !== "json") {
       program.error(`Unknown format: ${options.format}`);
     }
     const cwd = resolve(options.cwd);
-    const result = await analyzePullRequest({ cwd, base, config: loadConfig(cwd, options.config) });
+    const result = await analyzePullRequest({
+      cwd,
+      base,
+      config: loadConfig(cwd, options.config),
+      head: options.head,
+    });
     const output =
       options.format === "json" ? `${JSON.stringify(result, null, 2)}\n` : renderMarkdown(result);
     if (options.out) writeFileSync(options.out, output);
