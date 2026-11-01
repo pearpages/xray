@@ -6,13 +6,14 @@ item, and add a dated line at the top of **Done**.
 ## Open
 
 - [ ] **Dependencies through barrels** (optional): when a neighbour only re-exports (a package's `index.ts`), also show its importers, so a change inside a shared package reaches the apps in the dependency diagram too.
-- [ ] **Analysis 3 — impact and risk**: cross changes with test coverage and complexity → traffic light; warn about features without tests or with growing complexity.
+- [ ] **Analysis 3 — impact and risk** ([ADR-0007](docs/adr/0007-impact-and-risk-analysis.md), Proposed — 3 open questions): static test evidence × complexity → traffic light per unit, feature and PR.
 - [ ] **Analysis 4 — public API / contracts**: diff exports (types, functions, props) between base and PR with ts-morph, and endpoints (OpenAPI or routes) → compatible/breaking, list affected usages.
 - [ ] **Analysis 5 — bundle size**: build base and PR, compare chunks (gzip/brotli), flag over a configurable threshold and name the causing dependency/import.
 - [ ] **Claude skill, part 2**: explain the diagrams and risks of a report (part 1, the feature map, is done).
 
 ## Done
 
+- [x] 2026-11-01: Impact and risk designed (ADR-0007) after surveying coverage in 9 projects (none publish it) and a spike on dummy and futbol-manager.
 - [x] 2026-11-01: Analysis 1 resolves workspace packages without `node_modules` (exact aliases for dependency-cruiser). futbol-manager 6f2e08e: 0 → 47 cross-package edges; 15d1220 unchanged (barrel hop). Workspace module moved to `packages/core/src/workspaces.ts`.
 - [x] 2026-11-01: ADR-0006 accepted; the feature map skill confirmed working when installed from GitHub.
 - [x] 2026-11-01: Feature map skill (`/xray:features`) as a Claude Code plugin in this repo, with `xray --inventory`; tried on pearpages/dummy (map valid, report names Catalogue and Cart). Fixed `export default function` not being seen as a default export (lazy imports were lost).
