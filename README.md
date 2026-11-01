@@ -12,6 +12,8 @@ single comment** on the PR, updated on every push.
 | [`packages/cli`](packages/cli)       | The `xray [base]` CLI, a single command.                                                    |
 | [`packages/action`](packages/action) | Creates or updates the PR comment (found by the `<!-- xray:report -->` marker).             |
 | [`action.yml`](action.yml)           | Composite GitHub Action that builds xray, runs the CLI and comments.                        |
+| [`packages/quality`](packages/quality) | `xray-quality`: scores a whole repository (not a PR) and writes a JSON report.            |
+| [`packages/quality-ui`](packages/quality-ui) | Opens those reports in the browser (React, Vite, [pulp](https://github.com/pearpages/pulp)). |
 
 The core knows nothing about GitHub or the CLI: the upcoming project-quality tool can call
 `analyzePullRequest()` and use the JSON directly.
@@ -221,6 +223,76 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
 
 Claude skills: ✅ `/xray:features` writes and updates the feature map; ✅ `/xray:explain` explains
 a report and its risks.
+
+## Project quality
+
+A second tool in this repository scores the quality of a **whole repository** from 0 to 100, per
+metric and overall, so reports of successive commits can be compared. It reads the repository and
+never changes it ([ADR-0014](docs/adr/0014-project-quality-tool.md),
+[ADR-0015](docs/adr/0015-quality-phase-1-tuning.md)).
+
+```bash
+npm ci && npm run build
+node packages/quality/dist/cli.js --cwd ../my-project -o my-project.json
+```
+
+```
+xray-quality
+  -C, --cwd <dir>      root of the repository to analyse
+  -o, --out <file>     write the report to a file instead of stdout
+  -c, --config <file>  config with a `quality` section (default: xray.config.json in --cwd)
+```
+
+The report has the repository path, the analysed commit (and whether the tree had uncommitted
+changes), the date, a global score, and one result per metric: score, one-sentence summary and
+findings (`file`, `line`, `high`/`medium`/`low`, message). A metric that can't run (no network, no
+features defined) is *unavailable* with the reason, and the global score averages the others.
+
+| Metric | What it measures | Score |
+|---|---|---|
+| **Hotspots** | Per code file, commits in the window × the sum of its functions' cyclomatic complexity. | Findings formula |
+| **Architecture** | Features (`xray.features.json` features that declare `files`, else folders matching `features`) import each other only through a public API (`index.*`, or a map feature's entry points). Deep imports are medium, two features importing each other high. | Findings formula |
+| **Dependencies** | `audit` of production dependencies and `outdated`, with the package manager the lockfile names (npm, pnpm). Read-only; needs the registry. | `100 − 15·high − 5·medium − 1·low` |
+
+Findings formula: `100 − (10·high + 3·medium + 1·low) / (code files / 100)`, so one high finding per
+100 files costs 10 points. Global score: the weighted average of the metrics that ran.
+
+**The UI** (`npm run dev -w @xray/quality-ui`, or `npm run build -w @xray/quality-ui` for a static
+build in `packages/quality-ui/dist/`): open one or more reports with the button or by dropping them.
+It shows the global score and a card per metric, the hotspots table, architecture violations by
+feature, all findings filterable by severity and metric, and, with several reports of one
+repository, the score per commit. Reports stay in the browser.
+
+### Configuration (`quality` in `xray.config.json`)
+
+Every field is optional; the rest of the file (`roots`, `tsConfig`, `interactions.featureMap`) is
+read as for the PR report.
+
+```json
+{
+  "quality": {
+    "weights": { "hotspots": 1, "architecture": 1, "dependencies": 1 },
+    "severityPenalty": { "high": 10, "medium": 3, "low": 1 },
+    "hotspots": { "windowMonths": 12, "minChurn": 2, "minComplexity": 10, "thresholds": { "high": 1000, "medium": 300, "low": 100 } },
+    "architecture": { "features": ["**/features/*"], "publicApi": ["index.{ts,tsx,js,jsx,mts,mjs}"], "shared": ["_*", "shared", "common"], "useFeatureMap": true },
+    "dependencies": { "outdated": true, "dev": false, "timeoutSeconds": 60 },
+    "ignore": ["**/*.generated.*"]
+  }
+}
+```
+
+- `weights`: weight of each metric in the global score (default 1; 0 leaves it out).
+- `severityPenalty`: points a finding costs in the findings formula.
+- `hotspots.windowMonths`: how far back commits count. `minChurn` / `minComplexity`: below either, a
+  file is never a finding. `thresholds`: hotspot value from which a file is high, medium or low.
+- `architecture.features`: globs of feature folders (the outermost match owns a file).
+  `publicApi`: globs, inside a feature folder, of the files other features may import. `shared`:
+  names of folders among the features that are shared code, importable by anyone.
+  `useFeatureMap`: use `xray.features.json` features that declare `files` when there are two or
+  more.
+- `dependencies.outdated`: also list direct dependencies a major version behind (low). `dev`: audit
+  devDependencies too. `timeoutSeconds`: per command.
+- `ignore`: globs left out of every metric, on top of tests, stories, declarations and build output.
 
 ## Development
 

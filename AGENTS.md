@@ -48,6 +48,9 @@ Node 24 is pinned in `mise.toml` (`mise exec -- <cmd>` if the shell has no defau
 - `node packages/cli/dist/index.js <base> --cwd <repo>`: run the CLI against another repository
   (`-f json` for the raw `XrayResult`, `--bundle` to build and compare bundles, `--inventory` for
   the feature map skill's data).
+- `node packages/quality/dist/cli.js --cwd <repo> -o <file>`: the whole-repository quality report.
+- `npm run dev -w @xray/quality-ui` / `npm run build -w @xray/quality-ui`: the report viewer. The
+  Action never installs it (`build:action`, ADR-0014).
 - Release, after merging to `main` with CI green
   ([ADR-0010](docs/adr/0010-versioning-and-releases.md)):
   `git tag -a vX.Y.Z -m "vX.Y.Z" && git tag -f v0 vX.Y.Z && git push origin vX.Y.Z && git push -f origin v0`.

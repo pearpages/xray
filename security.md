@@ -26,6 +26,10 @@ sees the report. Never open a public issue for an unfixed vulnerability.
   exposure as the project's own CI. Rules: enable it only on `pull_request` (never
   `pull_request_target`); check out with `persist-credentials: false` so the build can't read the
   checkout's token; the GitHub token is only given to the comment step, after the builds.
+- **The quality tool** (`xray-quality`) reads the analysed repository: git, file contents, and its
+  package manager's `audit` and `outdated`, which contact the registry and don't install or change
+  anything. Nothing is written under the analysed root; the report goes where `-o` says. The UI is a
+  static page that reads report files locally.
 - **Write token in CI.** The Action uses `GITHUB_TOKEN` with `pull-requests: write` to create or
   update one comment, via the REST API at `GITHUB_API_URL`. It is meant for `pull_request` events,
   where fork PRs get a read-only token (the comment step then only warns; the report stays in the

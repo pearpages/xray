@@ -1,7 +1,7 @@
 # 0014. Project quality: a whole-repository report next to the PR report
 
 - **Date:** 2026-11-01
-- **Status:** Proposed — for the owner's review before any code.
+- **Status:** Accepted — reviewed by the owner ("build phase 1"), with the four open points as proposed.
 
 ## Context
 

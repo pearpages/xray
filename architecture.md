@@ -13,6 +13,9 @@ An npm workspaces monorepo in TypeScript (ESM, `NodeNext`), Node 24. It ships as
 - **`@xray/core`**: a library. Entry point `analyzePullRequest({ cwd, base })` → `XrayResult`;
   `renderMarkdown(result)` → the report.
 - **`@xray/cli`**: the `xray [base]` binary (`packages/cli/src/index.ts`, commander).
+- **`@xray/quality`**: the `xray-quality` binary and library: whole-repository scores
+  ([ADR-0014](docs/adr/0014-project-quality-tool.md)), built on core's exports.
+- **`@xray/quality-ui`** (private): a static React + Vite app on pulp that opens quality reports.
 - **A composite GitHub Action** (`action.yml` at the repo root) that builds the workspace in
   `github.action_path`, runs the CLI and calls `packages/action/dist/index.js` to post the comment.
 
@@ -63,6 +66,8 @@ flowchart LR
 | `packages/core/src/testing/` | Test-only helpers (a throwaway git repository); not built |
 | `packages/core/src/report.ts` | `ReportSection`, the hidden `<!-- xray:report -->` marker, the report frame |
 | `packages/core/src/index.ts` | `analyzePullRequest`, `reportSections`, `renderMarkdown` and re-exports |
+| `packages/quality/src/` | `analyzers/` (one file per metric: hotspots, architecture, dependencies), `registry.ts` (the list), `score.ts` (findings formula, global score), `config.ts` (the `quality` section), `files.ts` (tracked code files), `report.ts` (runs the analyzers, repo info), `cli.ts` |
+| `packages/quality-ui/src/` | `reports.ts` (parsing, grouping by repository, evolution, filters) and one component per view, each with its own `.css`, on pulp components and tokens |
 | `packages/cli/src/index.ts` | Argument parsing, `--format markdown|json`, `--out` |
 | `packages/action/src/` | Reading the PR number from `GITHUB_EVENT_PATH`, finding/updating the comment via the REST API, truncating to 65 536 chars |
 | `.github/workflows/` | `ci.yml` (build + tests) and `xray.yml` (runs the Action on this repo's PRs) |
@@ -110,12 +115,21 @@ flowchart LR
 
 No state is kept between runs other than the PR comment itself.
 
+**Quality report** (`xray-quality`): `codeFiles` lists tracked code under the root (no tests,
+stories, declarations, build output, `ignore`). Each registered analyzer gets the root, the
+resolved `quality` config and that list, and returns a `MetricResult`; one that throws becomes
+*unavailable* instead of failing the report. Hotspots reads `git log` and parses each file without
+types; architecture uses core's `buildDependencyGraph` (the same resolution as the PR report);
+dependencies runs the lockfile's package manager's `audit` and `outdated` in the analysed repo.
+`analyzeQuality` adds the repo's commit and the weighted global score. The UI only reads the JSON.
+
 ## Build, test, deploy
 
 - `tsc -b` with project references (`packages/{core,cli,action}/tsconfig.json` extend
   `tsconfig.base.json`). `typescript` stays on 6.x for dependency-cruiser
   ([ADR-0002](docs/adr/0002-typescript-6-for-dependency-cruiser.md)).
-- Tests: vitest, `packages/*/src/**/*.test.ts`. Unit tests for parsing, neighbourhood selection
+- Tests: vitest, `packages/*/src/**/*.test.ts` (quality's on small git repos built in the test, the
+  UI's on its report logic). Unit tests for parsing, neighbourhood selection
   and comment truncation; an integration test that builds a temporary git repo with a feature
   branch and runs `analyzePullRequest` end to end.
 - CI: `.github/workflows/ci.yml` runs `npm ci`, build and tests on pushes to `main` and on PRs.

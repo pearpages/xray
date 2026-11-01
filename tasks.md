@@ -5,10 +5,11 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
-- [ ] **Project quality tool** ([ADR-0014](docs/adr/0014-project-quality-tool.md), Proposed): waiting for the owner's review; then phase 1 (hotspots, architecture, dependencies; CLI and UI), then phase 2 (coverage, duplication, lint and types).
+- [ ] **Project quality, phase 2** ([ADR-0014](docs/adr/0014-project-quality-tool.md)): coverage from lcov, duplication (jscpd), ESLint and TypeScript errors with the project's configs.
 
 ## Done
 
+- [x] 2026-11-01: Project quality phase 1: `@xray/quality` (hotspots, architecture, dependencies; findings formula; `xray-quality` CLI) and `@xray/quality-ui` (pulp). Tuned on xray, dummy, futbol-manager and bitepals ([ADR-0015](docs/adr/0015-quality-phase-1-tuning.md)); the Action installs only core, cli and action (84 MB of node_modules instead of 159 MB).
 - [x] 2026-11-01: v0.3.1, from bitepals' first report (#134): each workspace package resolves imports with its own tsconfig (`paths`, tolerant of a missing `extends`), in both analyses; no more `Could not read tsconfig.json` for an uninstalled base ([ADR-0013](docs/adr/0013-per-package-tsconfig.md)). #134's change now reaches Place page.
 - [x] 2026-11-01: Real adoption PR opened, pearpages/futbol-manager#23 (workflow on `@v0` with `mise-action@v5`, `checkout@v7`, coverage and bundle; the 13-feature map), awaiting the owner's review. Its run: 4 min 48 s, no Node 20 warnings; the report is short because it adds no code (bundle −3 B: the app embeds its commit). The v0.3.0 replay on #22 confirmed the folder view, branch coverage and shared units on GitHub; #22 closed and its `try/` branches deleted.
 - [x] 2026-11-01: Released v0.3.0 (ADR-0012 follow-ups); `v0` moved to it.
