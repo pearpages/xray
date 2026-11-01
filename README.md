@@ -86,7 +86,7 @@ Every field is optional:
     "maxTouchedUnits": 40,
     "featureMap": "xray.features.json"
   },
-  "risk": { "complexityHigh": 15, "complexityJump": 3, "indirectDepth": 3 },
+  "risk": { "complexityHigh": 15, "complexityJump": 3, "indirectDepth": 3, "coverage": ["coverage/lcov.info"] },
   "bundle": { "enabled": false, "thresholdBytes": 10240, "thresholdPercent": 5, "timeoutMinutes": 10 }
 }
 ```
@@ -109,6 +109,9 @@ Every field is optional:
 - `risk.complexityHigh` / `complexityJump`: an untested unit at or above this complexity, or whose
   complexity grew by at least this much, is red.
 - `risk.indirectDepth`: how many callers up a test may sit and still count as evidence.
+- `risk.coverage`: lcov reports to read (default: `coverage/lcov.info` at the root and in each
+  workspace package, when present). Produce them in the workflow before the xray step, e.g.
+  `npx vitest run --coverage --coverage.reporter=lcov`; xray itself never runs tests.
 - `bundle.enabled`: measure bundle size (also `--bundle`, or the Action's `bundle: "true"`).
   `bundle.install`, `bundle.build` and `bundle.outDir` override what xray detects: the lockfile's
   install command, `vite build --sourcemap hidden` for Vite projects or the `build` script, and
@@ -169,8 +172,8 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
 (`exports`, `main`, or `src/index.ts`) with no `node_modules` needed, in both analyses:
 
 - **Dependencies** shows a changed file's imports from, and importers in, other packages.
-  Neighbours are direct: when a package is imported through its `index.ts`, a change deeper in that
-  package shows the `index.ts`, not the apps behind it.
+  When a package is imported through its `index.ts`, a change deeper in that package also shows
+  who imports that `index.ts`, grouped per folder.
 - **Interactions** analyses every package with a `tsconfig.json` together, so a change in a shared
   package is followed into the screens that use it. They share the root's compiler options: a
   package's own `paths` aliases (`@/…` inside one package) are not applied; relative imports and
@@ -181,21 +184,24 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
 1. **Dependencies** ✅ — changed files (`git diff` against the merge base) plus their direct
    neighbours (what they import and what imports them) according to dependency-cruiser, in a Mermaid
    diagram grouped by folder with the changed modules highlighted. Distinguishes type-only imports,
-   dynamic imports and tests.
+   dynamic imports and tests. When a neighbour is a barrel (a package's `index.ts`), its importers
+   are shown too, grouped per folder past 8.
 2. **Interactions** ✅ — with ts-morph, finds the functions, components and hooks the diff touches,
    follows who renders, calls, uses, lazy-loads, mounts or reads them up to entry points, and what they use
    one level down. One Mermaid sequence diagram per feature, named by the feature map when there is
    one. Works across workspace packages.
-3. **Impact and risk** ✅ — for each changed unit, the strongest test evidence (a test uses it, a
-   test file is named after its file, or a test uses a caller) and its complexity before and after.
+3. **Impact and risk** ✅ — for each changed unit, the strongest test evidence (line coverage of its
+   changed lines when an lcov report exists; otherwise a test uses it, a test file is named after
+   its file, or a test uses a caller) and its complexity before and after.
    A traffic light per unit, per feature and for the PR, plus *features without tests* and *growing
    complexity*. No test is run; it never fails the check
    ([ADR-0007](docs/adr/0007-impact-and-risk-analysis.md)).
 4. **Public API** ✅ — exports of every changed file, base vs PR, read from the source text
    (parameters, props, members, re-exports): 🔴 breaking, 🟡 to review, 🟢 compatible, with the
    files that use them (through package barrels too) and 📦 on what workspace packages expose.
-   Changed OpenAPI JSON specs are compared by method and path
-   ([ADR-0008](docs/adr/0008-public-api-analysis.md)).
+   Endpoints: changed OpenAPI JSON specs and Next.js route handlers (`app/**/route.ts`,
+   `pages/api/*`), compared by method and URL
+   ([ADR-0008](docs/adr/0008-public-api-analysis.md), [ADR-0011](docs/adr/0011-barrels-coverage-and-routes.md)).
 5. **Bundle size** ✅ (opt-in) — installs and builds the base and the PR in throwaway worktrees,
    compares chunks raw/gzip/brotli, flags growth over the threshold, and names the cause: per
    package from source maps, plus dependency changes. It runs your project's scripts: enable it with

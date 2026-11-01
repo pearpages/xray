@@ -8,12 +8,11 @@ item, and add a dated line at the top of **Done**.
 
 ### Later, if needed
 
-- [ ] **Coverage from lcov**: read a project's lcov report when its CI publishes one (ADR-0007 follow-up; none does today).
-- [ ] **Next.js route handlers as endpoints** for analysis 4, when slotflow (the only project with a server framework) adopts xray.
-- [ ] **Dependencies through barrels**: when a neighbour only re-exports (a package's `index.ts`), also show its importers in the dependency diagram.
+- [ ] **Branch coverage**: use lcov `BRDA` data so a changed line with an untested branch isn't "covered" (ADR-0011).
 
 ## Done
 
+- [x] 2026-11-01: Optional tasks done under delegation ([ADR-0011](docs/adr/0011-barrels-coverage-and-routes.md)): barrel importers in the dependency diagram (futbol-manager 15d1220 now reaches 6 folders through `@fm/domain`), lcov coverage of changed lines as risk evidence (checked with a real Vitest report on dummy), Next.js route handlers as endpoints (fixtures only: slotflow has none). 70 tests.
 - [x] 2026-11-01: Owner's six questions decided under delegation:
   1. **Versioning** → yes: `v0.1.0` plus a moving `v0`; README and the skills use `v0` ([ADR-0010](docs/adr/0010-versioning-and-releases.md)).
   2. **Failing the check** → never, for risk, API and bundle alike; the lights are information (ADR-0007/0008/0009 unchanged).

@@ -50,9 +50,9 @@ flowchart LR
 | `packages/core/src/workspaces.ts` | Workspace discovery (`pnpm-workspace.yaml`, `workspaces`) and mapping package names and subpath exports to files, for both analyses (CI has no `node_modules`) |
 | `packages/core/src/interactions/project.ts` | Loading the ts-morph project: the root tsconfig, or every workspace package at a workspace root, with workspace package names resolved to source |
 | `packages/core/src/interactions/changed-code.ts` | Loading the PR's code once for the ts-morph analyses: the project, the touched units, their base versions and removed units |
-| `packages/core/src/api/` | Analysis 4: export shapes from the source text, base vs PR compatibility, usages through barrels, OpenAPI JSON operations |
+| `packages/core/src/api/` | Analysis 4: export shapes from the source text, base vs PR compatibility, usages through barrels, OpenAPI JSON operations, Next.js route handlers |
 | `packages/core/src/bundle/` | Analysis 5 (opt-in): worktrees, install and build commands, chunk sizes, source-map attribution per package, dependency changes |
-| `packages/core/src/risk/` | Analysis 3: test evidence per touched unit (direct, by name, indirect), cyclomatic complexity before/after, traffic lights per unit, feature and PR |
+| `packages/core/src/risk/` | Analysis 3: test evidence per touched unit (lcov coverage of changed lines, direct, by name, indirect), cyclomatic complexity before/after, traffic lights per unit, feature and PR |
 | `packages/core/src/interactions/units.ts` | Units: top-level functions, components, hooks, classes and lookup tables, found per file and by enclosing node |
 | `packages/core/src/interactions/walk.ts` | Classifying references (renders, uses, calls, lazy-loads, mounts, reads) and walking callers up and callees down |
 | `packages/core/src/interactions/features.ts`, `analyze.ts` | The feature map, and grouping touched units into features (map features, entry points, shared hubs) |
@@ -76,7 +76,8 @@ flowchart LR
    module graph. Type-only and dynamic imports are kept as edge flags; npm/Node modules are dropped
    unless `includeExternal`.
 3. `selectNeighbourhood` keeps the changed modules plus whatever they import and whatever imports
-   them, only edges touching a changed module, capped at `maxNodes` (neighbours touching more
+   them, plus the importers of a barrel that re-exports a changed module (per folder past 8,
+   [ADR-0011](docs/adr/0011-barrels-coverage-and-routes.md)), only edges touching those, capped at `maxNodes` (neighbours touching more
    changed modules win). Changed files that are not graph modules go to `outsideGraph`.
 4. `analyzeInteractions` skips everything when no code changed. Otherwise it loads one ts-morph
    project ([ADR-0004](docs/adr/0004-interactions-analysis.md)), finds the units whose lines the
