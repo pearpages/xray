@@ -55,6 +55,14 @@ export function renderDependencyMermaid(analysis: DependencyAnalysis): string {
   return lines.join("\n");
 }
 
+/** Inline code span that survives backticks in the text (file names come from the PR). */
+export function inlineCode(text: string): string {
+  const longestRun = Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length));
+  const fence = "`".repeat(longestRun + 1);
+  const pad = text.startsWith("`") || text.endsWith("`") ? " " : "";
+  return `${fence}${pad}${text}${pad}${fence}`;
+}
+
 const STATUS_LABEL = {
   added: "added",
   modified: "modified",
@@ -93,8 +101,8 @@ export function renderDependencySection(analysis: DependencyAnalysis): string {
   if (analysis.outsideGraph.length > 0) {
     const items = analysis.outsideGraph.map((file) =>
       file.previousPath
-        ? `- \`${file.previousPath}\` → \`${file.path}\` (${STATUS_LABEL[file.status]})`
-        : `- \`${file.path}\` (${STATUS_LABEL[file.status]})`,
+        ? `- ${inlineCode(file.previousPath)} → ${inlineCode(file.path)} (${STATUS_LABEL[file.status]})`
+        : `- ${inlineCode(file.path)} (${STATUS_LABEL[file.status]})`,
     );
     out.push(
       "",

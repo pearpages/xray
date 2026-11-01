@@ -21,6 +21,15 @@ export interface GitHubContext {
   issueNumber: number;
 }
 
+export class GitHubApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
 interface IssueComment {
   id: number;
   body?: string;
@@ -38,7 +47,8 @@ async function request<T>(context: GitHubContext, method: string, path: string, 
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) {
-    throw new Error(`${method} ${path} → ${response.status} ${await response.text()}`);
+    const detail = `${method} ${path} → ${response.status} ${await response.text()}`;
+    throw new GitHubApiError(detail, response.status);
   }
   return (await response.json()) as T;
 }
