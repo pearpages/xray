@@ -49,9 +49,10 @@ runs:
     - name: Build xray
       shell: bash
       working-directory: ${{ github.action_path }}
+      # Only what a PR run needs: the quality tool and its UI (React, Vite, pulp) stay out (ADR-0014).
       run: |
-        npm ci --no-audit --no-fund
-        npm run build
+        npm ci --no-audit --no-fund --include-workspace-root --workspace @xray/core --workspace @xray/cli --workspace @xray/action
+        npm run build:action
 
     - name: Analyse
       id: analyse
