@@ -40,9 +40,18 @@ against mocked git or mocked dependency-cruiser output.
 *Why:* the bugs so far came from how git and dependency-cruiser actually behave (merge base,
 path resolution, tsconfig aliases). *Check:* `analyze.test.ts`; `npm test -- --run` in CI.
 
+## Action
+
+**P6. Every new analysis re-measures the Action on pearpages/dummy before it ships.** Compare
+the install + build time and the whole job time with the figures in ADR-0003; a noticeable jump
+reopens that decision (bundling, or trimming dependencies) instead of being accepted silently.
+*Why:* the Action rebuilds xray on every PR in every consumer repo, so each new dependency is
+paid many times. [ADR-0003](docs/adr/0003-action-builds-at-runtime.md) *Check:* review; the
+measurement goes in the analysis's Done line in tasks.md.
+
 ## Process
 
-**P6. Knowledge lives in its file.** How to work → `AGENTS.md`; rules → here; how it is
+**P7. Knowledge lives in its file.** How to work → `AGENTS.md`; rules → here; how it is
 built → `architecture.md`; why → an ADR; work → `tasks.md`; risk → `security.md`.
 *Why:* a session log in the agent file hides decisions from the next person.
 [ADR-0001](docs/adr/0001-project-knowledge-files.md)

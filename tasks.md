@@ -11,12 +11,9 @@ item, and add a dated line at the top of **Done**.
 - [ ] **Analysis 5 — bundle size**: build base and PR, compare chunks (gzip/brotli), flag over a configurable threshold and name the causing dependency/import.
 - [ ] **Claude skill** on top of the CLI that explains the diagrams and risks.
 
-### Scaffold follow-ups
-
-- [ ] **Decide ADR-0003** (Action builds on every run) — still Proposed — `docs/adr/`.
-
 ## Done
 
+- [x] 2026-11-01: ADR-0003 accepted (Action builds on every run, ~4 s); new principle P6: each new analysis re-measures the Action before shipping.
 - [x] 2026-11-01: Private vulnerability reporting enabled on pearpages/xray; security.md points to it.
 - [x] 2026-11-01: ADR-0002 accepted: keep dependency-cruiser on TypeScript 6 (TS 7 has no JS API); revisit with analysis 2's ts-morph measurement.
 - [x] 2026-11-01: Bundling the Action dropped as not needed: on pearpages/dummy the whole job takes ~12 s (`npm ci` ~2 s, build ~2 s).
