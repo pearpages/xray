@@ -77,7 +77,9 @@ flowchart LR
    unless `includeExternal`.
 3. `selectNeighbourhood` keeps the changed modules plus whatever they import and whatever imports
    them, plus the importers of a barrel that re-exports a changed module (per folder past 8,
-   [ADR-0011](docs/adr/0011-barrels-coverage-and-routes.md)), only edges touching those, capped at `maxNodes` (neighbours touching more
+   [ADR-0011](docs/adr/0011-barrels-coverage-and-routes.md)), only edges touching those; when the
+   changed modules alone exceed half of `maxNodes`, everything is drawn per folder instead
+   ([ADR-0012](docs/adr/0012-pilot-follow-ups.md)), capped at `maxNodes` (neighbours touching more
    changed modules win). Changed files that are not graph modules go to `outsideGraph`.
 4. `analyzeInteractions` skips everything when no code changed. Otherwise it loads one ts-morph
    project ([ADR-0004](docs/adr/0004-interactions-analysis.md)), finds the units whose lines the

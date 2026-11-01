@@ -22,6 +22,7 @@ accepted.
 | [0009](docs/adr/0009-bundle-size-analysis.md) | Bundle size: opt-in builds of base and PR in throwaway worktrees | Accepted (delegated) | 2026-11-01 |
 | [0010](docs/adr/0010-versioning-and-releases.md) | Versioned releases: `vX.Y.Z` tags and a moving `v0` | Accepted (delegated) | 2026-11-01 |
 | [0011](docs/adr/0011-barrels-coverage-and-routes.md) | Barrel importers, lcov coverage and Next.js route handlers | Accepted (delegated) | 2026-11-01 |
+| [0012](docs/adr/0012-pilot-follow-ups.md) | Pilot follow-ups: component entry points, folder diagrams, branch coverage | Accepted (delegated) | 2026-11-01 |
 
 ## Format
 

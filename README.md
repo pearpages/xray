@@ -96,8 +96,9 @@ Every field is optional:
 - `dependencies.maxNodes`: node limit for the diagram; neighbours connected to more changed modules
   are kept first, and the report says how many were left out.
 - `dependencies.includeExternal`: show npm packages and Node modules as neighbours.
-- `interactions.entryGlobs`: files whose functions and components are entry points (pages, routes,
-  screens). The feature map's entry points always count too.
+- `interactions.entryGlobs`: files whose components are entry points (pages, routes, screens); in
+  a file without components, the units nothing calls (`main`'s root, a route's `GET`). The feature
+  map's entry points always count too.
 - `interactions.ignore`: extra globs left out of the walk. Tests (`*.test.*`, `*.spec.*`,
   `__tests__/`) and stories (`*.stories.*`) are always left out.
 - `interactions.depthUp` / `depthDown`: how far to follow callers up and callees down.
@@ -193,13 +194,14 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
    neighbours (what they import and what imports them) according to dependency-cruiser, in a Mermaid
    diagram grouped by folder with the changed modules highlighted. Distinguishes type-only imports,
    dynamic imports and tests. When a neighbour is a barrel (a package's `index.ts`), its importers
-   are shown too, grouped per folder past 8.
+   are shown too, grouped per folder past 8. When a PR changes more modules than fit, the diagram
+   shows folders instead ("screens: 27 changed of 50 files").
 2. **Interactions** ✅ — with ts-morph, finds the functions, components and hooks the diff touches,
    follows who renders, calls, uses, lazy-loads, mounts or reads them up to entry points, and what they use
    one level down. One Mermaid sequence diagram per feature, named by the feature map when there is
    one. Works across workspace packages.
-3. **Impact and risk** ✅ — for each changed unit, the strongest test evidence (line coverage of its
-   changed lines when an lcov report exists; otherwise a test uses it, a test file is named after
+3. **Impact and risk** ✅ — for each changed unit, the strongest test evidence (coverage of its
+   changed lines, branches included, when an lcov report exists; otherwise a test uses it, a test file is named after
    its file, or a test uses a caller) and its complexity before and after.
    A traffic light per unit, per feature and for the PR, plus *features without tests* and *growing
    complexity*. No test is run; it never fails the check
