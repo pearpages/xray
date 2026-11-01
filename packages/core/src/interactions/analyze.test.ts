@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { resolveConfig } from "../config.js";
+import { resolveConfig, type XrayConfigInput } from "../config.js";
 import { analyzePullRequest, renderMarkdown } from "../index.js";
 import { GitFixture } from "../testing/git-fixture.js";
 import type { InteractionsAnalysis } from "./analyze.js";
@@ -37,12 +37,15 @@ const SHOP = {
 let fixture: GitFixture;
 afterEach(() => fixture.dispose());
 
-async function analyse(changes: Record<string, string>, setup?: (fixture: GitFixture) => void) {
+async function analyse(
+  changes: Record<string, string>,
+  setup?: (fixture: GitFixture) => void,
+  config: XrayConfigInput = {},
+) {
   fixture = new GitFixture().write(SHOP);
   setup?.(fixture);
   fixture.commit("base").branch("feature").write(changes).commit("change");
-  const result = await analyzePullRequest({ cwd: fixture.root, base: "main", config: resolveConfig(fixture.root) });
-  return result;
+  return analyzePullRequest({ cwd: fixture.root, base: "main", config: resolveConfig(fixture.root, config) });
 }
 
 const edges = (analysis: InteractionsAnalysis, featureName: string) =>
@@ -80,11 +83,12 @@ describe("analyzeInteractions", () => {
   });
 
   it("follows a lazy import() to the default export and goes two levels down", async () => {
+    const twoLevels = { interactions: { depthDown: 2 } };
     const { interactions } = await analyse({
       "src/pages/Cart.tsx":
         'import { PriceTag } from "@/components/PriceTag";\nimport { useCart } from "@/hooks/useCart";\n' +
         "export default function Cart() {\n  const cart = useCart();\n  return <p><PriceTag amount={cart.total} /></p>;\n}\n",
-    });
+    }, undefined, twoLevels);
 
     expect(interactions.touched).toEqual(["src/pages/Cart.tsx#Cart"]);
     expect(interactions.units["src/pages/Cart.tsx#Cart"]?.change).toBe("modified");
@@ -124,6 +128,39 @@ describe("analyzeInteractions", () => {
     ]);
     // Account only reaches main.tsx, which no feature claims.
     expect(interactions.unmapped).toEqual(["src/Account.tsx#Account"]);
+  });
+
+  it("stops at a hub without a feature map, and shows who shares it", async () => {
+    const { interactions } = await analyse(
+      { "src/lib/format.ts": "export const formatPrice = (n: number) => `${n.toFixed(2)} EUR`;\n" },
+      undefined,
+      // PriceTag has 3 callers (Home, Cart, Account); with a threshold of 2 it is a hub.
+      { interactions: { hubCallers: 2 } },
+    );
+    expect(interactions.features).toHaveLength(1);
+    const [hub] = interactions.features;
+    expect(hub?.name).toBe("PriceTag (shared by 3)");
+    expect(hub?.sharedBy?.map((id) => id.split("#")[1]).sort()).toEqual(["Account", "Cart", "Home"]);
+    expect(renderMarkdown(await analyzePullRequest({
+      cwd: fixture.root,
+      base: "main",
+      config: resolveConfig(fixture.root, { interactions: { hubCallers: 2 } }),
+    }))).toContain("Used by 3:");
+  });
+
+  it("caps the callees drawn per unit and counts the rest", async () => {
+    const { interactions } = await analyse(
+      {
+        "src/pages/Cart.tsx":
+          'import { PriceTag } from "@/components/PriceTag";\nimport { useCart } from "@/hooks/useCart";\n' +
+          "export default function Cart() {\n  const cart = useCart();\n  return <i><PriceTag amount={cart.total} /></i>;\n}\n",
+      },
+      undefined,
+      { interactions: { maxCallees: 1 } },
+    );
+    const cart = interactions.features.find((feature) => feature.name === "Cart");
+    expect(cart?.interactions.map((i) => i.to.split("#")[1])).toEqual(["useCart"]);
+    expect(cart?.hiddenCallees).toEqual({ "src/pages/Cart.tsx#Cart": 1 });
   });
 
   it("reports new and removed units", async () => {

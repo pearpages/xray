@@ -6,7 +6,7 @@ import { showFile, type ChangedFile, type LineRange } from "../git.js";
 import { featuresFor, loadFeatureMap, type FeatureDefinition } from "./features.js";
 import { loadProject } from "./project.js";
 import { unitsOf, UnitIndex, type Unit } from "./units.js";
-import { walkDown, walkUp, Walker, type Interaction, type UpWalk } from "./walk.js";
+import { walkDown, walkUp, Walker, type DownWalk, type Interaction, type UpWalk } from "./walk.js";
 
 export interface InteractionUnit {
   id: string;
@@ -25,6 +25,10 @@ export interface FeatureImpact {
   entryPoints: string[];
   touched: string[];
   interactions: Interaction[];
+  /** Callees not drawn per unit (`maxCallees`). */
+  hiddenCallees: Record<string, number>;
+  /** Set when the feature stands for a shared unit: every unit that uses it. */
+  sharedBy?: string[];
 }
 
 export interface InteractionsAnalysis {
@@ -95,6 +99,8 @@ interface FeatureDraft {
   entryPoints: Set<string>;
   touched: Set<string>;
   interactions: Map<string, Interaction>;
+  hiddenCallees: Map<string, number>;
+  sharedBy?: string[];
 }
 
 export async function analyzeInteractions(
@@ -163,20 +169,22 @@ export async function analyzeInteractions(
 
   const walker = new Walker(loaded.project, loaded.resolveModule, units, loaded.fileOf, ignored);
   const drafts = new Map<string, FeatureDraft>();
-  const draftFor = (key: string, make: () => Omit<FeatureDraft, "entryPoints" | "touched" | "interactions">) => {
+  type DraftHead = Omit<FeatureDraft, "entryPoints" | "touched" | "interactions" | "hiddenCallees">;
+  const draftFor = (key: string, make: () => DraftHead) => {
     let draft = drafts.get(key);
     if (!draft) {
-      draft = { ...make(), entryPoints: new Set(), touched: new Set(), interactions: new Map() };
+      draft = { ...make(), entryPoints: new Set(), touched: new Set(), interactions: new Map(), hiddenCallees: new Map() };
       drafts.set(key, draft);
     }
     return draft;
   };
-  const addTo = (draft: FeatureDraft, unit: Unit, starts: string[], up: UpWalk, down: Interaction[]) => {
+  const addTo = (draft: FeatureDraft, unit: Unit, starts: string[], up: UpWalk, down: DownWalk) => {
     draft.touched.add(unit.id);
     starts.forEach((start) => draft.entryPoints.add(start));
-    for (const interaction of [...reachableFrom(starts, up.interactions), ...down]) {
+    for (const interaction of [...reachableFrom(starts, up.interactions), ...down.interactions]) {
       draft.interactions.set(`${interaction.from}>${interaction.to}`, interaction);
     }
+    down.hidden.forEach((count, id) => draft.hiddenCallees.set(id, count));
   };
   const fromMap = (feature: FeatureDefinition) => () => ({
     id: feature.id,
@@ -184,14 +192,18 @@ export async function analyzeInteractions(
     description: feature.description,
     mapped: true,
   });
-  const fromEntry = (root: string) => () => {
+  const fromEntry = (root: string, sharedBy?: string[]) => () => {
     const { file, name } = splitUnitId(root);
-    return { id: root, name: name === "default" ? file.split("/").pop()! : name, mapped: false };
+    const label = name === "default" ? file.split("/").pop()! : name;
+    return sharedBy
+      ? { id: root, name: `${label} (shared by ${sharedBy.length})`, mapped: false, sharedBy }
+      : { id: root, name: label, mapped: false };
   };
 
   for (const unit of touched) {
-    const up = walkUp(walker, unit, isEntry, settings.depthUp);
-    const down = walkDown(walker, unit, settings.depthDown);
+    // With a map, features are bounded by the map, so hubs don't need cutting.
+    const up = walkUp(walker, unit, isEntry, settings.depthUp, map ? undefined : settings.hubCallers);
+    const down = walkDown(walker, unit, settings.depthDown, settings.maxCallees);
     const owners = map ? featuresFor(map, up.roots, unit.file) : [];
     if (map && owners.length === 0) result.unmapped.push(unit.id);
     if (owners.length > 0) {
@@ -200,7 +212,9 @@ export async function analyzeInteractions(
         addTo(draftFor(`map:${feature.id}`, fromMap(feature)), unit, starts.length ? starts : [unit.id], up, down);
       }
     } else {
-      for (const root of up.roots) addTo(draftFor(`entry:${root}`, fromEntry(root)), unit, [root], up, down);
+      for (const root of up.roots) {
+        addTo(draftFor(`entry:${root}`, fromEntry(root, up.hubs.get(root))), unit, [root], up, down);
+      }
     }
   }
 
@@ -224,6 +238,8 @@ export async function analyzeInteractions(
       entryPoints: [...draft.entryPoints],
       touched: [...draft.touched],
       interactions: [...draft.interactions.values()],
+      hiddenCallees: Object.fromEntries(draft.hiddenCallees),
+      ...(draft.sharedBy ? { sharedBy: draft.sharedBy } : {}),
     }))
     .sort((a, b) => Number(b.mapped) - Number(a.mapped) || b.touched.length - a.touched.length || a.name.localeCompare(b.name));
   return result;

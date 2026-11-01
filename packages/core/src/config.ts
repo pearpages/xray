@@ -17,6 +17,14 @@ export interface InteractionsConfig {
   depthUp: number;
   /** How many levels of callees to show below each touched unit. */
   depthDown: number;
+  /** Callees shown per unit; the rest are counted. */
+  maxCallees: number;
+  /**
+   * Without a feature map, a unit with more callers than this (a store hook, a
+   * shared layout) ends the walk and stands for all of them, instead of one
+   * near-identical feature per caller.
+   */
+  hubCallers: number;
   maxDiagrams: number;
   /** Above this many touched units, only the table is shown (diagrams would not be readable). */
   maxTouchedUnits: number;
@@ -65,7 +73,9 @@ export function resolveConfig(cwd: string, input: XrayConfigInput = {}): XrayCon
       entryGlobs: input.interactions?.entryGlobs ?? DEFAULT_ENTRY_GLOBS,
       ignore: input.interactions?.ignore ?? [],
       depthUp: input.interactions?.depthUp ?? 6,
-      depthDown: input.interactions?.depthDown ?? 2,
+      depthDown: input.interactions?.depthDown ?? 1,
+      maxCallees: input.interactions?.maxCallees ?? 6,
+      hubCallers: input.interactions?.hubCallers ?? 8,
       maxDiagrams: input.interactions?.maxDiagrams ?? 5,
       maxTouchedUnits: input.interactions?.maxTouchedUnits ?? 40,
       featureMap: input.interactions?.featureMap ?? "xray.features.json",

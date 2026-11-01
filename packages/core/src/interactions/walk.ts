@@ -156,8 +156,10 @@ function dedupe(links: Link[]): Link[] {
 
 export interface UpWalk {
   interactions: Interaction[];
-  /** Where the walk stopped: entry points, or units nothing else uses. */
+  /** Where the walk stopped: entry points, hubs, or units nothing else uses. */
   roots: string[];
+  /** Hubs the walk stopped at, with every unit that uses them. */
+  hubs: Map<string, string[]>;
 }
 
 /** From a touched unit up through its callers until entry points (or `maxDepth`). */
@@ -166,9 +168,12 @@ export function walkUp(
   start: Unit,
   isEntry: (unit: Unit) => boolean,
   maxDepth: number,
+  /** Stop at units with more callers than this; undefined never stops. */
+  hubCallers?: number,
 ): UpWalk {
   const interactions: Interaction[] = [];
   const roots = new Set<string>();
+  const hubs = new Map<string, string[]>();
   const seen = new Set<string>();
   const queue: [Unit, number][] = [[start, 0]];
   while (queue.length > 0) {
@@ -184,23 +189,37 @@ export function walkUp(
       roots.add(unit.id);
       continue;
     }
+    if (hubCallers !== undefined && callers.length > hubCallers) {
+      roots.add(unit.id);
+      hubs.set(unit.id, callers.map((caller) => caller.unit.id));
+      continue;
+    }
     for (const caller of callers) {
       interactions.push({ from: caller.unit.id, to: unit.id, kind: caller.kind, order: caller.order });
       queue.push([caller.unit, depth + 1]);
     }
   }
-  return { interactions, roots: [...roots] };
+  return { interactions, roots: [...roots], hubs };
 }
 
-/** From a touched unit down through what it uses, `maxDepth` levels. */
-export function walkDown(walker: Walker, start: Unit, maxDepth: number): Interaction[] {
+export interface DownWalk {
+  interactions: Interaction[];
+  /** Callees left out per unit because of `maxCallees`. */
+  hidden: Map<string, number>;
+}
+
+/** From a touched unit down through what it uses, `maxDepth` levels, `maxCallees` per unit. */
+export function walkDown(walker: Walker, start: Unit, maxDepth: number, maxCallees: number): DownWalk {
   const interactions: Interaction[] = [];
+  const hidden = new Map<string, number>();
   const seen = new Set<string>([start.id]);
   let level = [start];
   for (let depth = 0; depth < maxDepth && level.length > 0; depth++) {
     const next: Unit[] = [];
     for (const unit of level) {
-      for (const callee of walker.calleesOf(unit)) {
+      const callees = walker.calleesOf(unit);
+      if (callees.length > maxCallees) hidden.set(unit.id, callees.length - maxCallees);
+      for (const callee of callees.slice(0, maxCallees)) {
         interactions.push({ from: unit.id, to: callee.unit.id, kind: callee.kind, order: callee.order });
         if (!seen.has(callee.unit.id)) {
           seen.add(callee.unit.id);
@@ -210,5 +229,5 @@ export function walkDown(walker: Walker, start: Unit, maxDepth: number): Interac
     }
     level = next;
   }
-  return interactions;
+  return { interactions, hidden };
 }

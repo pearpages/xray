@@ -69,19 +69,25 @@ export function renderSequenceDiagram(
     lines.push(`  ${alias.get(message.from)}->>${alias.get(message.to)}: ${message.kind}`);
   }
   if (shown.length === 0) lines.push(`  Note over ${alias.get(participants[0]!)}: changed`);
+  for (const [id, count] of Object.entries(feature.hiddenCallees)) {
+    if (alias.has(id)) lines.push(`  Note right of ${alias.get(id)}: and ${count} more`);
+  }
   if (messages.length > shown.length) {
     lines.push(`  Note over ${alias.get(participants[0]!)}: ${messages.length - shown.length} more interaction(s) not shown`);
   }
   return lines.join("\n");
 }
 
-function unitList(ids: string[], units: Record<string, InteractionUnit>): string {
+function unitList(ids: string[], units: Record<string, InteractionUnit>, limit = Infinity): string {
+  const more = ids.length > limit ? ` and ${ids.length - limit} more` : "";
   return ids
+    .slice(0, limit)
     .map((id) => {
       const unit = units[id];
-      return unit ? `${inlineCode(unit.name)}${unit.change ? MARKER[unit.change] : ""}` : inlineCode(id);
+      const name = unit?.name ?? id.slice(id.lastIndexOf("#") + 1);
+      return `${inlineCode(name)}${unit?.change ? MARKER[unit.change] : ""}`;
     })
-    .join(", ");
+    .join(", ") + more;
 }
 
 const MISSING_MAP =
@@ -116,8 +122,11 @@ export function renderInteractionsSection(analysis: InteractionsAnalysis, maxDia
     analysis.features.slice(0, maxDiagrams).forEach((feature, index) => {
       const diagram = ["```mermaid", renderSequenceDiagram(feature, units), "```"];
       const title = feature.description ? `${feature.name} — ${feature.description}` : feature.name;
-      if (index === 0) out.push("", `### ${title}`, "", ...diagram);
-      else out.push("", `<details><summary>${title}</summary>`, "", ...diagram, "", "</details>");
+      const shared = feature.sharedBy
+        ? [`Used by ${feature.sharedBy.length}: ${unitList(feature.sharedBy, units, 12)}`, ""]
+        : [];
+      if (index === 0) out.push("", `### ${title}`, "", ...shared, ...diagram);
+      else out.push("", `<details><summary>${title}</summary>`, "", ...shared, ...diagram, "", "</details>");
     });
     if (analysis.features.length > maxDiagrams) {
       out.push(
