@@ -39,7 +39,14 @@ function holdsFunction(initializer: Node | undefined): boolean {
 export function unitsOf(sourceFile: SourceFile, file: string): Unit[] {
   const defaultName = defaultExportName(sourceFile);
   const units: Unit[] = [];
-  const add = (name: string, node: Node, statement: Node, nameNode?: Identifier, kind: Unit["kind"] = "code") =>
+  const add = (
+    name: string,
+    node: Node,
+    statement: Node,
+    nameNode?: Identifier,
+    kind: Unit["kind"] = "code",
+    isDefault = false,
+  ) =>
     units.push({
       id: `${file}#${name}`,
       file,
@@ -47,14 +54,15 @@ export function unitsOf(sourceFile: SourceFile, file: string): Unit[] {
       node,
       statement,
       nameNode,
-      isDefaultExport: name === "default" || name === defaultName,
+      isDefaultExport: isDefault || name === "default" || name === defaultName,
       kind,
     });
 
   for (const statement of sourceFile.getStatements()) {
     if (Node.isFunctionDeclaration(statement) || Node.isClassDeclaration(statement)) {
       const nameNode = statement.getNameNode();
-      add(nameNode?.getText() ?? "default", statement, statement, nameNode);
+      // `export default function Cart()` is the default export without an `export default Cart;`.
+      add(nameNode?.getText() ?? "default", statement, statement, nameNode, "code", statement.isDefaultExport());
     } else if (Node.isVariableStatement(statement)) {
       for (const declaration of statement.getDeclarations()) {
         const nameNode = declaration.getNameNode();

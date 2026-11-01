@@ -130,6 +130,22 @@ describe("analyzeInteractions", () => {
     expect(interactions.unmapped).toEqual(["src/Account.tsx#Account"]);
   });
 
+  it("links a lazy import() to the default export it loads", async () => {
+    // Pages are entry points by default; with no entry globs the walk goes past Cart to App.
+    const { interactions } = await analyse(
+      {
+        "src/pages/Cart.tsx":
+          'import { PriceTag } from "@/components/PriceTag";\nimport { useCart } from "@/hooks/useCart";\n' +
+          "export default function Cart() {\n  const cart = useCart();\n  return <s><PriceTag amount={cart.total} /></s>;\n}\n",
+      },
+      undefined,
+      { interactions: { entryGlobs: [] } },
+    );
+    expect(edges(interactions, "root")).toEqual(
+      expect.arrayContaining(["App -renders-> Cart", "Cart -lazy-loads-> Cart", "root -renders-> App"]),
+    );
+  });
+
   it("stops at a hub without a feature map, and shows who shares it", async () => {
     const { interactions } = await analyse(
       { "src/lib/format.ts": "export const formatPrice = (n: number) => `${n.toFixed(2)} EUR`;\n" },
