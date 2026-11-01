@@ -10,10 +10,10 @@ item, and add a dated line at the top of **Done**.
 - [ ] **Analysis 4 — public API / contracts**: diff exports (types, functions, props) between base and PR with ts-morph, and endpoints (OpenAPI or routes) → compatible/breaking, list affected usages.
 - [ ] **Analysis 5 — bundle size**: build base and PR, compare chunks (gzip/brotli), flag over a configurable threshold and name the causing dependency/import.
 - [ ] **Claude skill, part 2**: explain the diagrams and risks of a report (part 1, the feature map, is done).
-- [ ] **Decide ADR-0006** (plugin distribution, `--inventory`) — Proposed — `docs/adr/`.
 
 ## Done
 
+- [x] 2026-11-01: ADR-0006 accepted; the feature map skill confirmed working when installed from GitHub.
 - [x] 2026-11-01: Feature map skill (`/xray:features`) as a Claude Code plugin in this repo, with `xray --inventory`; tried on pearpages/dummy (map valid, report names Catalogue and Cart). Fixed `export default function` not being seen as a default export (lazy imports were lost).
 - [x] 2026-11-01: Analysis 2 (interactions) released: merged `feat/interactions` into main ([ADR-0004](docs/adr/0004-interactions-analysis.md), [ADR-0005](docs/adr/0005-interactions-refinements.md)).
 - [x] 2026-11-01: ADR-0005 accepted (lookup tables and `reads`, hub cut-off without a map, one level of callees, 6 per unit).

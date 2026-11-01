@@ -1,7 +1,7 @@
 # 0006. The feature map skill ships as a Claude Code plugin from this repo
 
 - **Date:** 2026-11-01
-- **Status:** Proposed
+- **Status:** Accepted
 
 ## Context
 
