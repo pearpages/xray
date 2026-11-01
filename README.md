@@ -58,7 +58,8 @@ jobs:
 ```
 
 The report is also appended to the *job summary* and exposed as the `report-path` output.
-On PRs from forks `GITHUB_TOKEN` is read-only, so the comment will fail.
+On PRs from forks `GITHUB_TOKEN` is read-only: the comment step then logs a warning instead of failing,
+and the report is still in the job summary.
 
 ## Configuration (`xray.config.json`)
 

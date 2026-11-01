@@ -19,12 +19,14 @@ unfixed vulnerability.
   bundle builds) change this and must be reviewed here first.
 - **Write token in CI.** The Action uses `GITHUB_TOKEN` with `pull-requests: write` to create or
   update one comment, via the REST API at `GITHUB_API_URL`. It is meant for `pull_request` events,
-  where fork PRs get a read-only token; using it on `pull_request_target` would give fork code a
+  where fork PRs get a read-only token (the comment step then only warns; the report stays in the
+  job summary); using it on `pull_request_target` would give fork code a
   write token alongside the checkout and is not supported.
 - **Shell injection.** `action.yml` passes inputs (`base`, `config`) to scripts through `env`, never
   by interpolating workflow expressions into `run:` bodies.
 - **Report content.** File paths from the PR end up in the comment's Markdown and Mermaid labels.
-  Mermaid labels are quoted and `"` is escaped; other Markdown in file names is not escaped.
+  Mermaid labels are quoted and `"` is escaped; in Markdown, file names are always inside a code
+  span whose fence is longer than any backtick run in the name, so they cannot inject Markdown.
 
 ## Secrets
 
@@ -38,13 +40,12 @@ unfixed vulnerability.
 - Runtime dependencies are kept minimal: `dependency-cruiser`, `typescript` (core) and `commander`
   (cli). The comment script uses Node's built-in `fetch`, no Octokit.
 - `package-lock.json` is committed; CI and the Action install with `npm ci`.
-- Third-party actions (`actions/checkout`, `actions/setup-node`) are referenced by major tag, not
-  by commit SHA.
+- Third-party actions (`actions/checkout`, `actions/setup-node`) are pinned by commit SHA, with the
+  version in a comment.
 - No automated update/audit job yet.
 
 ## Known risks
 
-- Actions pinned by tag can change under us — accepted for now, follow-up in [tasks.md](tasks.md).
 - The Action installs xray's dependencies from npm on every run
   ([ADR-0003](docs/adr/0003-action-builds-at-runtime.md)), so a compromised dependency release
   would run in consumers' CI — mitigated only by the committed lockfile.

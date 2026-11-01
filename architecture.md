@@ -59,7 +59,8 @@ flowchart LR
 4. `reportSections` renders each analysis to a section; `renderReport` adds the marker and header.
 5. In CI, the Action runs the CLI with `--head` set to the PR's head commit (the checkout itself is
    GitHub's temporary merge commit), writes the report to `$RUNNER_TEMP`, appends it to the job
-   summary, and the comment script PATCHes the existing comment carrying the marker or POSTs a new one.
+   summary, and the comment script PATCHes the existing comment carrying the marker or POSTs a new one. A 403/404
+   from the API (read-only token on fork PRs) is a warning, not a failure.
 
 No state is kept between runs other than the PR comment itself.
 

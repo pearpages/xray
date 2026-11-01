@@ -10,17 +10,19 @@ item, and add a dated line at the top of **Done**.
 - [ ] **Analysis 4 — public API / contracts**: diff exports (types, functions, props) between base and PR with ts-morph, and endpoints (OpenAPI or routes) → compatible/breaking, list affected usages.
 - [ ] **Analysis 5 — bundle size**: build base and PR, compare chunks (gzip/brotli), flag over a configurable threshold and name the causing dependency/import.
 - [ ] **Claude skill** on top of the CLI that explains the diagrams and risks.
-- [ ] Run the Action on a real PR (needs a GitHub remote) and check the Mermaid diagram renders in the comment.
 
 ### Scaffold follow-ups
 
 - [ ] **Decide ADR-0002 and ADR-0003** — recorded as Proposed from this session's choices — `docs/adr/`.
 - [ ] **Vulnerability reporting channel** — security.md has a TODO until the repo is public — enable GitHub private advisories.
-- [ ] **Pin third-party actions by SHA** — tags can move — `action.yml`, `.github/workflows/`.
-- [ ] **Bundle the Action** (ncc or similar) if the per-run `npm ci` + build gets too slow — ADR-0003 trade-off.
 
 ## Done
 
+- [x] 2026-11-01: Bundling the Action dropped as not needed: on pearpages/dummy the whole job takes ~12 s (`npm ci` ~2 s, build ~2 s).
+- [x] 2026-11-01: Third-party actions pinned by commit SHA (`actions/checkout`, `actions/setup-node` v4.4.0).
+- [x] 2026-11-01: File names in the report escape backticks; comment step warns instead of failing on 403/404 (fork PRs).
+- [x] 2026-11-01: Tests for the comment API calls (fake GitHub) and for uncommitted/untracked files in the diff.
+- [x] 2026-11-01: Action verified on a real PR (pearpages/dummy#3): comment created, updated in place, Mermaid renders.
 - [x] 2026-11-01: Report header shows the PR's head commit in CI, not GitHub's temporary merge commit (`--head`).
 - [x] 2026-11-01: Report, CLI and README text switched from Spanish to English.
 - [x] 2026-11-01: README names the MIT license.
