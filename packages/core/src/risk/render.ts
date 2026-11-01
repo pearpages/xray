@@ -1,5 +1,6 @@
 import { inlineCode } from "../dependencies/render.js";
 import { splitUnitId } from "../interactions/analyze.js";
+import { disambiguators } from "../interactions/render.js";
 import { evidenceStrength, type Light, type RiskAnalysis, type TestEvidence, type UnitRisk } from "./analyze.js";
 
 const DOT: Record<Light, string> = { green: "🟢", yellow: "🟡", red: "🔴" };
@@ -54,6 +55,8 @@ export function renderRiskSection(risk: RiskAnalysis): string {
   if (risk.units.length === 0) return "No function, component or hook changed in this PR.";
 
   const byId = new Map(risk.units.map((unit) => [unit.id, unit]));
+  const labels = disambiguators(risk.units.map((unit) => unit.id));
+  const nameOf = (unit: UnitRisk) => `${inlineCode(unit.name)}${labels.has(unit.id) ? ` (${labels.get(unit.id)})` : ""}`;
   const out = [summary(risk)];
   if (risk.features.length > 0) {
     // Green features only as a count: on a broad PR they are most of the list.
@@ -73,7 +76,7 @@ export function renderRiskSection(risk: RiskAnalysis): string {
       .sort((a, b) => ({ red: 0, yellow: 1, green: 2 })[a.light] - ({ red: 0, yellow: 1, green: 2 })[b.light])
       .map(
         (unit) =>
-          `| ${DOT[unit.light]} | ${inlineCode(unit.name)}${unit.change === "added" ? " 🆕" : ""} | ` +
+          `| ${DOT[unit.light]} | ${nameOf(unit)}${unit.change === "added" ? " 🆕" : ""} | ` +
           `${evidenceText(unit.evidence)} | ${complexityText(unit)} |`,
       ),
   );
@@ -85,7 +88,7 @@ export function renderRiskSection(risk: RiskAnalysis): string {
   if (risk.growing.length > 0) {
     const growing = risk.growing.map((id) => {
       const unit = byId.get(id)!;
-      return `${inlineCode(unit.name)} ${unit.complexity.before} → ${unit.complexity.after}`;
+      return `${nameOf(unit)} ${unit.complexity.before} → ${unit.complexity.after}`;
     });
     out.push("", `**Growing complexity:** ${growing.join(", ")}`);
   }

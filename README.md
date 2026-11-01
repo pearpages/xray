@@ -110,8 +110,15 @@ Every field is optional:
   complexity grew by at least this much, is red.
 - `risk.indirectDepth`: how many callers up a test may sit and still count as evidence.
 - `risk.coverage`: lcov reports to read (default: `coverage/lcov.info` at the root and in each
-  workspace package, when present). Produce them in the workflow before the xray step, e.g.
-  `npx vitest run --coverage --coverage.reporter=lcov`; xray itself never runs tests.
+  workspace package, when present). Produce them in the workflow before the xray step; xray itself
+  never runs tests. With Vitest, call it directly (`pnpm test -- …` passes a literal `--`, after
+  which Vitest ignores flags) and keep the report even if a test fails or slows down under
+  instrumentation:
+
+  ```yaml
+  - run: npx vitest run --coverage --coverage.reporter=lcov --coverage.reportOnFailure --testTimeout=60000
+    continue-on-error: true # the project's CI is where tests gate the PR
+  ```
 - `bundle.enabled`: measure bundle size (also `--bundle`, or the Action's `bundle: "true"`).
   `bundle.install`, `bundle.build` and `bundle.outDir` override what xray detects: the lockfile's
   install command, `vite build --sourcemap hidden` for Vite projects (at a workspace root: in the one
