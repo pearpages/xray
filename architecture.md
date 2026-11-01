@@ -41,7 +41,8 @@ flowchart LR
 | `packages/core/src/git.ts` | Resolving the merge base (`<base>` or `origin/<base>`), the changed files and changed line ranges (diff to the working tree + untracked files, relative to the analysed folder), and file contents on the base |
 | `packages/core/src/config.ts` | `xray.config.json` loading and defaults (`roots`, `tsConfig`, `exclude`, `dependencies.*`, `interactions.*`) |
 | `packages/core/src/dependencies/` | Analysis 1: cruise the project, keep changed modules + direct neighbours, render the Mermaid flowchart |
-| `packages/core/src/interactions/project.ts`, `workspaces.ts` | Loading the ts-morph project: the root tsconfig, or every workspace package at a workspace root, with workspace package names resolved to source |
+| `packages/core/src/workspaces.ts` | Workspace discovery (`pnpm-workspace.yaml`, `workspaces`) and mapping package names and subpath exports to files, for both analyses (CI has no `node_modules`) |
+| `packages/core/src/interactions/project.ts` | Loading the ts-morph project: the root tsconfig, or every workspace package at a workspace root, with workspace package names resolved to source |
 | `packages/core/src/interactions/units.ts` | Units: top-level functions, components, hooks, classes and lookup tables, found per file and by enclosing node |
 | `packages/core/src/interactions/walk.ts` | Classifying references (renders, uses, calls, lazy-loads, mounts, reads) and walking callers up and callees down |
 | `packages/core/src/interactions/features.ts`, `analyze.ts` | The feature map, and grouping touched units into features (map features, entry points, shared hubs) |
@@ -61,7 +62,7 @@ flowchart LR
 1. `resolveMergeBase` finds the commit the branch forked from; `getChangedFiles` lists what changed
    since then (`git diff --name-status -M` + `git ls-files --others`).
 2. `analyzeDependencies` cruises the configured `roots` once with dependency-cruiser (using the
-   repo's tsconfig for path aliases), normalises every path to repo-relative POSIX, and builds the
+   repo's tsconfig for path aliases, and exact aliases for workspace packages at a workspace root), normalises every path to repo-relative POSIX, and builds the
    module graph. Type-only and dynamic imports are kept as edge flags; npm/Node modules are dropped
    unless `includeExternal`.
 3. `selectNeighbourhood` keeps the changed modules plus whatever they import and whatever imports

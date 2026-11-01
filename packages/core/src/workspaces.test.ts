@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { resolveConfig } from "../config.js";
-import { analyzePullRequest } from "../index.js";
-import { GitFixture } from "../testing/git-fixture.js";
-import { discoverWorkspace, parsePnpmWorkspace, workspaceResolver } from "./workspaces.js";
+import { resolveConfig } from "./config.js";
+import { analyzePullRequest } from "./index.js";
+import { GitFixture } from "./testing/git-fixture.js";
+import { discoverWorkspace, parsePnpmWorkspace, workspaceAliases, workspaceResolver } from "./workspaces.js";
 
 const tsconfig = JSON.stringify({ compilerOptions: { jsx: "react-jsx", strict: true }, include: ["src"] });
 
@@ -14,13 +14,18 @@ const MONOREPO = {
   "packages/domain/tsconfig.json": tsconfig,
   "packages/domain/src/index.ts": 'export { total } from "./cart";\n',
   "packages/domain/src/cart.ts": "export const total = (prices: number[]) => prices.reduce((a, b) => a + b, 0);\n",
-  "packages/ui/package.json": JSON.stringify({ name: "@shop/ui", main: "./dist/index.js" }),
+  "packages/ui/package.json": JSON.stringify({
+    name: "@shop/ui",
+    main: "./dist/index.js",
+    exports: { ".": "./dist/index.js", "./theme.css": "./src/theme.css" },
+  }),
+  "packages/ui/src/theme.css": ":root { --gap: 4px; }\n",
   "packages/ui/tsconfig.json": tsconfig,
   "packages/ui/src/index.tsx": "export const Money = ({ value }: { value: number }) => <b>{value}</b>;\n",
   "packages/app/package.json": JSON.stringify({ name: "@shop/app", dependencies: { "@shop/domain": "workspace:*" } }),
   "packages/app/tsconfig.json": tsconfig,
   "packages/app/src/pages/Cart.tsx":
-    'import { total } from "@shop/domain";\nimport { Money } from "@shop/ui";\n' +
+    'import { total } from "@shop/domain";\nimport { Money } from "@shop/ui";\nimport "@shop/ui/theme.css";\n' +
     "export const Cart = () => <Money value={total([1, 2])} />;\n",
 };
 
@@ -51,7 +56,34 @@ describe("workspaces", () => {
     expect(resolve("@shop/domain")).toMatch(/packages\/domain\/src\/index\.ts$/);
     expect(resolve("@shop/ui")).toMatch(/packages\/ui\/src\/index\.tsx$/);
     expect(resolve("@shop/domain/missing")).toBeUndefined();
+    // CSS is not TypeScript: the interactions resolver leaves it out, the aliases keep it.
+    expect(resolve("@shop/ui/theme.css")).toBeUndefined();
+    expect(Object.keys(workspaceAliases(packages)).sort()).toEqual([
+      "@shop/domain$",
+      "@shop/ui$",
+      "@shop/ui/theme.css$",
+    ]);
     expect(resolve("react")).toBeUndefined();
+  });
+
+  it("draws a changed app page's imports from other workspace packages", async () => {
+    fixture = new GitFixture().write(MONOREPO).commit("base").branch("feature");
+    fixture.write({
+      "packages/app/src/pages/Cart.tsx":
+        'import { total } from "@shop/domain";\nimport { Money } from "@shop/ui";\nimport "@shop/ui/theme.css";\n' +
+        "export const Cart = () => <p><Money value={total([1, 2])} /></p>;\n",
+    }).commit("change");
+
+    const { dependencies } = await analyzePullRequest({
+      cwd: fixture.root,
+      base: "main",
+      config: resolveConfig(fixture.root),
+    });
+    expect(dependencies.edges.map((edge) => `${edge.from} -> ${edge.to}`).sort()).toEqual([
+      "packages/app/src/pages/Cart.tsx -> packages/domain/src/index.ts",
+      "packages/app/src/pages/Cart.tsx -> packages/ui/src/index.tsx",
+      "packages/app/src/pages/Cart.tsx -> packages/ui/src/theme.css",
+    ]);
   });
 
   it("follows a change in a shared package into the app that imports it", async () => {

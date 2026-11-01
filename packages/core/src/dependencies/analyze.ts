@@ -4,6 +4,7 @@ import { cruise, type ICruiseResult, type IDependency } from "dependency-cruiser
 import extractTSConfig from "dependency-cruiser/config-utl/extract-ts-config";
 import type { XrayConfig } from "../config.js";
 import type { ChangedFile, ChangeStatus } from "../git.js";
+import { discoverWorkspace, workspaceAliases } from "../workspaces.js";
 
 export type NodeKind = "source" | "test" | "external";
 
@@ -65,6 +66,7 @@ async function cruiseProject(
       warnings.push(`Could not read ${config.tsConfig}: ${(error as Error).message}`);
     }
   }
+  const workspace = discoverWorkspace(cwd);
   const result = await cruise(
     config.roots,
     {
@@ -74,7 +76,8 @@ async function cruiseProject(
       tsPreCompilationDeps: true,
       ...(tsConfig && config.tsConfig ? { tsConfig: { fileName: join(cwd, config.tsConfig) } } : {}),
     },
-    {},
+    // CI has no node_modules: map workspace package names to their files ourselves.
+    workspace ? { alias: workspaceAliases(workspace) } : {},
     tsConfig ? { tsConfig } : {},
   );
   if (typeof result.output === "string") {

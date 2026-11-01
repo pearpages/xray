@@ -5,7 +5,7 @@ import { loadFeatureMap, type FeatureDefinition, type FeatureMapStatus } from ".
 import { loadProject } from "./project.js";
 import { UnitIndex, type Unit } from "./units.js";
 import { Walker } from "./walk.js";
-import { discoverWorkspace } from "./workspaces.js";
+import { discoverWorkspace } from "../workspaces.js";
 
 /** Why a unit might start a feature. */
 export type CandidateReason = "entry-glob" | "unused-export" | "hub";

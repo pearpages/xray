@@ -2,7 +2,7 @@ import { existsSync, realpathSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import { Project, ts, type SourceFile } from "ts-morph";
 import type { XrayConfig } from "../config.js";
-import { discoverWorkspace, workspaceResolver } from "./workspaces.js";
+import { discoverWorkspace, workspaceResolver } from "../workspaces.js";
 
 export interface LoadedProject {
   project: Project;

@@ -5,7 +5,10 @@ export interface WorkspacePackage {
   name: string;
   /** Folder relative to the workspace root. */
   dir: string;
-  /** `exports`-style subpath (".", "./utils") → absolute source file. */
+  /**
+   * `exports`-style subpath (".", "./tokens.css") → absolute file. "." prefers
+   * TypeScript source over built output; other subpaths keep any existing file.
+   */
   entries: Map<string, string>;
 }
 
@@ -85,10 +88,15 @@ function pickTarget(target: unknown): string | undefined {
 function entriesOf(root: string, dir: string, manifest: Record<string, unknown>): Map<string, string> {
   const entries = new Map<string, string>();
   const packageDir = join(root, dir);
+  const isSource = (file: string | undefined) => !!file && SOURCE.test(file) && !file.endsWith(".d.ts");
   const accept = (subpath: string, target: string | undefined) => {
     if (!target || target.includes("*")) return;
     const file = join(packageDir, target);
-    if (SOURCE.test(file) && !file.endsWith(".d.ts") && existsSync(file)) entries.set(subpath, file);
+    if (file.endsWith(".d.ts") || !existsSync(file)) return;
+    // "." may be replaced by source found later; anything else is kept as the package exports it.
+    if (!entries.has(subpath) || (subpath === "." && !isSource(entries.get(".")) && isSource(file))) {
+      entries.set(subpath, file);
+    }
   };
 
   const exports = manifest.exports;
@@ -100,11 +108,11 @@ function entriesOf(root: string, dir: string, manifest: Record<string, unknown>)
     accept(".", pickTarget(exports));
   }
   for (const field of ["source", "module", "main", "types"]) {
-    if (!entries.has(".")) accept(".", manifest[field] as string | undefined);
+    if (!isSource(entries.get("."))) accept(".", manifest[field] as string | undefined);
   }
   // Built-only packages (dist/…): source usually sits in src/index.
   for (const fallback of ["src/index.ts", "src/index.tsx", "index.ts", "index.tsx"]) {
-    if (!entries.has(".")) accept(".", fallback);
+    if (!isSource(entries.get("."))) accept(".", fallback);
   }
   return entries;
 }
@@ -121,7 +129,21 @@ export function discoverWorkspace(root: string): WorkspacePackage[] | undefined 
   return packages;
 }
 
-/** Resolves `@scope/pkg` or `@scope/pkg/sub` to a workspace package's source file. */
+/**
+ * Exact-match aliases (`@scope/pkg$` → file) for resolvers like enhanced-resolve,
+ * so workspace imports resolve without node_modules.
+ */
+export function workspaceAliases(packages: WorkspacePackage[]): Record<string, string> {
+  const aliases: Record<string, string> = {};
+  for (const pkg of packages) {
+    for (const [subpath, file] of pkg.entries) {
+      aliases[`${subpath === "." ? pkg.name : `${pkg.name}/${subpath.slice(2)}`}$`] = file;
+    }
+  }
+  return aliases;
+}
+
+/** Resolves `@scope/pkg` or `@scope/pkg/sub` to a workspace package's TypeScript source file. */
 export function workspaceResolver(packages: WorkspacePackage[]): (specifier: string) => string | undefined {
   const byName = new Map(packages.map((pkg) => [pkg.name, pkg]));
   return (specifier) => {
@@ -130,6 +152,7 @@ export function workspaceResolver(packages: WorkspacePackage[]): (specifier: str
     const pkg = byName.get(parts.slice(0, nameLength).join("/"));
     if (!pkg) return undefined;
     const rest = parts.slice(nameLength).join("/");
-    return pkg.entries.get(rest ? `./${rest}` : ".");
+    const file = pkg.entries.get(rest ? `./${rest}` : ".");
+    return file && SOURCE.test(file) && !file.endsWith(".d.ts") ? file : undefined;
   };
 }

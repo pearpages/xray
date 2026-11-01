@@ -147,9 +147,14 @@ entry points that no longer exist and pages no feature claims.
 ## Monorepos
 
 Run xray from the workspace root (`pnpm-workspace.yaml` or `workspaces` in `package.json`).
-Every package with a `tsconfig.json` is analysed together, and workspace imports such as
-`@acme/domain` resolve to that package's source (`exports`, `main`, or `src/index.ts`), with no
-`node_modules` needed, so a change in a shared package shows up in the screens that use it.
+Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that package's files
+(`exports`, `main`, or `src/index.ts`) with no `node_modules` needed, in both analyses:
+
+- **Dependencies** shows a changed file's imports from, and importers in, other packages.
+  Neighbours are direct: when a package is imported through its `index.ts`, a change deeper in that
+  package shows the `index.ts`, not the apps behind it.
+- **Interactions** analyses every package with a `tsconfig.json` together, so a change in a shared
+  package is followed into the screens that use it.
 
 ## Analyses
 
