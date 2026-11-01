@@ -70,7 +70,18 @@ Every field is optional:
   "roots": ["src"],
   "tsConfig": "tsconfig.json",
   "exclude": ["(^|/)node_modules/", "(^|/)(dist|build|coverage|\\.next)/"],
-  "dependencies": { "maxNodes": 60, "includeExternal": false }
+  "dependencies": { "maxNodes": 60, "includeExternal": false },
+  "interactions": {
+    "entryGlobs": ["**/src/main.{ts,tsx,js,jsx}", "**/src/{pages,routes,screens,views}/**", "**/app/**/{page,layout,route}.{ts,tsx,js,jsx}", "**/pages/**"],
+    "ignore": [],
+    "depthUp": 6,
+    "depthDown": 1,
+    "maxCallees": 6,
+    "hubCallers": 8,
+    "maxDiagrams": 5,
+    "maxTouchedUnits": 40,
+    "featureMap": "xray.features.json"
+  }
 }
 ```
 
@@ -79,6 +90,48 @@ Every field is optional:
 - `dependencies.maxNodes`: node limit for the diagram; neighbours connected to more changed modules
   are kept first, and the report says how many were left out.
 - `dependencies.includeExternal`: show npm packages and Node modules as neighbours.
+- `interactions.entryGlobs`: files whose functions and components are entry points (pages, routes,
+  screens). The feature map's entry points always count too.
+- `interactions.ignore`: extra globs left out of the walk. Tests (`*.test.*`, `*.spec.*`,
+  `__tests__/`) and stories (`*.stories.*`) are always left out.
+- `interactions.depthUp` / `depthDown`: how far to follow callers up and callees down.
+- `interactions.maxCallees`: callees drawn per unit; the rest are counted.
+- `interactions.hubCallers`: without a feature map, a unit with more callers than this (a store hook,
+  a shared layout) ends the walk and is shown once as a shared feature.
+- `interactions.maxDiagrams` / `maxTouchedUnits`: limits that keep the comment readable; past
+  `maxTouchedUnits` only the list of changed units is shown.
+
+## Feature map (`xray.features.json`)
+
+Optional. It names the product's features so diagrams say "Cart" instead of a component name:
+
+```json
+{
+  "version": 1,
+  "features": [
+    {
+      "id": "cart",
+      "name": "Cart",
+      "description": "See and pay for what you added",
+      "entryPoints": ["src/pages/Cart.tsx#Cart"],
+      "files": ["src/cart/**"]
+    }
+  ]
+}
+```
+
+- `entryPoints` are `path#name` units where the feature starts; the walk stops there.
+- `files` (optional) claims changed code even when no walk reaches an entry point.
+- xray only reads this file. It is meant to be written and updated by the xray skill in Claude Code
+  and reviewed like code; the report lists changed code no feature covers.
+- Without it, every entry point reached is its own feature and the section says the map is missing.
+
+## Monorepos
+
+Run xray from the workspace root (`pnpm-workspace.yaml` or `workspaces` in `package.json`).
+Every package with a `tsconfig.json` is analysed together, and workspace imports such as
+`@acme/domain` resolve to that package's source (`exports`, `main`, or `src/index.ts`), with no
+`node_modules` needed, so a change in a shared package shows up in the screens that use it.
 
 ## Analyses
 
@@ -86,8 +139,10 @@ Every field is optional:
    neighbours (what they import and what imports them) according to dependency-cruiser, in a Mermaid
    diagram grouped by folder with the changed modules highlighted. Distinguishes type-only imports,
    dynamic imports and tests.
-2. **Interactions** — ts-morph: touched functions/components → references up to entry points and 1-2
-   levels down → sequence diagrams per feature, using a feature map versioned in the repo.
+2. **Interactions** ✅ — with ts-morph, finds the functions, components and hooks the diff touches,
+   follows who renders, calls, uses, lazy-loads or mounts them up to entry points, and what they use
+   one level down. One Mermaid sequence diagram per feature, named by the feature map when there is
+   one. Works across workspace packages.
 3. **Impact and risk** — coverage × complexity → traffic light.
 4. **Public API / contracts** — diff of exports and endpoints, compatible/breaking, affected usages.
 5. **Bundle size** — build base and PR, gzip/brotli chunks, configurable threshold and cause.
@@ -102,8 +157,9 @@ npm run build
 npm test -- --run
 ```
 
-Node 24 (pinned in `mise.toml`). `typescript` stays on the 6.x series: dependency-cruiser does not
-support TypeScript 7 yet (`>=2 <7`), and without it it does not analyse `.ts`/`.tsx` files.
+Node 24 (pinned in `mise.toml`). `typescript` stays on the 6.x series: TypeScript 7 has no
+JavaScript API, so dependency-cruiser and ts-morph both run on 6
+([ADR-0002](docs/adr/0002-typescript-6-for-dependency-cruiser.md)).
 
 ## License
 

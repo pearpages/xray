@@ -5,7 +5,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
-- [ ] **Analysis 2 — interactions** ([ADR-0004](docs/adr/0004-interactions-analysis.md)): stage 1 core walk on dummy, stage 2 workspaces on futbol-manager, then measure the Action (P6) and release.
+- [ ] **Analysis 2 — interactions** ([ADR-0004](docs/adr/0004-interactions-analysis.md)): built (stages 1 and 2); left: decide [ADR-0005](docs/adr/0005-interactions-refinements.md), measure the Action on dummy (P6), release.
 - [ ] **Analysis 1 in workspaces**: resolve workspace package imports without `node_modules`, so the dependency diagram and interactions agree on monorepos (ADR-0004).
 - [ ] **Analysis 3 — impact and risk**: cross changes with test coverage and complexity → traffic light; warn about features without tests or with growing complexity.
 - [ ] **Analysis 4 — public API / contracts**: diff exports (types, functions, props) between base and PR with ts-morph, and endpoints (OpenAPI or routes) → compatible/breaking, list affected usages.
@@ -14,6 +14,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Done
 
+- [x] 2026-11-01: Interactions built: single project (dummy) and workspaces (futbol-manager: 4 touched units, 3 features, ~1.1 s). Fixed changed-file paths when run from a monorepo package.
 - [x] 2026-11-01: ADR-0004 accepted: whole-workspace interactions in v1, built in two stages.
 - [x] 2026-11-01: ADR-0004 question 2 settled: without a feature map, draw per entry point and warn that the map is missing.
 - [x] 2026-11-01: ADR-0004 question 1 settled: the feature map is written by the Claude skill only; xray never calls an AI API.

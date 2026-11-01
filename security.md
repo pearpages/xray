@@ -14,8 +14,10 @@ sees the report. Never open a public issue for an unfixed vulnerability.
 ## Surface
 
 - **Input is untrusted PR content.** xray reads the PR's files, paths and `tsconfig.json`, but only
-  parses them statically (git, dependency-cruiser). It never runs the analysed project's code,
-  scripts or package installs. Analyses that need to execute the project (planned: tests coverage,
+  parses them statically (git, dependency-cruiser, ts-morph). It never runs the analysed project's
+  code, scripts or package installs; base versions of files are read with `git show`, not checked
+  out. Workspace `package.json` files and `pnpm-workspace.yaml` are read as data (JSON, and a
+  minimal line parser for the YAML) to map package names to folders. Analyses that need to execute the project (planned: tests coverage,
   bundle builds) change this and must be reviewed here first.
 - **Write token in CI.** The Action uses `GITHUB_TOKEN` with `pull-requests: write` to create or
   update one comment, via the REST API at `GITHUB_API_URL`. It is meant for `pull_request` events,
@@ -37,8 +39,8 @@ sees the report. Never open a public issue for an unfixed vulnerability.
 
 ## Dependencies
 
-- Runtime dependencies are kept minimal: `dependency-cruiser`, `typescript` (core) and `commander`
-  (cli). The comment script uses Node's built-in `fetch`, no Octokit.
+- Runtime dependencies are kept minimal: `dependency-cruiser`, `ts-morph`, `typescript` (core) and
+  `commander` (cli). The comment script uses Node's built-in `fetch`, no Octokit.
 - `package-lock.json` is committed; CI and the Action install with `npm ci`.
 - Third-party actions (`actions/checkout`, `actions/setup-node`) are pinned by commit SHA, with the
   version in a comment.
