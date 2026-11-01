@@ -1,0 +1,10 @@
+{
+  "name": "@xray/quality",
+  "version": "0.1.0",
+  "description": "Whole-repository quality report: one analyzer per metric, scores 0-100, a JSON report",
+  "type": "module",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "bin": { "xray-quality": "./dist/cli.js" },
+  "files": ["dist"],
+  "dependencies": { "@xray/core": "0.1.0", "commander": "^15.0.0" }
+}
