@@ -5,7 +5,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
-- [ ] **Analysis 2 — interactions** ([ADR-0004](docs/adr/0004-interactions-analysis.md)): built and measured on branch `feat/interactions`; left: decide [ADR-0005](docs/adr/0005-interactions-refinements.md), merge to main (release).
+- [ ] **Analysis 2 — interactions** ([ADR-0004](docs/adr/0004-interactions-analysis.md), [ADR-0005](docs/adr/0005-interactions-refinements.md)): built and measured on branch `feat/interactions`; left: merge to main (release), close pearpages/dummy#4.
 - [ ] **Analysis 1 in workspaces**: resolve workspace package imports without `node_modules`, so the dependency diagram and interactions agree on monorepos (ADR-0004).
 - [ ] **Analysis 3 — impact and risk**: cross changes with test coverage and complexity → traffic light; warn about features without tests or with growing complexity.
 - [ ] **Analysis 4 — public API / contracts**: diff exports (types, functions, props) between base and PR with ts-morph, and endpoints (OpenAPI or routes) → compatible/breaking, list affected usages.
@@ -14,6 +14,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Done
 
+- [x] 2026-11-01: ADR-0005 accepted (lookup tables and `reads`, hub cut-off without a map, one level of callees, 6 per unit).
 - [x] 2026-11-01: Action measured with interactions (P6) on pearpages/dummy#4: job 13 s (was ~12 s), install + build 3.5 s (was ~4 s), analysis 0.9 s. ts-morph adds ~13 MB, 7 packages.
 - [x] 2026-11-01: Interactions built: single project (dummy) and workspaces (futbol-manager: 4 touched units, 3 features, ~1.1 s). Fixed changed-file paths when run from a monorepo package.
 - [x] 2026-11-01: ADR-0004 accepted: whole-workspace interactions in v1, built in two stages.

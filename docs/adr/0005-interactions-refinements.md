@@ -1,7 +1,7 @@
 # 0005. Interactions: lookup tables, hubs and shallower callees
 
 - **Date:** 2026-11-01
-- **Status:** Proposed
+- **Status:** Accepted
 - **Amends:** [0004](0004-interactions-analysis.md) (the rest of it stands)
 
 ## Context

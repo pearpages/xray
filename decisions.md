@@ -15,7 +15,7 @@ accepted.
 | [0002](docs/adr/0002-typescript-6-for-dependency-cruiser.md) | Keep `typescript` on 6.x while dependency-cruiser does not support 7 | Accepted | 2026-11-01 |
 | [0003](docs/adr/0003-action-builds-at-runtime.md) | The composite Action builds xray on each run instead of committing `dist/` | Accepted | 2026-11-01 |
 | [0004](docs/adr/0004-interactions-analysis.md) | Interactions analysis: ts-morph walk, feature map and sequence diagrams | Accepted | 2026-11-01 |
-| [0005](docs/adr/0005-interactions-refinements.md) | Interactions: lookup tables, hubs and shallower callees (amends 0004) | Proposed | 2026-11-01 |
+| [0005](docs/adr/0005-interactions-refinements.md) | Interactions: lookup tables, hubs and shallower callees (amends 0004) | Accepted | 2026-11-01 |
 
 ## Format
 
