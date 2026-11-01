@@ -5,6 +5,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
+- [ ] **Project quality tool** ([ADR-0014](docs/adr/0014-project-quality-tool.md), Proposed): waiting for the owner's review; then phase 1 (hotspots, architecture, dependencies; CLI and UI), then phase 2 (coverage, duplication, lint and types).
 
 ## Done
 

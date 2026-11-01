@@ -24,6 +24,7 @@ accepted.
 | [0011](docs/adr/0011-barrels-coverage-and-routes.md) | Barrel importers, lcov coverage and Next.js route handlers | Accepted (delegated) | 2026-11-01 |
 | [0012](docs/adr/0012-pilot-follow-ups.md) | Pilot follow-ups: component entry points, folder diagrams, branch coverage | Accepted (delegated) | 2026-11-01 |
 | [0013](docs/adr/0013-per-package-tsconfig.md) | Each workspace package resolves imports with its own tsconfig | Accepted | 2026-11-01 |
+| [0014](docs/adr/0014-project-quality-tool.md) | Project quality: a whole-repository report next to the PR report | Proposed | 2026-11-01 |
 
 ## Format
 
