@@ -71,7 +71,7 @@ describe("analyzeInteractions", () => {
     ]);
     expect(edges(interactions, "root")).toEqual([
       "Account -renders-> PriceTag",
-      "App -mounts-> SCREENS",
+      "App -reads-> SCREENS",
       "PriceTag -calls-> formatPrice",
       "SCREENS -mounts-> Account",
       "root -renders-> App",

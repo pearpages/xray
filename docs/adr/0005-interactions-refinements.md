@@ -19,7 +19,9 @@ plan for:
 ## Decision
 
 - **Top-level object and array literals are units** (`kind: "table"`). They appear on the way up
-  (`SCREENS -mounts-> Account`), never on the way down, where they are just data.
+  (`App -reads-> SCREENS -mounts-> Account`), never on the way down, where they are just data. A new
+  relation, `reads`, marks code using a table as a value, so the arrow doesn't claim the table is
+  mounted. A changed table (`SYMBOLS = { EUR: "€" }`) counts as a touched unit.
 - **Without a feature map, the walk stops at hubs**: a unit with more than `interactions.hubCallers`
   (default 8) callers becomes the root, shown once as "`useGame` (shared by 25)" with the list of
   its users. With a map the walk goes through hubs, because the map already bounds the features.

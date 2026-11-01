@@ -140,7 +140,7 @@ Every package with a `tsconfig.json` is analysed together, and workspace imports
    diagram grouped by folder with the changed modules highlighted. Distinguishes type-only imports,
    dynamic imports and tests.
 2. **Interactions** ✅ — with ts-morph, finds the functions, components and hooks the diff touches,
-   follows who renders, calls, uses, lazy-loads or mounts them up to entry points, and what they use
+   follows who renders, calls, uses, lazy-loads, mounts or reads them up to entry points, and what they use
    one level down. One Mermaid sequence diagram per feature, named by the feature map when there is
    one. Works across workspace packages.
 3. **Impact and risk** — coverage × complexity → traffic light.

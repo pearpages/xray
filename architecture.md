@@ -43,7 +43,7 @@ flowchart LR
 | `packages/core/src/dependencies/` | Analysis 1: cruise the project, keep changed modules + direct neighbours, render the Mermaid flowchart |
 | `packages/core/src/interactions/project.ts`, `workspaces.ts` | Loading the ts-morph project: the root tsconfig, or every workspace package at a workspace root, with workspace package names resolved to source |
 | `packages/core/src/interactions/units.ts` | Units: top-level functions, components, hooks, classes and lookup tables, found per file and by enclosing node |
-| `packages/core/src/interactions/walk.ts` | Classifying references (renders, uses, calls, lazy-loads, mounts) and walking callers up and callees down |
+| `packages/core/src/interactions/walk.ts` | Classifying references (renders, uses, calls, lazy-loads, mounts, reads) and walking callers up and callees down |
 | `packages/core/src/interactions/features.ts`, `analyze.ts` | The feature map, and grouping touched units into features (map features, entry points, shared hubs) |
 | `packages/core/src/interactions/render.ts` | The Interactions section: table, sequence diagrams, warnings |
 | `packages/core/src/testing/` | Test-only helpers (a throwaway git repository); not built |

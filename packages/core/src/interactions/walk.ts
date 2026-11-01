@@ -1,7 +1,7 @@
 import { Node, SyntaxKind, type CallExpression, type Project, type SourceFile } from "ts-morph";
 import type { Unit, UnitIndex } from "./units.js";
 
-export type RelationKind = "renders" | "uses" | "calls" | "lazy-loads" | "mounts";
+export type RelationKind = "renders" | "uses" | "calls" | "lazy-loads" | "mounts" | "reads";
 
 export interface Interaction {
   from: string;
@@ -100,7 +100,9 @@ export class Walker {
     for (const reference of unit.nameNode?.findReferencesAsNodes() ?? []) {
       const file = this.fileOf(reference.getSourceFile());
       if (file === undefined || this.ignored(file)) continue;
-      const kind = classify(reference);
+      const classified = classify(reference);
+      // Using a lookup table as a value means reading it (`SCREENS[key]`), not mounting it.
+      const kind = classified === "mounts" && unit.kind === "table" ? "reads" : classified;
       const caller = kind && this.units.at(reference);
       if (kind && this.usable(caller, unit)) links.push({ unit: caller, kind, order: reference.getStart() });
     }
