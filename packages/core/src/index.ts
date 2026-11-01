@@ -13,6 +13,7 @@ export * from "./dependencies/analyze.js";
 export * from "./dependencies/render.js";
 export * from "./interactions/analyze.js";
 export * from "./interactions/features.js";
+export * from "./interactions/inventory.js";
 export * from "./interactions/render.js";
 export type { Interaction, RelationKind } from "./interactions/walk.js";
 
