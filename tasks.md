@@ -5,7 +5,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
-- [ ] **Analyses 4 and 5** ([ADR-0008](docs/adr/0008-public-api-analysis.md), [ADR-0009](docs/adr/0009-bundle-size-analysis.md)): built on branch `feat/api-and-bundle`; left: measure the Action on dummy (P6, with and without `bundle: "true"`), merge to main.
+- [ ] **Analyses 4 and 5** ([ADR-0008](docs/adr/0008-public-api-analysis.md), [ADR-0009](docs/adr/0009-bundle-size-analysis.md)): built and measured on branch `feat/api-and-bundle`; left: merge to main (release), close pearpages/dummy#6.
 
 ### Questions for you
 
@@ -33,6 +33,7 @@ updates the ADR it names (or starts one).
 
 ## Done
 
+- [x] 2026-11-01: Action measured (P6) on pearpages/dummy#6: default job 12 s (install + build 3.8 s, analysis 1 s: unchanged); with `bundle: "true"` 26 s (analysis 16.5 s for two installs and builds).
 - [x] 2026-11-01: Analysis 4 (public API) and 5 (bundle size, opt-in) built; dummy measured: +49 B gzip in 6 s; 62 tests. Bundle build errors are summarised (error lines, no colours or stack frames).
 - [x] 2026-11-01: `/xray:explain` skill: a reviewer's briefing from a report (PR comment via `gh`, or a local JSON run), checked on pearpages/dummy#3 and futbol-manager. The runner script moved to the plugin root, shared by both skills.
 - [x] 2026-11-01: Analysis 3 (impact and risk) released: merged `feat/risk` into main ([ADR-0007](docs/adr/0007-impact-and-risk-analysis.md)).
