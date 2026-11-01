@@ -49,7 +49,7 @@ jobs:
   xray:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # needed to find the merge base with the base branch
           persist-credentials: false # recommended; required if you enable bundle

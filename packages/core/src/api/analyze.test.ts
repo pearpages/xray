@@ -115,3 +115,9 @@ describe("analyzeApi", () => {
     expect(markdown).toContain("1 file, 1 test");
   });
 });
+
+describe("type text", () => {
+  it("ignores comments, so documenting a type is not a change", () => {
+    expect(diff("export type P = { /** the size */ size: number };", "export type P = { // px\n size: number };")).toEqual([]);
+  });
+});

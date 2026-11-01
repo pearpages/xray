@@ -1,0 +1,22 @@
+# Weekly dependency updates (security.md, "Dependencies"). Grouped so a week's bumps arrive
+# as one PR per ecosystem; each PR runs CI, and xray's own report, before anyone merges it.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm:
+        patterns: ["*"]
+    ignore:
+      # ADR-0002: TypeScript 7 has no JavaScript API; dependency-cruiser and ts-morph need 6.x.
+      - dependency-name: typescript
+        versions: [">=7"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

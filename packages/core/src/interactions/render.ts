@@ -78,16 +78,49 @@ export function renderSequenceDiagram(
   return lines.join("\n");
 }
 
+/**
+ * For units sharing a name (an app's FormStrip and the design system's), the first path
+ * segment where their files differ: `app`, `design-system`.
+ */
+export function disambiguators(ids: string[]): Map<string, string> {
+  const byName = new Map<string, string[]>();
+  for (const id of ids) {
+    const name = id.slice(id.lastIndexOf("#") + 1);
+    byName.set(name, [...(byName.get(name) ?? []), id]);
+  }
+  const labels = new Map<string, string>();
+  for (const group of byName.values()) {
+    if (group.length < 2) continue;
+    const paths = group.map((id) => id.slice(0, id.lastIndexOf("#")).split("/"));
+    const at = paths[0]!.findIndex((segment, index) => paths.some((path) => path[index] !== segment));
+    group.forEach((id, index) => labels.set(id, paths[index]![Math.max(at, 0)] ?? id));
+  }
+  return labels;
+}
+
 function unitList(ids: string[], units: Record<string, InteractionUnit>, limit = Infinity): string {
   const more = ids.length > limit ? ` and ${ids.length - limit} more` : "";
+  const labels = disambiguators(ids);
   return ids
     .slice(0, limit)
     .map((id) => {
       const unit = units[id];
       const name = unit?.name ?? id.slice(id.lastIndexOf("#") + 1);
-      return `${inlineCode(name)}${unit?.change ? MARKER[unit.change] : ""}`;
+      const where = labels.has(id) ? ` (${labels.get(id)})` : "";
+      return `${inlineCode(name)}${where}${unit?.change ? MARKER[unit.change] : ""}`;
     })
     .join(", ") + more;
+}
+
+/**
+ * Touched units that reach most features (translations, shared components): listed once
+ * above the table instead of in every row. Only with 4+ features; "most" is half or more.
+ */
+export function sharedUnits(features: { touched: string[] }[]): string[] {
+  if (features.length < 4) return [];
+  const counts = new Map<string, number>();
+  for (const feature of features) for (const id of feature.touched) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return [...counts].filter(([, count]) => count >= Math.ceil(features.length / 2)).map(([id]) => id);
 }
 
 const MISSING_MAP =
@@ -110,14 +143,25 @@ export function renderInteractionsSection(analysis: InteractionsAnalysis, maxDia
     );
   } else {
     if (analysis.featureMap === "missing") out.push(MISSING_MAP, "");
+    const shared = new Set(sharedUnits(analysis.features));
+    if (shared.size > 0) {
+      out.push(
+        `**Shared by most features:** ${unitList([...shared], units)}. ` +
+          "These reach the features below through common code; the table lists the rest.",
+        "",
+      );
+    }
     out.push(
       "| Feature | Changed | Entry point |",
       "|---|---|---|",
-      ...analysis.features.map(
-        (feature) =>
-          `| ${feature.name}${feature.mapped ? "" : " *(entry point)*"} | ${unitList(feature.touched, units)} | ` +
-          `${feature.entryPoints.map((id) => inlineCode(id)).join("<br>")} |`,
-      ),
+      ...analysis.features.map((feature) => {
+        const own = feature.touched.filter((id) => !shared.has(id));
+        return (
+          `| ${feature.name}${feature.mapped ? "" : " *(entry point)*"} | ` +
+          `${own.length > 0 ? unitList(own, units) : "*shared changes only*"} | ` +
+          `${feature.entryPoints.map((id) => inlineCode(id)).join("<br>")} |`
+        );
+      }),
     );
     analysis.features.slice(0, maxDiagrams).forEach((feature, index) => {
       const diagram = ["```mermaid", renderSequenceDiagram(feature, units), "```"];

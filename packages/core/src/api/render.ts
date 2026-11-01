@@ -5,10 +5,15 @@ import type { Compatibility } from "./compare.js";
 const DOT: Record<Compatibility, string> = { compatible: "🟢", review: "🟡", breaking: "🔴" };
 const LABEL: Record<Compatibility, string> = { compatible: "compatible", review: "to review", breaking: "breaking" };
 
+/** Long types stay readable in a table cell; the JSON keeps them whole. */
+const MAX_DETAIL = 140;
+
 function changeText(change: ApiChange): string {
   if (change.change === "added") return "added";
   if (change.change === "removed") return "removed";
-  return change.details.join("; ");
+  return change.details
+    .map((detail) => (detail.length > MAX_DETAIL ? `${detail.slice(0, MAX_DETAIL - 1)}…\`` : detail))
+    .join("; ");
 }
 
 function usedByText(change: ApiChange): string {

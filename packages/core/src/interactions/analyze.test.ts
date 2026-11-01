@@ -215,3 +215,24 @@ describe("analyzeInteractions", () => {
     );
   });
 });
+
+describe("rendering helpers", () => {
+  it("tells same-named units apart by the first path segment that differs", async () => {
+    const { disambiguators } = await import("./render.js");
+    expect([...disambiguators([
+      "packages/app/src/screens/FormStrip.tsx#FormStrip",
+      "packages/design-system/src/components/FormStrip/FormStrip.tsx#FormStrip",
+      "packages/app/src/App.tsx#App",
+    ])]).toEqual([
+      ["packages/app/src/screens/FormStrip.tsx#FormStrip", "app"],
+      ["packages/design-system/src/components/FormStrip/FormStrip.tsx#FormStrip", "design-system"],
+    ]);
+  });
+
+  it("finds the units shared by most features, from 4 features up", async () => {
+    const { sharedUnits } = await import("./render.js");
+    const f = (...touched: string[]) => ({ touched });
+    expect(sharedUnits([f("i18n", "A"), f("i18n", "B"), f("i18n", "C"), f("D")])).toEqual(["i18n"]);
+    expect(sharedUnits([f("i18n", "A"), f("i18n", "B"), f("i18n")])).toEqual([]);
+  });
+});

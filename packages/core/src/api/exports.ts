@@ -40,7 +40,13 @@ export interface ExportedSymbol {
   shape: ExportShape;
 }
 
-const squash = (text: string) => text.replace(/\s+/g, " ").trim();
+/** One line, without comments: types are compared and shown by their meaning, not their docs. */
+const squash = (text: string) =>
+  text
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\/\/[^\n]*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
 function typeText(node: Node | undefined): string {
   return node ? squash(node.getText()) : "";
