@@ -7,6 +7,8 @@ import { Text } from "@pearpages/pulp-react/text";
 import { Button } from "@pearpages/pulp-react/button";
 import { useEffect, useMemo, useState } from "react";
 import { ArchitectureViolations } from "./components/ArchitectureViolations";
+import { CoverageTable } from "./components/CoverageTable";
+import { DuplicationBlocks } from "./components/DuplicationBlocks";
 import { Findings } from "./components/Findings";
 import { HotspotsTable } from "./components/HotspotsTable";
 import { ReportLoader } from "./components/ReportLoader";
@@ -89,6 +91,8 @@ export function App({ storage = browserStorage() }: Props) {
           {history.length > 1 && <ScoreEvolution points={evolution(history)} />}
           {metric("hotspots") && <HotspotsTable metric={metric("hotspots")!} />}
           {metric("architecture") && <ArchitectureViolations metric={metric("architecture")!} />}
+          {metric("coverage") && <CoverageTable metric={metric("coverage")!} />}
+          {metric("duplication") && <DuplicationBlocks metric={metric("duplication")!} />}
           <Findings report={report} />
         </>
       )}

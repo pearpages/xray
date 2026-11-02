@@ -51,6 +51,54 @@ export const unavailableMetric = (): MetricResult => ({
   findings: [],
 });
 
+export const coverageMetric = (stale = false): MetricResult => ({
+  id: "coverage",
+  name: "Coverage",
+  score: 60,
+  summary: "60 % of 20 instrumented lines covered.",
+  status: "ok",
+  findings: [{ file: "src/cart/total.ts", severity: "high", message: "no test loads it (≈ 8 lines)" }],
+  data: {
+    files: ["coverage/lcov.info"],
+    percent: 60,
+    lines: 20,
+    covered: 12,
+    untested: 1,
+    missing: ["apps/mobile/a.ts"],
+    reportDate: "2026-11-02T10:00:00.000Z",
+    stale,
+    rows: [
+      { file: "src/cart/total.ts", lines: 8, covered: 0, percent: 0, untested: true },
+      { file: "src/cart/reduce.ts", lines: 4, covered: 4, percent: 100 },
+      { file: "src/app.ts", lines: 10, covered: 4, percent: 40 },
+    ],
+  },
+});
+
+export const duplicationMetric = (clones = 2): MetricResult => ({
+  id: "duplication",
+  name: "Duplication",
+  score: 84,
+  summary: "4 % of 500 lines are duplicated.",
+  status: "ok",
+  findings: [],
+  data: {
+    percent: 4,
+    lines: 500,
+    duplicatedLines: 20,
+    clones: [
+      { tokens: 240, lines: 12, a: { file: "src/cart/reduce.ts", start: 10, end: 21 }, b: { file: "src/cart/undo.ts", start: 3, end: 14 } },
+      { tokens: 60, lines: 4, a: { file: "src/app.ts", start: 1, end: 4 }, b: { file: "src/main.ts", start: 2, end: 5 } },
+      ...Array.from({ length: Math.max(0, clones - 2) }, (_, i) => ({
+        tokens: 50,
+        lines: 3,
+        a: { file: `src/gen/a${i}.ts`, start: 1, end: 3 },
+        b: { file: `src/gen/b${i}.ts`, start: 1, end: 3 },
+      })),
+    ].slice(0, clones),
+  },
+});
+
 export function report(overrides: { commit?: string; generatedAt?: string; score?: number | null; name?: string; metrics?: MetricResult[] } = {}): QualityReport {
   const name = overrides.name ?? "shop";
   return {

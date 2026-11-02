@@ -3,7 +3,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "./App";
-import { MemoryStorage, report, reportFile } from "./testing/fixtures";
+import { architectureMetric, coverageMetric, duplicationMetric, hotspotsMetric, MemoryStorage, report, reportFile, unavailableMetric } from "./testing/fixtures";
 
 afterEach(cleanup);
 
@@ -70,5 +70,12 @@ describe("App", () => {
     await userEvent.selectOptions(screen.getByLabelText("Repository"), "blog");
     expect(within(screen.getByRole("region", { name: "Scores" })).getByText("90")).toBeTruthy();
     expect(screen.queryByLabelText("Report")).toBeNull();
+  });
+
+  it("shows the coverage and duplication views when those metrics ran", async () => {
+    render(<App storage={new MemoryStorage()} />);
+    await open(reportFile(report({ metrics: [hotspotsMetric(), architectureMetric(), unavailableMetric(), coverageMetric(), duplicationMetric()] })));
+    expect(screen.getByRole("heading", { level: 2, name: "Coverage" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 2, name: "Duplication" })).toBeTruthy();
   });
 });

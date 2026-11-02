@@ -1,0 +1,9 @@
+.coverage {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* The control keeps its own width instead of stretching across the grid. */
+.coverage__view {
+  justify-self: start;
+}

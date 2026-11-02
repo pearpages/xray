@@ -265,7 +265,9 @@ Findings formula: `100 − (10·high + 3·medium + 1·low) / (code files / 100)`
 **The UI** (`npm run dev -w @xray/quality-ui`, or `npm run build -w @xray/quality-ui` for a static
 build in `packages/quality-ui/dist/`): open one or more reports with the button or by dropping them.
 It shows the global score and a card per metric, the hotspots table, architecture violations by
-feature, all findings filterable by severity and metric, and, with several reports of one
+feature, coverage per file (the least covered tested files, and apart the files no test loads), the
+biggest duplicated blocks with both copies side by side, all findings filterable by severity and
+metric, and, with several reports of one
 repository, the score per commit. Reports never leave the browser: it keeps the open ones (in
 localStorage) until you press *Close all*, so a reload doesn't lose them.
 

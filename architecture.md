@@ -67,7 +67,7 @@ flowchart LR
 | `packages/core/src/report.ts` | `ReportSection`, the hidden `<!-- xray:report -->` marker, the report frame |
 | `packages/core/src/index.ts` | `analyzePullRequest`, `reportSections`, `renderMarkdown` and re-exports |
 | `packages/quality/src/` | `analyzers/` (one file per metric: hotspots, architecture, dependencies, coverage, duplication, lint), `registry.ts` (the list), `score.ts` (findings formula, global score), `config.ts` (the `quality` section), `files.ts` (tracked code files), `report.ts` (runs the analyzers, repo info), `output.ts` (writes the report, creating folders), `cli.ts` |
-| `packages/quality-ui/src/` | `reports.ts` (parsing, grouping by repository, evolution, filters), `storage.ts` (the open reports in localStorage, tolerant of a full or blocked one) and one component per view, each with its own `.css`, on pulp components and tokens; component tests in jsdom with Testing Library |
+| `packages/quality-ui/src/` | `reports.ts` (parsing, grouping by repository, evolution, filters), `storage.ts` (the open reports in localStorage, tolerant of a full or blocked one) and one component per view (scores, evolution, hotspots, architecture, coverage, duplication, findings), each with its own `.css`, on pulp components and tokens; component tests in jsdom with Testing Library |
 | `packages/cli/src/index.ts` | Argument parsing, `--format markdown|json`, `--out` |
 | `packages/action/src/` | Reading the PR number from `GITHUB_EVENT_PATH`, finding/updating the comment via the REST API, truncating to 65 536 chars |
 | `.github/workflows/` | `ci.yml` (build + tests) and `xray.yml` (runs the Action on this repo's PRs) |

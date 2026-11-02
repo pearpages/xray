@@ -1,0 +1,45 @@
+.duplication {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.duplication__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The card header stacks its children; the badge keeps its own width. */
+.duplication__size {
+  align-self: flex-start;
+}
+
+/* Both copies side by side; stacked on narrow screens. */
+.duplication__pair {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.duplication__copy {
+  overflow-wrap: anywhere;
+  font-size: var(--font-size-sm);
+}
+
+.duplication__same {
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+@media (max-width: 40rem) {
+  .duplication__pair {
+    grid-template-columns: 1fr;
+  }
+
+  .duplication__same {
+    justify-self: start;
+  }
+}
