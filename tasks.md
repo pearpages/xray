@@ -5,11 +5,13 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
-- [ ] **Review [ADR-0016](docs/adr/0016-quality-phase-2.md)** (Proposed): jscpd 4 over 5, lint/types attribution to the nearest tsconfig and the `typecheck` script's config.
+- [ ] **Restore pearpages/fourpass#134's xray comment** (the owner runs it: GitHub writes from the session were refused): the rebuilt report is ready, see the 2026-11-02 decisions line.
+- [ ] **Coverage on a real repo**: only xray has an lcov report; futbol-manager or bitepals need their tests run with coverage by their owner (xray never runs tests).
 - [ ] **Quality UI views for phase 2**: coverage per file (lowest first) and duplicated blocks side by side; today they show as cards and findings only.
 
 ## Done
 
+- [x] 2026-11-02: Pending decisions settled under delegation ("do whatever you think is best, but document it"): (1) [ADR-0016](docs/adr/0016-quality-phase-2.md) Accepted as proposed. (2) The Action leaves merged and closed PRs' comments alone ([ADR-0017](docs/adr/0017-leave-closed-prs-alone.md)), so #134's accident can't repeat. (3) fourpass#134's empty comment: rebuilt from the PR head (`7d1a5c2`) against `main` before the merge (`39549db`), with a note saying so; posting it was refused to the session, so it's an Open item for the owner. (4) futbol-manager#23 stays closed: the owner closed it on 2026-11-01 (its `check` job had failed), so it isn't reopened. (5) The two commits on `main` with a co-author line (44b3c52, 4e1f005) stay: rewriting published `main` costs more than the lines; later commits follow the owner's commit-message skill (no trailer). (6) Next work: the phase 2 UI views, before hosting the UI.
 - [x] 2026-11-02: Project quality phase 2: coverage (lcov, branches folded in), duplication (jscpd 4.3.0 in-process), lint and types (the project's own ESLint and `tsc --noEmit`, per config folder and tsconfig) ([ADR-0016](docs/adr/0016-quality-phase-2.md)); each metric records its duration. Run on xray (89, 4 s), dummy (100, 1 s), futbol-manager (84, 11 s), bitepals (73, 172 s), none changed. Core's `unitsOf` reads default exports from the syntax: bitepals hotspots 138 s → 0.6 s. `ts-morph` declared in `@xray/quality` (it was hoisted). The Action installs 58 packages (49 MB) instead of 91 (84 MB): it no longer installs the root's dev dependencies, which vitest's optional peers (jsdom, coverage) would have grown; to be measured on dummy (P6).
 - [x] 2026-11-02: Quality UI keeps the open reports across reloads (localStorage, *Close all*); `-o` creates missing folders; UI component tests (jsdom, Testing Library) and CLI tests on the built command; `npm run coverage` with a floor (statements 85, branches 70, functions 85, lines 88), run in CI. Coverage: 91.9 % lines, 74.9 % branches.
 - [x] 2026-11-02: Released v0.4.0 (project quality phase 1, narrowed Action install); `v0` moved to it.

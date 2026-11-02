@@ -1,8 +1,8 @@
 # 0016. Quality phase 2: coverage, duplication, lint and types as built
 
 - **Date:** 2026-11-02
-- **Status:** Proposed — built and measured on xray, dummy, futbol-manager and bitepals; awaiting
-  the owner's review.
+- **Status:** Accepted (2026-11-02) — the owner reviewed it and delegated the call ("do whatever you
+  think is best, but document it"); points 1, 2 and 8 kept as proposed.
 - **Amends:** [0014](0014-project-quality-tool.md) (phase 2 metrics), [0015](0015-quality-phase-1-tuning.md).
 
 ## Context

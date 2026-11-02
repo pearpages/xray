@@ -62,6 +62,20 @@ async function findReportComment(context: GitHubContext): Promise<IssueComment |
   }
 }
 
+/**
+ * The PR's state now, not in the event: a re-run job replays the event of when the PR was open.
+ * After a merge, the base branch already holds the change, so a new report would be empty (ADR-0017).
+ */
+export async function pullRequestState(context: GitHubContext): Promise<"open" | "closed" | "merged"> {
+  const pull = await request<{ state: string; merged?: boolean; merged_at?: string | null }>(
+    context,
+    "GET",
+    `/repos/${context.repository}/pulls/${context.issueNumber}`,
+  );
+  if (pull.state === "open") return "open";
+  return pull.merged || pull.merged_at ? "merged" : "closed";
+}
+
 /** Updates the PR's xray comment in place, or creates it on the first run. */
 export async function upsertComment(
   context: GitHubContext,

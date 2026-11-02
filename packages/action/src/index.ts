@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { GitHubApiError, upsertComment } from "./comment.js";
+import { GitHubApiError, pullRequestState, upsertComment, type GitHubContext } from "./comment.js";
 
 function required(name: string): string {
   const value = process.env[name];
@@ -21,17 +21,22 @@ async function main(): Promise<void> {
     return;
   }
 
+  const context: GitHubContext = {
+    apiUrl: process.env.GITHUB_API_URL ?? "https://api.github.com",
+    token: required("GITHUB_TOKEN"),
+    repository: required("GITHUB_REPOSITORY"),
+    issueNumber,
+  };
+  // A merged or closed PR keeps the report it had; the new one stays in the job summary.
+  const state = await pullRequestState(context).catch(() => "open" as const);
+  if (state !== "open") {
+    console.log(`xray: #${issueNumber} is ${state}, leaving its comment as it is (the report is in the job summary).`);
+    return;
+  }
+
   let result: { id: number; created: boolean };
   try {
-    result = await upsertComment(
-      {
-        apiUrl: process.env.GITHUB_API_URL ?? "https://api.github.com",
-        token: required("GITHUB_TOKEN"),
-        repository: required("GITHUB_REPOSITORY"),
-        issueNumber,
-      },
-      readFileSync(reportPath, "utf8"),
-    );
+    result = await upsertComment(context, readFileSync(reportPath, "utf8"));
   } catch (error) {
     // Fork PRs get a read-only token. The report is still in the job summary,
     // so a missing permission is a warning, not a failed check.

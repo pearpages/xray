@@ -65,7 +65,8 @@ jobs:
 
 The report is also appended to the *job summary* and exposed as the `report-path` output.
 On PRs from forks `GITHUB_TOKEN` is read-only: the comment step then logs a warning instead of failing,
-and the report is still in the job summary.
+and the report is still in the job summary. A run on a PR that is already merged or closed (a re-run
+after the merge, say) leaves its comment as it was: the report it was reviewed with stays.
 
 ## Configuration (`xray.config.json`)
 

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { REPORT_MARKER } from "@xray/core";
-import { GitHubApiError, upsertComment, type GitHubContext } from "./comment.js";
+import { GitHubApiError, pullRequestState, upsertComment, type GitHubContext } from "./comment.js";
 
 const context: GitHubContext = {
   apiUrl: "https://api.test",
@@ -59,5 +59,29 @@ describe("upsertComment", () => {
     fakeGitHub([], 403);
     await expect(upsertComment(context, "report")).rejects.toMatchObject({ status: 403 });
     await expect(upsertComment(context, "report")).rejects.toBeInstanceOf(GitHubApiError);
+  });
+});
+
+describe("pullRequestState", () => {
+  const serve = (pull: object) => {
+    const urls: string[] = [];
+    vi.stubGlobal("fetch", async (url: string) => {
+      urls.push(url);
+      return Response.json(pull);
+    });
+    return urls;
+  };
+
+  it("asks GitHub for the PR as it is now", async () => {
+    const urls = serve({ state: "open", merged: false });
+    expect(await pullRequestState(context)).toBe("open");
+    expect(urls).toEqual(["https://api.test/repos/o/r/pulls/7"]);
+  });
+
+  it("tells merged from closed", async () => {
+    serve({ state: "closed", merged: true, merged_at: "2026-11-01T21:25:00Z" });
+    expect(await pullRequestState(context)).toBe("merged");
+    serve({ state: "closed", merged: false, merged_at: null });
+    expect(await pullRequestState(context)).toBe("closed");
   });
 });
