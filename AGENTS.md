@@ -44,7 +44,11 @@ Node 24 is pinned in `mise.toml` (`mise exec -- <cmd>` if the shell has no defau
 - `npm ci`: install all workspaces.
 - `npm run build`: `tsc -b` over core, cli and action (outputs to each `packages/*/dist`).
 - `npm test -- --run`: run the vitest suite once. Never plain `npm test`, which starts watch mode.
-  Tests in `packages/action` import `@xray/core` from `dist`, so build first.
+  Tests in `packages/action` import `@xray/core` from `dist`, and the `xray-quality` CLI tests run
+  `packages/quality/dist/cli.js`, so build first. UI component tests run in jsdom
+  (`// @vitest-environment jsdom` at the top of the file).
+- `npm run coverage`: the suite with v8 coverage; it fails under the floor in `vitest.config.ts`
+  (CI runs this).
 - `node packages/cli/dist/index.js <base> --cwd <repo>`: run the CLI against another repository
   (`-f json` for the raw `XrayResult`, `--bundle` to build and compare bundles, `--inventory` for
   the feature map skill's data).

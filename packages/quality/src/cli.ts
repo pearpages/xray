@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Command } from "commander";
 import { loadQualityConfig } from "./config.js";
+import { writeReport } from "./output.js";
 import { analyzeQuality } from "./report.js";
 
 interface Options {
@@ -21,7 +21,7 @@ const program = new Command()
     const root = resolve(options.cwd);
     const report = await analyzeQuality(root, loadQualityConfig(root, options.config));
     const json = `${JSON.stringify(report, null, 2)}\n`;
-    if (options.out) writeFileSync(options.out, json);
+    if (options.out) writeReport(options.out, json);
     else process.stdout.write(json);
     if (options.out) {
       const scores = report.metrics.map((metric) => `${metric.name} ${metric.score ?? "n/a"}`).join(" · ");

@@ -29,7 +29,8 @@ sees the report. Never open a public issue for an unfixed vulnerability.
 - **The quality tool** (`xray-quality`) reads the analysed repository: git, file contents, and its
   package manager's `audit` and `outdated`, which contact the registry and don't install or change
   anything. Nothing is written under the analysed root; the report goes where `-o` says. The UI is a
-  static page that reads report files locally.
+  static page that reads report files locally and keeps the open ones in the browser's localStorage
+  (that origin only; *Close all* removes them).
 - **Write token in CI.** The Action uses `GITHUB_TOKEN` with `pull-requests: write` to create or
   update one comment, via the REST API at `GITHUB_API_URL`. It is meant for `pull_request` events,
   where fork PRs get a read-only token (the comment step then only warns; the report stays in the
@@ -59,6 +60,8 @@ sees the report. Never open a public issue for an unfixed vulnerability.
 
 - Runtime dependencies are kept minimal: `dependency-cruiser`, `ts-morph`, `typescript` (core) and
   `commander` (cli). The comment script uses Node's built-in `fetch`, no Octokit.
+- Development only, never installed by the Action: React, Vite and pulp (quality-ui), vitest with
+  `@vitest/coverage-v8`, and `jsdom` + Testing Library for the UI's component tests.
 - `package-lock.json` is committed; CI and the Action install with `npm ci`.
 - Third-party actions (`actions/checkout`, `actions/setup-node`) are pinned by commit SHA, with the
   version in a comment, on their Node 24 releases.

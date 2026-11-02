@@ -9,6 +9,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Done
 
+- [x] 2026-11-02: Quality UI keeps the open reports across reloads (localStorage, *Close all*); `-o` creates missing folders; UI component tests (jsdom, Testing Library) and CLI tests on the built command; `npm run coverage` with a floor (statements 85, branches 70, functions 85, lines 88), run in CI. Coverage: 91.9 % lines, 74.9 % branches.
 - [x] 2026-11-02: Released v0.4.0 (project quality phase 1, narrowed Action install); `v0` moved to it.
 - [x] 2026-11-02: Action measured with the narrowed install (P6) on pearpages/dummy#7, same diff as #3 with `bundle: "true"`: job 32 s (v0: 30 s), install + build 4.5 s (v0: 4.6 s, still 90 packages), analysis 19.3 s (v0: 19.5 s); report identical to v0's. Without the narrowing the runner would install the quality tools and the UI as well.
 - [x] 2026-11-01: Project quality phase 1: `@xray/quality` (hotspots, architecture, dependencies; findings formula; `xray-quality` CLI) and `@xray/quality-ui` (pulp). Tuned on xray, dummy, futbol-manager and bitepals ([ADR-0015](docs/adr/0015-quality-phase-1-tuning.md)); the Action installs only core, cli and action (84 MB of node_modules instead of 159 MB).

@@ -66,8 +66,8 @@ flowchart LR
 | `packages/core/src/testing/` | Test-only helpers (a throwaway git repository); not built |
 | `packages/core/src/report.ts` | `ReportSection`, the hidden `<!-- xray:report -->` marker, the report frame |
 | `packages/core/src/index.ts` | `analyzePullRequest`, `reportSections`, `renderMarkdown` and re-exports |
-| `packages/quality/src/` | `analyzers/` (one file per metric: hotspots, architecture, dependencies), `registry.ts` (the list), `score.ts` (findings formula, global score), `config.ts` (the `quality` section), `files.ts` (tracked code files), `report.ts` (runs the analyzers, repo info), `cli.ts` |
-| `packages/quality-ui/src/` | `reports.ts` (parsing, grouping by repository, evolution, filters) and one component per view, each with its own `.css`, on pulp components and tokens |
+| `packages/quality/src/` | `analyzers/` (one file per metric: hotspots, architecture, dependencies), `registry.ts` (the list), `score.ts` (findings formula, global score), `config.ts` (the `quality` section), `files.ts` (tracked code files), `report.ts` (runs the analyzers, repo info), `output.ts` (writes the report, creating folders), `cli.ts` |
+| `packages/quality-ui/src/` | `reports.ts` (parsing, grouping by repository, evolution, filters), `storage.ts` (the open reports in localStorage, tolerant of a full or blocked one) and one component per view, each with its own `.css`, on pulp components and tokens; component tests in jsdom with Testing Library |
 | `packages/cli/src/index.ts` | Argument parsing, `--format markdown|json`, `--out` |
 | `packages/action/src/` | Reading the PR number from `GITHUB_EVENT_PATH`, finding/updating the comment via the REST API, truncating to 65 536 chars |
 | `.github/workflows/` | `ci.yml` (build + tests) and `xray.yml` (runs the Action on this repo's PRs) |
@@ -128,11 +128,13 @@ dependencies runs the lockfile's package manager's `audit` and `outdated` in the
 - `tsc -b` with project references (`packages/{core,cli,action}/tsconfig.json` extend
   `tsconfig.base.json`). `typescript` stays on 6.x for dependency-cruiser
   ([ADR-0002](docs/adr/0002-typescript-6-for-dependency-cruiser.md)).
-- Tests: vitest, `packages/*/src/**/*.test.ts` (quality's on small git repos built in the test, the
-  UI's on its report logic). Unit tests for parsing, neighbourhood selection
+- Tests: vitest, `packages/*/src/**/*.test.{ts,tsx}` (quality's on small git repos built in the
+  test, its CLI's on the built command; the UI's on its report logic and, in jsdom with Testing
+  Library, on each component). `npm run coverage` adds v8 coverage with a floor in
+  `vitest.config.ts`. Unit tests for parsing, neighbourhood selection
   and comment truncation; an integration test that builds a temporary git repo with a feature
   branch and runs `analyzePullRequest` end to end.
-- CI: `.github/workflows/ci.yml` runs `npm ci`, build and tests on pushes to `main` and on PRs.
+- CI: `.github/workflows/ci.yml` runs `npm ci`, build and tests with coverage on pushes to `main` and on PRs.
 - Release: `vX.Y.Z` tags plus a moving `v0` ([ADR-0010](docs/adr/0010-versioning-and-releases.md));
   consumers use `@v0`. The Action builds itself on each run instead of shipping a committed `dist/`
   ([ADR-0003](docs/adr/0003-action-builds-at-runtime.md)), and the plugin's skills build the `v0`

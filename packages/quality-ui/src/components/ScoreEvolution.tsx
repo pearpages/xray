@@ -11,7 +11,7 @@ const PAD = 32;
 export function ScoreEvolution({ points }: { points: EvolutionPoint[] }) {
   const step = points.length > 1 ? (WIDTH - 2 * PAD) / (points.length - 1) : 0;
   const x = (index: number) => PAD + index * step;
-  const y = (score: number) => HEIGHT - PAD - (score / 100) * (HEIGHT - 2 * PAD);
+  const y = (score: number) => Math.round((HEIGHT - PAD - (score / 100) * (HEIGHT - 2 * PAD)) * 10) / 10;
   const scored = points.map((point, index) => ({ ...point, index })).filter((point) => point.score !== null);
   const path = scored.map((point, i) => `${i === 0 ? "M" : "L"}${x(point.index)},${y(point.score!)}`).join(" ");
 

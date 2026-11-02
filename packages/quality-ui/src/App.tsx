@@ -4,7 +4,8 @@ import { Inline } from "@pearpages/pulp-react/inline";
 import { Select } from "@pearpages/pulp-react/select";
 import { Stack } from "@pearpages/pulp-react/stack";
 import { Text } from "@pearpages/pulp-react/text";
-import { useMemo, useState } from "react";
+import { Button } from "@pearpages/pulp-react/button";
+import { useEffect, useMemo, useState } from "react";
 import { ArchitectureViolations } from "./components/ArchitectureViolations";
 import { Findings } from "./components/Findings";
 import { HotspotsTable } from "./components/HotspotsTable";
@@ -12,10 +13,18 @@ import { ReportLoader } from "./components/ReportLoader";
 import { ScoreEvolution } from "./components/ScoreEvolution";
 import { ScoreOverview } from "./components/ScoreOverview";
 import { byRepo, evolution, type QualityReport } from "./reports";
+import { browserStorage, loadSaved, save } from "./storage";
 import "./App.css";
 
-export function App() {
-  const [reports, setReports] = useState<QualityReport[]>([]);
+interface Props {
+  /** Where reports are kept between visits; the browser's localStorage by default. */
+  storage?: Storage | undefined;
+}
+
+export function App({ storage = browserStorage() }: Props) {
+  const [reports, setReports] = useState<QualityReport[]>(() => loadSaved(storage));
+  const [kept, setKept] = useState(true);
+  useEffect(() => setKept(save(storage, reports)), [storage, reports]);
   const groups = useMemo(() => byRepo(reports), [reports]);
   const [repo, setRepo] = useState<string>();
   const [commit, setCommit] = useState<string>();
@@ -33,6 +42,18 @@ export function App() {
           xray quality
         </Heading>
         <ReportLoader onLoad={(loaded) => setReports((current) => [...current, ...loaded])} />
+        {reports.length > 0 && (
+          <Inline gap={3} align="center">
+            <Text tone="muted" size="sm">
+              {kept
+                ? `${reports.length} report(s) open, kept in this browser until you close them.`
+                : `${reports.length} report(s) open. This browser can't keep them, so they close when you leave.`}
+            </Text>
+            <Button variant="ghost" size="sm" onClick={() => setReports([])}>
+              Close all
+            </Button>
+          </Inline>
+        )}
       </Stack>
 
       {!report ? (

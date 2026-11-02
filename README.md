@@ -239,7 +239,7 @@ node packages/quality/dist/cli.js --cwd ../my-project -o my-project.json
 ```
 xray-quality
   -C, --cwd <dir>      root of the repository to analyse
-  -o, --out <file>     write the report to a file instead of stdout
+  -o, --out <file>     write the report to a file instead of stdout (folders are created)
   -c, --config <file>  config with a `quality` section (default: xray.config.json in --cwd)
 ```
 
@@ -261,7 +261,8 @@ Findings formula: `100 − (10·high + 3·medium + 1·low) / (code files / 100)`
 build in `packages/quality-ui/dist/`): open one or more reports with the button or by dropping them.
 It shows the global score and a card per metric, the hotspots table, architecture violations by
 feature, all findings filterable by severity and metric, and, with several reports of one
-repository, the score per commit. Reports stay in the browser.
+repository, the score per commit. Reports never leave the browser: it keeps the open ones (in
+localStorage) until you press *Close all*, so a reload doesn't lose them.
 
 ### Configuration (`quality` in `xray.config.json`)
 
@@ -300,6 +301,7 @@ read as for the PR report.
 npm ci
 npm run build
 npm test -- --run
+npm run coverage   # the same, with coverage and its floor (as in CI)
 ```
 
 Node 24 (pinned in `mise.toml`). `typescript` stays on the 6.x series: TypeScript 7 has no
