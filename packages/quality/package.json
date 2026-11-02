@@ -3,8 +3,26 @@
   "version": "0.1.0",
   "description": "Whole-repository quality report: one analyzer per metric, scores 0-100, a JSON report",
   "type": "module",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "bin": { "xray-quality": "./dist/cli.js" },
-  "files": ["dist"],
-  "dependencies": { "@xray/core": "0.1.0", "commander": "^15.0.0" }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "xray-quality": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@xray/core": "0.1.0",
+    "commander": "^15.0.0",
+    "jscpd": "4.3.0",
+    "ts-morph": "28.0.0"
+  },
+  "devDependencies": {
+    "eslint": "10.14.0",
+    "@vitest/coverage-v8": "^5.0.5"
+  }
 }

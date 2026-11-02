@@ -18,7 +18,7 @@ export interface RunResult {
 export type Runner = (command: string, args: string[], cwd: string, timeoutMs: number) => RunResult;
 
 const defaultRunner: Runner = (command, args, cwd, timeoutMs) => {
-  const result = spawnSync(command, args, { cwd, encoding: "utf8", timeout: timeoutMs, maxBuffer: 64 * 1024 * 1024 });
+  const result = spawnSync(command, args, { cwd, encoding: "utf8", timeout: timeoutMs, maxBuffer: 1024 * 1024 * 1024 });
   return { status: result.status, stdout: result.stdout ?? "", stderr: result.stderr ?? "", ...(result.error ? { error: result.error } : {}) };
 };
 
@@ -127,7 +127,16 @@ export function createDependencies(runner: Runner = defaultRunner): Analyzer {
 
       const prodOnly = config.dependencies.dev ? [] : command === "pnpm" ? ["--prod"] : ["--omit=dev"];
       const audit = runner(command, ["audit", "--json", ...prodOnly], root, timeout);
-      if (audit.error) return unavailable("dependencies", "Dependencies", `${command} isn't available (${audit.error.message})`);
+      if (audit.error) {
+        const code = (audit.error as NodeJS.ErrnoException).code;
+        const why =
+          code === "ENOBUFS"
+            ? `\`${command} audit\` printed more than 1 GiB`
+            : code === "ETIMEDOUT"
+              ? `\`${command} audit\` took longer than ${config.dependencies.timeoutSeconds} s (dependencies.timeoutSeconds)`
+              : `${command} isn't available (${audit.error.message})`;
+        return unavailable("dependencies", "Dependencies", why);
+      }
       const vulnerabilities = worstPerPackage(parseAudit(audit.stdout));
       if (!vulnerabilities) {
         const output = `${audit.stderr}\n${audit.stdout}`;

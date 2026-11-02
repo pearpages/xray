@@ -23,6 +23,8 @@ export interface MetricResult {
   reason?: string;
   /** Metric-specific detail for the UI (hotspot rows, violations by feature). */
   data?: unknown;
+  /** How long the metric took. */
+  durationMs?: number;
 }
 
 /** What every analyzer gets: the analysed root, the resolved config and shared facts. */

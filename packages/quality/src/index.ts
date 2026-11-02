@@ -7,3 +7,6 @@ export { ANALYZERS } from "./registry.js";
 export { churnSince, hotspots, type HotspotRow } from "./analyzers/hotspots.js";
 export { architecture, importLine, type Feature, type FeatureViolations } from "./analyzers/architecture.js";
 export { createDependencies, dependencies, parseAudit, parseOutdated, type Runner } from "./analyzers/dependencies.js";
+export { coverage, fileCoverage, type CoverageRow } from "./analyzers/coverage.js";
+export { duplication, findClones, type Clone } from "./analyzers/duplication.js";
+export { lint, parseTscOutput, tsconfigsToCheck, type LintRun } from "./analyzers/lint.js";

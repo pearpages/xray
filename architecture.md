@@ -66,7 +66,7 @@ flowchart LR
 | `packages/core/src/testing/` | Test-only helpers (a throwaway git repository); not built |
 | `packages/core/src/report.ts` | `ReportSection`, the hidden `<!-- xray:report -->` marker, the report frame |
 | `packages/core/src/index.ts` | `analyzePullRequest`, `reportSections`, `renderMarkdown` and re-exports |
-| `packages/quality/src/` | `analyzers/` (one file per metric: hotspots, architecture, dependencies), `registry.ts` (the list), `score.ts` (findings formula, global score), `config.ts` (the `quality` section), `files.ts` (tracked code files), `report.ts` (runs the analyzers, repo info), `output.ts` (writes the report, creating folders), `cli.ts` |
+| `packages/quality/src/` | `analyzers/` (one file per metric: hotspots, architecture, dependencies, coverage, duplication, lint), `registry.ts` (the list), `score.ts` (findings formula, global score), `config.ts` (the `quality` section), `files.ts` (tracked code files), `report.ts` (runs the analyzers, repo info), `output.ts` (writes the report, creating folders), `cli.ts` |
 | `packages/quality-ui/src/` | `reports.ts` (parsing, grouping by repository, evolution, filters), `storage.ts` (the open reports in localStorage, tolerant of a full or blocked one) and one component per view, each with its own `.css`, on pulp components and tokens; component tests in jsdom with Testing Library |
 | `packages/cli/src/index.ts` | Argument parsing, `--format markdown|json`, `--out` |
 | `packages/action/src/` | Reading the PR number from `GITHUB_EVENT_PATH`, finding/updating the comment via the REST API, truncating to 65 536 chars |
@@ -120,8 +120,12 @@ stories, declarations, build output, `ignore`). Each registered analyzer gets th
 resolved `quality` config and that list, and returns a `MetricResult`; one that throws becomes
 *unavailable* instead of failing the report. Hotspots reads `git log` and parses each file without
 types; architecture uses core's `buildDependencyGraph` (the same resolution as the PR report);
-dependencies runs the lockfile's package manager's `audit` and `outdated` in the analysed repo.
-`analyzeQuality` adds the repo's commit and the weighted global score. The UI only reads the JSON.
+dependencies runs the lockfile's package manager's `audit` and `outdated` in the analysed repo;
+coverage reads lcov through core's `loadCoverage`; duplication runs jscpd in-process on the code
+files; lint and types runs the analysed repo's own `eslint` and `tsc --noEmit` (resolved from its
+`node_modules`, one run per ESLint config folder and per tsconfig, errors attributed to a file's
+nearest tsconfig, [ADR-0016](docs/adr/0016-quality-phase-2.md)). `analyzeQuality` times each metric
+and adds the repo's commit and the weighted global score. The UI only reads the JSON.
 
 ## Build, test, deploy
 

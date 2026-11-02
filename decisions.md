@@ -26,6 +26,7 @@ accepted.
 | [0013](docs/adr/0013-per-package-tsconfig.md) | Each workspace package resolves imports with its own tsconfig | Accepted | 2026-11-01 |
 | [0014](docs/adr/0014-project-quality-tool.md) | Project quality: a whole-repository report next to the PR report | Accepted | 2026-11-01 |
 | [0015](docs/adr/0015-quality-phase-1-tuning.md) | Quality phase 1: what running it on real repositories changed | Accepted | 2026-11-01 |
+| [0016](docs/adr/0016-quality-phase-2.md) | Quality phase 2: coverage, duplication, lint and types as built | Proposed | 2026-11-02 |
 
 ## Format
 

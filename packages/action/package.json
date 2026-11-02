@@ -9,5 +9,8 @@
   ],
   "dependencies": {
     "@xray/core": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6"
   }
 }

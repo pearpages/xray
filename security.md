@@ -26,9 +26,12 @@ sees the report. Never open a public issue for an unfixed vulnerability.
   exposure as the project's own CI. Rules: enable it only on `pull_request` (never
   `pull_request_target`); check out with `persist-credentials: false` so the build can't read the
   checkout's token; the GitHub token is only given to the comment step, after the builds.
-- **The quality tool** (`xray-quality`) reads the analysed repository: git, file contents, and its
-  package manager's `audit` and `outdated`, which contact the registry and don't install or change
-  anything. Nothing is written under the analysed root; the report goes where `-o` says. The UI is a
+- **The quality tool** (`xray-quality`) reads the analysed repository: git, file contents, lcov
+  reports, and its package manager's `audit` and `outdated`, which contact the registry and don't
+  install or change anything. It also runs the repository's **own** ESLint and `tsc --noEmit` from
+  its `node_modules`: ESLint configs are code, so this is the same trust as running the project's
+  lint; tsc runs with `--incremental false --composite false` so no `.tsbuildinfo` is written
+  ([ADR-0016](docs/adr/0016-quality-phase-2.md)). Nothing is written under the analysed root; the report goes where `-o` says. The UI is a
   static page that reads report files locally and keeps the open ones in the browser's localStorage
   (that origin only; *Close all* removes them).
 - **Write token in CI.** The Action uses `GITHUB_TOKEN` with `pull-requests: write` to create or
@@ -59,7 +62,8 @@ sees the report. Never open a public issue for an unfixed vulnerability.
 ## Dependencies
 
 - Runtime dependencies are kept minimal: `dependency-cruiser`, `ts-morph`, `typescript` (core) and
-  `commander` (cli). The comment script uses Node's built-in `fetch`, no Octokit.
+  `commander` (cli); the quality tool adds `jscpd` 4 and `ts-morph`, never installed by the Action.
+  The comment script uses Node's built-in `fetch`, no Octokit.
 - Development only, never installed by the Action: React, Vite and pulp (quality-ui), vitest with
   `@vitest/coverage-v8`, and `jsdom` + Testing Library for the UI's component tests.
 - `package-lock.json` is committed; CI and the Action install with `npm ci`.

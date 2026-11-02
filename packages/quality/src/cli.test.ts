@@ -30,7 +30,7 @@ describe("xray-quality", () => {
     expect(result.status).toBe(0);
     const report = JSON.parse(readFileSync(out, "utf8")) as QualityReport;
     expect(report.version).toBe(1);
-    expect(result.stderr).toMatch(/^xray-quality: \d+\/100 \(Hotspots \d+ · Architecture n\/a · Dependencies n\/a\) → /);
+    expect(result.stderr).toMatch(/^xray-quality: \d+\/100 \(Hotspots \d+ · Architecture n\/a · Dependencies n\/a · Coverage n\/a · Duplication \d+ · Lint and types n\/a\) → /);
     expect(result.stdout).toBe("");
   });
 

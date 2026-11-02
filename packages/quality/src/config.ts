@@ -30,6 +30,28 @@ export interface QualityConfig {
     dev: boolean;
     timeoutSeconds: number;
   };
+  coverage: {
+    /** lcov reports, relative to the root; by default `coverage/lcov.info` at the root and in each workspace package. */
+    files?: string[];
+    /** Files under this % of lines covered are medium findings. */
+    fileThreshold: number;
+    /** Files under this % are high findings. */
+    highThreshold: number;
+  };
+  duplication: {
+    /** Smallest block reported, in tokens. */
+    minTokens: number;
+    /** Blocks of at least this many tokens are medium findings, the rest low. */
+    mediumTokens: number;
+  };
+  lint: {
+    /** Run the project's own ESLint from each folder with an ESLint config. */
+    eslint: boolean;
+    /** Run the project's own `tsc --noEmit` on each tsconfig.json. */
+    typescript: boolean;
+    /** Per run. */
+    timeoutSeconds: number;
+  };
   /** Globs left out of every metric, on top of tests, stories, declarations and build output. */
   ignore: string[];
   /** The xray config of the same file, for core (roots, tsconfig, workspaces, feature map). */
@@ -49,7 +71,10 @@ export const DEFAULT_QUALITY: Omit<QualityConfig, "xray"> = {
     shared: ["_*", "shared", "common"],
     useFeatureMap: true,
   },
-  dependencies: { outdated: true, dev: false, timeoutSeconds: 60 },
+  dependencies: { outdated: true, dev: false, timeoutSeconds: 180 },
+  coverage: { fileThreshold: 50, highThreshold: 20 },
+  duplication: { minTokens: 50, mediumTokens: 200 },
+  lint: { eslint: true, typescript: true, timeoutSeconds: 300 },
   ignore: [],
 };
 
@@ -70,6 +95,9 @@ export function resolveQualityConfig(input: QualityConfigInput, xray: XrayConfig
       useFeatureMap: input.architecture?.useFeatureMap ?? d.architecture.useFeatureMap,
     },
     dependencies: { ...d.dependencies, ...input.dependencies },
+    coverage: { ...d.coverage, ...input.coverage },
+    duplication: { ...d.duplication, ...input.duplication },
+    lint: { ...d.lint, ...input.lint },
     ignore: input.ignore ?? d.ignore,
     xray,
   } as QualityConfig;

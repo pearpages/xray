@@ -31,12 +31,15 @@ export async function analyzeQuality(root: string, config: QualityConfig, analyz
   const files = codeFiles(root, config.ignore);
   const metrics: MetricResult[] = [];
   for (const analyzer of analyzers) {
+    const started = Date.now();
+    let result: MetricResult;
     try {
-      metrics.push(await analyzer.analyze({ root, config, codeFiles: files }));
+      result = await analyzer.analyze({ root, config, codeFiles: files });
     } catch (error) {
       // One broken metric must not lose the others.
-      metrics.push(unavailable(analyzer.id, analyzer.name, `it failed: ${(error as Error).message.split("\n")[0]}`));
+      result = unavailable(analyzer.id, analyzer.name, `it failed: ${(error as Error).message.split("\n")[0]}`);
     }
+    metrics.push({ ...result, durationMs: Date.now() - started });
   }
   const weights = Object.fromEntries(analyzers.map((analyzer) => [analyzer.id, config.weights[analyzer.id] ?? 1]));
   return {

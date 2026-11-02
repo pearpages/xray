@@ -171,16 +171,20 @@ describe("analyzeQuality", () => {
   it("reports the commit, every metric and a global score, and never changes the repo", async () => {
     const repo = (fixture = new GitFixture().write(FEATURES).commit("base"));
     const report = await analyzeQuality(repo.root, loadQualityConfig(repo.root));
-    expect(report).toMatchObject({ version: 1, repo: { dirty: false }, weights: { hotspots: 1, architecture: 1, dependencies: 1 } });
+    expect(report).toMatchObject({ version: 1, repo: { dirty: false }, weights: { hotspots: 1, architecture: 1, dependencies: 1, coverage: 1, duplication: 1, lint: 1 } });
     expect(report.repo.commit).toMatch(/^[0-9a-f]{40}$/);
     expect(report.metrics.map((metric) => [metric.id, metric.status])).toEqual([
       ["hotspots", "ok"],
       ["architecture", "ok"],
       ["dependencies", "unavailable"],
+      ["coverage", "unavailable"],
+      ["duplication", "ok"],
+      ["lint", "unavailable"],
     ]);
-    expect(report.score).toBe(Math.round(((report.metrics[0]!.score ?? 0) + (report.metrics[1]!.score ?? 0)) / 2));
+    const ran = report.metrics.filter((metric) => metric.score !== null);
+    expect(report.score).toBe(Math.round(ran.reduce((sum, metric) => sum + metric.score!, 0) / ran.length));
     const { execFileSync } = await import("node:child_process");
-    expect(execFileSync("git", ["status", "--porcelain"], { cwd: repo.root, encoding: "utf8" })).toBe("");
+    expect(execFileSync("git", ["status", "--porcelain", "--ignored"], { cwd: repo.root, encoding: "utf8" })).toBe("");
   });
 
   it("reads weights and thresholds from the quality section of xray.config.json", () => {

@@ -62,7 +62,8 @@ export function unitsOf(sourceFile: SourceFile, file: string): Unit[] {
     if (Node.isFunctionDeclaration(statement) || Node.isClassDeclaration(statement)) {
       const nameNode = statement.getNameNode();
       // `export default function Cart()` is the default export without an `export default Cart;`.
-      add(nameNode?.getText() ?? "default", statement, statement, nameNode, "code", statement.isDefaultExport());
+      // Read from the syntax: `isDefaultExport()` would start the type checker for every file.
+      add(nameNode?.getText() ?? "default", statement, statement, nameNode, "code", statement.hasDefaultKeyword());
     } else if (Node.isVariableStatement(statement)) {
       for (const declaration of statement.getDeclarations()) {
         const nameNode = declaration.getNameNode();
@@ -79,11 +80,16 @@ export function unitsOf(sourceFile: SourceFile, file: string): Unit[] {
   return units;
 }
 
-/** `export default Cart;` names an existing unit as the default export. */
+/** `export default Cart;` or `export { Cart as default };` names an existing unit as the default export. */
 function defaultExportName(sourceFile: SourceFile): string | undefined {
   for (const assignment of sourceFile.getExportAssignments()) {
     const expression = assignment.getExpression();
     if (!assignment.isExportEquals() && Node.isIdentifier(expression)) return expression.getText();
+  }
+  for (const declaration of sourceFile.getExportDeclarations()) {
+    if (declaration.getModuleSpecifier()) continue;
+    const named = declaration.getNamedExports().find((specifier) => specifier.getAliasNode()?.getText() === "default");
+    if (named) return named.getNameNode().getText();
   }
   return undefined;
 }

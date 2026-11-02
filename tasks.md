@@ -5,10 +5,12 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
-- [ ] **Project quality, phase 2** ([ADR-0014](docs/adr/0014-project-quality-tool.md)): coverage from lcov, duplication (jscpd), ESLint and TypeScript errors with the project's configs.
+- [ ] **Review [ADR-0016](docs/adr/0016-quality-phase-2.md)** (Proposed): jscpd 4 over 5, lint/types attribution to the nearest tsconfig and the `typecheck` script's config.
+- [ ] **Quality UI views for phase 2**: coverage per file (lowest first) and duplicated blocks side by side; today they show as cards and findings only.
 
 ## Done
 
+- [x] 2026-11-02: Project quality phase 2: coverage (lcov, branches folded in), duplication (jscpd 4.3.0 in-process), lint and types (the project's own ESLint and `tsc --noEmit`, per config folder and tsconfig) ([ADR-0016](docs/adr/0016-quality-phase-2.md)); each metric records its duration. Run on xray (89, 4 s), dummy (100, 1 s), futbol-manager (84, 11 s), bitepals (73, 172 s), none changed. Core's `unitsOf` reads default exports from the syntax: bitepals hotspots 138 s → 0.6 s. `ts-morph` declared in `@xray/quality` (it was hoisted). The Action installs 58 packages (49 MB) instead of 91 (84 MB): it no longer installs the root's dev dependencies, which vitest's optional peers (jsdom, coverage) would have grown; to be measured on dummy (P6).
 - [x] 2026-11-02: Quality UI keeps the open reports across reloads (localStorage, *Close all*); `-o` creates missing folders; UI component tests (jsdom, Testing Library) and CLI tests on the built command; `npm run coverage` with a floor (statements 85, branches 70, functions 85, lines 88), run in CI. Coverage: 91.9 % lines, 74.9 % branches.
 - [x] 2026-11-02: Released v0.4.0 (project quality phase 1, narrowed Action install); `v0` moved to it.
 - [x] 2026-11-02: Action measured with the narrowed install (P6) on pearpages/dummy#7, same diff as #3 with `bundle: "true"`: job 32 s (v0: 30 s), install + build 4.5 s (v0: 4.6 s, still 90 packages), analysis 19.3 s (v0: 19.5 s); report identical to v0's. Without the narrowing the runner would install the quality tools and the UI as well.
