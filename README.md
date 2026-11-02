@@ -267,9 +267,11 @@ build in `packages/quality-ui/dist/`): open one or more reports with the button 
 (anywhere on the page once one is open). The header names the repository, commit and date and
 switches between repositories and reports. An **Overview** tab shows the global score, one card per
 metric (a one-line summary, its findings, how it's scored) and, with several reports of one
-repository, the score per commit; each card opens the metric's own tab: the hotspots table,
-architecture violations by feature, coverage per file (the least covered tested files, and apart the
-files no test loads), duplicated blocks with both copies side by side, or the metric's findings.
+repository, the score per commit (and each metric's, on the same scale, or as a table); each card
+opens the metric's own tab: the hotspots table, architecture violations by feature (one closed
+section each, the worst first), vulnerable packages and the majors behind, coverage per file (the
+least covered tested files, and apart the files no test loads), duplicated blocks with both copies
+side by side, or each ESLint/tsc run with the most frequent rules.
 **Findings** lists them all, filterable by severity and metric. Long lists come a page at a time,
 and the open tab is in the URL (`#coverage`), so Back works. Reports never leave the browser: it
 keeps the open ones (in localStorage) until you press *Close all*, so a reload doesn't lose them.

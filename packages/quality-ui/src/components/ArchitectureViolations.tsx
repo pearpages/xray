@@ -1,5 +1,5 @@
 import { Alert } from "@pearpages/pulp-react/alert";
-import { Card, CardBody, CardHeader } from "@pearpages/pulp-react/card";
+import { Accordion, AccordionItem, AccordionPanel, AccordionTrigger } from "@pearpages/pulp-react/accordion";
 import { Heading } from "@pearpages/pulp-react/heading";
 import { Text } from "@pearpages/pulp-react/text";
 import type { FeatureViolations } from "@xray/quality";
@@ -13,13 +13,14 @@ interface ArchitectureData {
   cycles: [string, string][];
 }
 
-/** Deep imports between features, grouped by the feature that makes them. */
+/** Deep imports between features, one closed section per importing feature, the worst first. */
 export function ArchitectureViolations({ metric }: { metric: MetricResult }) {
   const data = metric.data as ArchitectureData | undefined;
   if (!data) return null;
   const name = (id: string) => data.features.find((feature) => feature.id === id)?.name ?? id;
   const byFeature = new Map<string, FeatureViolations[]>();
   for (const group of data.violations) byFeature.set(group.from, [...(byFeature.get(group.from) ?? []), group]);
+  const count = (groups: FeatureViolations[]) => groups.reduce((sum, group) => sum + group.imports.length, 0);
 
   return (
     <section aria-labelledby="architecture-heading" className="architecture">
@@ -37,36 +38,35 @@ export function ArchitectureViolations({ metric }: { metric: MetricResult }) {
       {byFeature.size === 0 ? (
         <Text>No deep imports between features.</Text>
       ) : (
-        [...byFeature].map(([from, groups]) => (
-          <Card key={from} variant="outlined">
-            <CardHeader>
-              <Heading level={3} size="sm">
-                {name(from)}
-              </Heading>
-              <Text tone="muted" size="sm">
-                {groups.reduce((sum, group) => sum + group.imports.length, 0)} deep import(s)
-              </Text>
-            </CardHeader>
-            <CardBody>
-              {groups.map((group) => (
-                <div key={group.to} className="architecture__group">
-                  <Text weight="semibold">into {name(group.to)}</Text>
-                  <ul className="architecture__imports">
-                    {group.imports.map((item) => (
-                      <li key={`${item.file}:${item.imports}`}>
-                        <code>
-                          {item.file}
-                          {item.line ? `:${item.line}` : ""}
-                        </code>{" "}
-                        → <code>{item.imports}</code>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </CardBody>
-          </Card>
-        ))
+        <Accordion type="multiple" headingLevel={3} className="architecture__features">
+          {[...byFeature]
+            .sort(([, a], [, b]) => count(b) - count(a))
+            .map(([from, groups]) => (
+              <AccordionItem key={from} value={from}>
+                <AccordionTrigger>
+                  {name(from)}: {count(groups)} deep import(s) into {groups.map((group) => name(group.to)).join(", ")}
+                </AccordionTrigger>
+                <AccordionPanel>
+                  {groups.map((group) => (
+                    <div key={group.to} className="architecture__group">
+                      <Text weight="semibold">into {name(group.to)}</Text>
+                      <ul className="architecture__imports">
+                        {group.imports.map((item) => (
+                          <li key={`${item.file}:${item.imports}`}>
+                            <code>
+                              {item.file}
+                              {item.line ? `:${item.line}` : ""}
+                            </code>{" "}
+                            → <code>{item.imports}</code>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </AccordionPanel>
+              </AccordionItem>
+            ))}
+        </Accordion>
       )}
     </section>
   );

@@ -83,7 +83,9 @@ export function Overview({ report, history, tabs }: Props) {
           <MetricCard key={metric.id} metric={metric} href={tabs.includes(metric.id) ? `#${metric.id}` : undefined} />
         ))}
       </section>
-      {history.length > 1 && <ScoreEvolution points={evolution(history)} />}
+      {history.length > 1 && (
+        <ScoreEvolution points={evolution(history)} metrics={report.metrics.map(({ id, name }) => ({ id, name }))} />
+      )}
     </div>
   );
 }

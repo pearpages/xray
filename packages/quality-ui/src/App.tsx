@@ -2,13 +2,10 @@ import { Alert } from "@pearpages/pulp-react/alert";
 import { EmptyState } from "@pearpages/pulp-react/empty-state";
 import { Heading } from "@pearpages/pulp-react/heading";
 import { Tabs } from "@pearpages/pulp-react/tabs";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Spinner } from "@pearpages/pulp-react/spinner";
 import { AppHeader } from "./components/AppHeader";
-import { ArchitectureViolations } from "./components/ArchitectureViolations";
-import { CoverageTable } from "./components/CoverageTable";
-import { DuplicationBlocks } from "./components/DuplicationBlocks";
 import { Findings } from "./components/Findings";
-import { HotspotsTable } from "./components/HotspotsTable";
 import { Overview } from "./components/Overview";
 import { readReportFiles, ReportLoader } from "./components/ReportLoader";
 import { byRepo, type MetricResult, type QualityReport } from "./reports";
@@ -21,9 +18,19 @@ interface Props {
   storage?: Storage | undefined;
 }
 
+// Each metric view loads when its tab first opens: the overview doesn't pay for the tables.
+const ArchitectureViolations = lazy(() => import("./components/ArchitectureViolations").then((m) => ({ default: m.ArchitectureViolations })));
+const CoverageTable = lazy(() => import("./components/CoverageTable").then((m) => ({ default: m.CoverageTable })));
+const DependenciesView = lazy(() => import("./components/DependenciesView").then((m) => ({ default: m.DependenciesView })));
+const DuplicationBlocks = lazy(() => import("./components/DuplicationBlocks").then((m) => ({ default: m.DuplicationBlocks })));
+const HotspotsTable = lazy(() => import("./components/HotspotsTable").then((m) => ({ default: m.HotspotsTable })));
+const LintView = lazy(() => import("./components/LintView").then((m) => ({ default: m.LintView })));
+
 /** A metric's own view; metrics without one show their findings. */
-const VIEWS: Record<string, (metric: MetricResult) => ReactNode> = {
+const VIEWS: Record<string, (metric: MetricResult, report: QualityReport) => ReactNode> = {
   hotspots: (metric) => <HotspotsTable metric={metric} />,
+  dependencies: (metric) => <DependenciesView metric={metric} />,
+  lint: (metric, report) => <LintView metric={metric} report={report} />,
   architecture: (metric) => <ArchitectureViolations metric={metric} />,
   coverage: (metric) => <CoverageTable metric={metric} />,
   duplication: (metric) => <DuplicationBlocks metric={metric} />,
@@ -136,7 +143,11 @@ export function App({ storage = browserStorage() }: Props) {
         </Tabs.Panel>
         {measured.map((metric) => (
           <Tabs.Panel key={metric.id} value={metric.id}>
-            {current === metric.id && (VIEWS[metric.id]?.(metric) ?? <Findings report={report} metric={metric.id} />)}
+            {current === metric.id && (
+              <Suspense fallback={<Spinner label={`Loading ${metric.name}`} />}>
+                {VIEWS[metric.id]?.(metric, report) ?? <Findings report={report} metric={metric.id} />}
+              </Suspense>
+            )}
           </Tabs.Panel>
         ))}
         <Tabs.Panel value="findings">{current === "findings" && <Findings report={report} />}</Tabs.Panel>

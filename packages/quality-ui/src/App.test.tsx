@@ -43,7 +43,7 @@ describe("App", () => {
     window.location.hash = "hotspots";
     fireEvent(window, new HashChangeEvent("hashchange"));
     await waitFor(() => expect(tab("Hotspots").getAttribute("aria-selected")).toBe("true"));
-    expect(screen.getByRole("heading", { level: 2, name: "Hotspots" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { level: 2, name: "Hotspots" })).toBeTruthy();
 
     await userEvent.click(tab(/Findings/));
     expect(window.location.hash).toBe("#findings");
@@ -93,7 +93,7 @@ describe("App", () => {
       reportFile(report({ commit: "bbb2222", generatedAt: "2026-11-01T00:00:00.000Z", score: 77 })),
       reportFile(report({ name: "blog", score: 90 })),
     );
-    expect(screen.getByRole("img", { name: "aaa1111: 60, bbb2222: 77" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Global score: aaa1111: 60, bbb2222: 77" })).toBeTruthy();
     const hero = () => screen.getByRole("region", { name: "Quality score" });
 
     await userEvent.selectOptions(screen.getByLabelText("Report"), screen.getByRole("option", { name: /aaa1111/ }));
@@ -108,8 +108,8 @@ describe("App", () => {
     render(<App storage={new MemoryStorage()} />);
     await open(reportFile(report({ metrics: [hotspotsMetric(), architectureMetric(), unavailableMetric(), coverageMetric(), duplicationMetric()] })));
     await userEvent.click(tab("Coverage"));
-    expect(screen.getByRole("heading", { level: 2, name: "Coverage" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { level: 2, name: "Coverage" })).toBeTruthy();
     await userEvent.click(tab("Duplication"));
-    expect(screen.getByRole("heading", { level: 2, name: "Duplication" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { level: 2, name: "Duplication" })).toBeTruthy();
   });
 });

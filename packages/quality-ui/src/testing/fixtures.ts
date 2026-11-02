@@ -99,6 +99,52 @@ export const duplicationMetric = (clones = 2): MetricResult => ({
   },
 });
 
+export const dependenciesMetric = (outdated: boolean = true): MetricResult => ({
+  id: "dependencies",
+  name: "Dependencies",
+  score: 70,
+  summary: "",
+  status: "ok",
+  findings: [{ file: "package.json", severity: "high", message: "next: SSRF (critical)" }],
+  data: {
+    packageManager: "pnpm",
+    vulnerabilities: [
+      { package: "semver", severity: "moderate", title: "ReDoS" },
+      { package: "next", severity: "critical", title: "SSRF; Cache poisoning; Request smuggling" },
+      { package: "zod", severity: "low", title: "DoS" },
+    ],
+    outdated: outdated
+      ? [
+          { package: "react", current: "18.3.1", latest: "19.2.0", major: true },
+          { package: "vite", current: "8.3.5", latest: "8.4.0", major: false },
+        ]
+      : null,
+  },
+});
+
+export const lintMetric = (): MetricResult => ({
+  id: "lint",
+  name: "Lint and types",
+  score: 90,
+  summary: "",
+  status: "ok",
+  findings: [
+    { file: "src/a.ts", line: 3, severity: "medium", message: "Type 'string' is not assignable to type 'number'. (TS2322)" },
+    { file: "src/b.js", line: 1, severity: "low", message: "Use const. (prefer-const)" },
+  ],
+  data: {
+    runs: [
+      { tool: "eslint", target: ".", status: "ok", errors: 0, warnings: 1 },
+      { tool: "typescript", target: "tsconfig.json", status: "ok", errors: 1, warnings: 0 },
+      { tool: "eslint", target: "apps/web", status: "not installed", errors: 0, warnings: 0, reason: "eslint isn't installed (xray doesn't install)" },
+    ],
+    rules: [
+      { rule: "TS2322", count: 1 },
+      { rule: "eslint:prefer-const", count: 1 },
+    ],
+  },
+});
+
 export function report(overrides: { commit?: string; generatedAt?: string; score?: number | null; name?: string; metrics?: MetricResult[] } = {}): QualityReport {
   const name = overrides.name ?? "shop";
   return {

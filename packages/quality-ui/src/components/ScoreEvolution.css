@@ -1,25 +1,79 @@
-.evolution {
+.evolution-section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.evolution-section__multiples {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-4);
+}
+
+.evolution-section__multiple {
+  margin: 0;
+}
+
+.evolution-section__table summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.evolution svg {
+  display: block;
   width: 100%;
-  max-width: 48rem;
   height: auto;
 }
 
+.evolution--large {
+  max-width: 48rem;
+}
+
+/* Recessive grid and axis labels; text wears text tokens, the mark carries the series. */
 .evolution__grid {
   stroke: var(--color-border-default);
   stroke-dasharray: 2 4;
 }
 
+.evolution__label {
+  fill: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
 .evolution__line {
   fill: none;
-  stroke: var(--color-action-primary);
+  stroke: var(--color-accent-1);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* A 2 px surface ring keeps a point readable where it meets the line. */
+.evolution__point {
+  fill: var(--color-accent-1);
+  stroke: var(--color-surface-base);
   stroke-width: 2;
 }
 
-.evolution__point {
-  fill: var(--color-action-primary);
+.evolution__hit {
+  fill: transparent;
 }
 
-.evolution__label {
+.evolution__mark {
+  cursor: default;
+  outline: none;
+}
+
+.evolution__mark:focus-visible .evolution__point {
+  stroke: var(--color-border-focus);
+}
+
+.evolution__tooltip rect {
+  fill: var(--color-surface-raised);
+  stroke: var(--color-border-default);
+}
+
+.evolution__tooltip text {
   fill: var(--color-text-default);
-  font-size: 11px;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
 }

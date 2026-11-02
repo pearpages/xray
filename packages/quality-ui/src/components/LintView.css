@@ -1,0 +1,16 @@
+.lint {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.lint__section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.lint__rules {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: var(--space-5);
+}
