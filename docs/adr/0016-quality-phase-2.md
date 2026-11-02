@@ -64,8 +64,8 @@ raised five questions the design left open, or answered in a way that didn't hol
   --max-warnings=0` and each app's typecheck), not 0 from 2 001 phantom errors.
 + Hotspots on bitepals: 0.6 s instead of 138 s; the PR report's interactions analysis gets the
   same speed-up.
-+ The Action installs 58 packages (49 MB) instead of 91 (84 MB); install + build 2 s on a clean
-  copy, measured on pearpages/dummy before release (P6).
++ The Action installs 58 packages (49 MB) instead of 91 (84 MB). Measured on pearpages/dummy#8
+  (P6): install + build 3.3 s (was 4.5 s), job 30 s, report identical to v0's.
 + Whole runs: xray 4 s, dummy 1 s, futbol-manager 11 s, bitepals 172 s (124 s are pnpm's `audit`
   and `outdated`, 42 s its ESLint and tsc).
 − jscpd 4 may stop being released; moving to jscpd 5 would mean running its binary and reading a
