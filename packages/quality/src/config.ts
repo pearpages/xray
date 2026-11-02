@@ -37,6 +37,8 @@ export interface QualityConfig {
     fileThreshold: number;
     /** Files under this % are high findings. */
     highThreshold: number;
+    /** Globs left out of coverage, like a test runner's coverage `exclude`: tooling no test is meant to load. */
+    exclude: string[];
   };
   duplication: {
     /** Smallest block reported, in tokens. */
@@ -72,7 +74,11 @@ export const DEFAULT_QUALITY: Omit<QualityConfig, "xray"> = {
     useFeatureMap: true,
   },
   dependencies: { outdated: true, dev: false, timeoutSeconds: 180 },
-  coverage: { fileThreshold: 50, highThreshold: 20 },
+  coverage: {
+    fileThreshold: 50,
+    highThreshold: 20,
+    exclude: ["**/*.config.*", "**/scripts/**", "**/testing/**", "**/test-utils/**", "**/__mocks__/**", "**/mocks/**", "**/.storybook/**"],
+  },
   duplication: { minTokens: 50, mediumTokens: 200 },
   lint: { eslint: true, typescript: true, timeoutSeconds: 300 },
   ignore: [],

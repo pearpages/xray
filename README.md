@@ -255,7 +255,7 @@ run (no network, no features defined, no lcov report, ESLint/TypeScript not inst
 | **Hotspots** | Per code file, commits in the window × the sum of its functions' cyclomatic complexity. | Findings formula |
 | **Architecture** | Features (`xray.features.json` features that declare `files`, else folders matching `features`) import each other only through a public API (`index.*`, or a map feature's entry points). Deep imports are medium, two features importing each other high. | Findings formula |
 | **Dependencies** | `audit` of production dependencies and `outdated`, with the package manager the lockfile names (npm, pnpm). Read-only; needs the registry. | `100 − 15·high − 5·medium − 1·low` |
-| **Coverage** | Lines covered in your lcov reports (a line with an untaken branch isn't covered). xray never runs the tests: run them with coverage first. Files under `fileThreshold` % are medium, under `highThreshold` % high. | % of instrumented lines covered |
+| **Coverage** | Lines covered in your lcov reports (a line with an untaken branch isn't covered). xray never runs the tests: run them with coverage first. A code file of a project with a report that isn't in it was loaded by no test: 0 %, its lines estimated, high. Files under `fileThreshold` % are medium, under `highThreshold` % high. | % of instrumented lines covered |
 | **Duplication** | Copied blocks of code ([jscpd](https://github.com/kucherenko/jscpd)), ≥ `minTokens` tokens low, ≥ `mediumTokens` medium. | `100 − 4 × duplicated %` |
 | **Lint and types** | Your own ESLint (from each folder with an ESLint config) and `tsc --noEmit` (each `tsconfig.json`, or the config a folder's `typecheck` script names), from your `node_modules`; xray installs nothing. A file's TypeScript errors count from its nearest `tsconfig.json`. Errors medium, warnings low. | Findings formula |
 
@@ -282,7 +282,7 @@ read as for the PR report.
     "hotspots": { "windowMonths": 12, "minChurn": 2, "minComplexity": 10, "thresholds": { "high": 1000, "medium": 300, "low": 100 } },
     "architecture": { "features": ["**/features/*"], "publicApi": ["index.{ts,tsx,js,jsx,mts,mjs}"], "shared": ["_*", "shared", "common"], "useFeatureMap": true },
     "dependencies": { "outdated": true, "dev": false, "timeoutSeconds": 180 },
-    "coverage": { "files": ["coverage/lcov.info"], "fileThreshold": 50, "highThreshold": 20 },
+    "coverage": { "files": ["coverage/lcov.info"], "fileThreshold": 50, "highThreshold": 20, "exclude": ["**/*.config.*", "**/scripts/**", "**/testing/**", "**/test-utils/**", "**/__mocks__/**", "**/mocks/**", "**/.storybook/**"] },
     "duplication": { "minTokens": 50, "mediumTokens": 200 },
     "lint": { "eslint": true, "typescript": true, "timeoutSeconds": 300 },
     "ignore": ["**/*.generated.*"]
@@ -304,6 +304,9 @@ read as for the PR report.
 - `coverage.files`: lcov reports, relative to the root (default: `coverage/lcov.info` at the root
   and in each workspace package, as in the PR report). `fileThreshold` / `highThreshold`: a file
   under that % of lines covered is a medium / high finding.
+  `exclude`: globs left out of coverage, like your runner's coverage `exclude` (tooling no test is
+  meant to load). For exact numbers, make your runner report every file (Vitest: `coverage.include`);
+  otherwise xray estimates the files no test loaded ([ADR-0018](docs/adr/0018-untested-files-count.md)).
 - `duplication.minTokens`: the smallest copied block reported. `mediumTokens`: from this size a
   block is medium instead of low.
 - `lint.eslint` / `lint.typescript`: run the project's ESLint / `tsc --noEmit`. `timeoutSeconds`:

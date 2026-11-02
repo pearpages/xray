@@ -28,6 +28,7 @@ accepted.
 | [0015](docs/adr/0015-quality-phase-1-tuning.md) | Quality phase 1: what running it on real repositories changed | Accepted | 2026-11-01 |
 | [0016](docs/adr/0016-quality-phase-2.md) | Quality phase 2: coverage, duplication, lint and types as built | Accepted | 2026-11-02 |
 | [0017](docs/adr/0017-leave-closed-prs-alone.md) | The Action leaves merged and closed PRs' comments alone | Accepted | 2026-11-02 |
+| [0018](docs/adr/0018-untested-files-count.md) | Coverage counts the files no test loads | Accepted | 2026-11-02 |
 
 ## Format
 
