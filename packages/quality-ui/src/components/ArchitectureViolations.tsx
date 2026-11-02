@@ -25,8 +25,8 @@ export function ArchitectureViolations({ metric }: { metric: MetricResult }) {
 
   return (
     <section aria-labelledby="architecture-heading" className="architecture">
-      <Heading level={2} size="md" id="architecture-heading">
-        Architecture
+      <Heading level={3} size="sm" id="architecture-heading">
+        Deep imports by feature, the worst first
       </Heading>
       <Text tone="muted" size="sm">
         {data.features.length} features, from {data.source}. A feature imports another only through its public API.

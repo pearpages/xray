@@ -101,16 +101,6 @@ export function shortSummary(metric: MetricResult): string {
   }
 }
 
-/** How each metric turns into a score, for the overview's tooltips (ADR-0014, 0016, 0018). */
-export const SCORING: Record<string, string> = {
-  hotspots: "100 minus 10 per high, 3 per medium and 1 per low hotspot, per 100 files of code.",
-  architecture: "100 minus 3 per deep import and 10 per cycle between features, per 100 files of code.",
-  dependencies: "100 minus 15 per high or critical, 5 per moderate and 1 per low vulnerability or major behind.",
-  coverage: "The share of instrumented lines covered; a file no test loads counts as 0 %.",
-  duplication: "100 minus 4 per percent of the code that is a copy.",
-  lint: "100 minus 3 per error and 1 per warning, per 100 files of code.",
-};
-
 /** Items of one page (1-based) and the page count. */
 export function pageOf<T>(items: T[], page: number, size: number): { items: T[]; page: number; count: number } {
   const count = Math.max(1, Math.ceil(items.length / size));

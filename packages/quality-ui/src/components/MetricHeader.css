@@ -1,0 +1,83 @@
+.metric-header__layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+
+.metric-header__score {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+}
+
+.metric-header__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.metric-header__value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.metric-header__number {
+  font-family: var(--font-family-display);
+  font-size: calc(var(--font-size-3xl) * 1.6);
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-header__number--good,
+.metric-header__band--good {
+  color: var(--color-status-success-text);
+}
+
+.metric-header__number--fair,
+.metric-header__band--fair {
+  color: var(--color-status-warning-text);
+}
+
+.metric-header__number--poor,
+.metric-header__band--poor {
+  color: var(--color-status-error-text);
+}
+
+.metric-header__number--none,
+.metric-header__band--none {
+  color: var(--color-status-neutral-text);
+}
+
+.metric-header__text {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  flex: 1 1 26rem;
+  min-width: 0;
+}
+
+.metric-header__steps {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-surface);
+  background: var(--color-surface-sunken);
+}
+
+.metric-header__list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+  overflow-wrap: anywhere;
+}
+
+.change[data-direction="up"] {
+  color: var(--color-status-success-text);
+}
+
+.change[data-direction="down"] {
+  color: var(--color-status-error-text);
+}

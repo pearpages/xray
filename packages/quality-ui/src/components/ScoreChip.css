@@ -1,0 +1,30 @@
+.score-chip {
+  display: inline-block;
+  min-inline-size: 1.5rem;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.score-chip[data-band="good"] {
+  background: var(--color-status-success-subtle);
+  color: var(--color-status-success-text);
+}
+
+.score-chip[data-band="fair"] {
+  background: var(--color-status-warning-subtle);
+  color: var(--color-status-warning-text);
+}
+
+.score-chip[data-band="poor"] {
+  background: var(--color-status-error-subtle);
+  color: var(--color-status-error-text);
+}
+
+.score-chip[data-band="none"] {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+}

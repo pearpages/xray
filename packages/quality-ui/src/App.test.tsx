@@ -27,8 +27,8 @@ describe("App", () => {
     expect(screen.getByText(/main · /)).toBeTruthy();
     expect(within(screen.getByRole("region", { name: "Quality score" })).getByText("77")).toBeTruthy();
     expect(within(scores()).getByText("Not measured: the registry can't be reached")).toBeTruthy();
-    // One tab per measured metric, plus the overview and every finding.
-    expect(screen.getAllByRole("tab").map((item) => item.textContent)).toEqual(["Overview", "Hotspots", "Architecture", "Findings (4)"]);
+    // A tab per metric with its score, the weakest first and the unmeasured last, then every finding.
+    expect(screen.getAllByRole("tab").map((item) => item.textContent)).toEqual(["Overview", "Hotspots 72", "Architecture 82", "Dependencies –", "Findings (4)"]);
     expect(tab("Overview").getAttribute("aria-selected")).toBe("true");
   });
 
@@ -36,13 +36,11 @@ describe("App", () => {
     render(<App storage={new MemoryStorage()} />);
     await open(reportFile(report()));
     // jsdom doesn't follow fragment links on click; the card's link is what it would follow.
-    const card = within(scores()).getByRole("link", { name: /Hotspots: 72, open its tab/ });
+    const card = within(scores()).getByRole("link", { name: "Hotspots" });
     expect(card.getAttribute("href")).toBe("#hotspots");
-    // An unmeasured metric has no tab, so its card links nowhere.
-    expect(within(scores()).queryByRole("link", { name: /Dependencies/ })).toBeNull();
     window.location.hash = "hotspots";
     fireEvent(window, new HashChangeEvent("hashchange"));
-    await waitFor(() => expect(tab("Hotspots").getAttribute("aria-selected")).toBe("true"));
+    await waitFor(() => expect(tab(/^Hotspots/).getAttribute("aria-selected")).toBe("true"));
     expect(await screen.findByRole("heading", { level: 2, name: "Hotspots" })).toBeTruthy();
 
     await userEvent.click(tab(/Findings/));
@@ -107,10 +105,10 @@ describe("App", () => {
   it("gives coverage and duplication their own tabs when they ran", async () => {
     render(<App storage={new MemoryStorage()} />);
     await open(reportFile(report({ metrics: [hotspotsMetric(), architectureMetric(), unavailableMetric(), coverageMetric(), duplicationMetric()] })));
-    await userEvent.click(tab("Coverage"));
-    expect(await screen.findByRole("heading", { level: 2, name: "Coverage" })).toBeTruthy();
-    await userEvent.click(tab("Duplication"));
-    expect(await screen.findByRole("heading", { level: 2, name: "Duplication" })).toBeTruthy();
+    await userEvent.click(tab(/^Coverage/));
+    expect(await screen.findByRole("heading", { level: 3, name: "Files, the most uncovered lines first" })).toBeTruthy();
+    await userEvent.click(tab(/^Duplication/));
+    expect(await screen.findByRole("heading", { level: 3, name: "Copied blocks, the biggest first" })).toBeTruthy();
   });
 
   it("opens a file's profile from any file path", async () => {
@@ -121,5 +119,25 @@ describe("App", () => {
     const sheet = await screen.findByRole("dialog", { name: "src/cart/reduce.ts" });
     expect(within(sheet).getByText("18 commits in 12 months × complexity 216 = 3888")).toBeTruthy();
     expect(within(sheet).getByRole("heading", { name: "Findings (1)" })).toBeTruthy();
+  });
+
+  it("opens every metric's tab with its score, what it means and what to do", async () => {
+    render(<App storage={new MemoryStorage()} />);
+    await open(reportFile(report()));
+    await userEvent.click(tab(/^Hotspots/));
+    const header = screen.getByRole("region", { name: "Hotspots score" });
+    expect(within(header).getByText("72")).toBeTruthy();
+    expect(within(header).getByText("Fair")).toBeTruthy();
+    expect(within(header).getByText(/What it measures:/)).toBeTruthy();
+    expect(within(header).getByText("Next steps, the most useful first")).toBeTruthy();
+  });
+
+  it("gives an unmeasured metric a tab that says why and how to measure it", async () => {
+    render(<App storage={new MemoryStorage()} />);
+    await open(reportFile(report()));
+    await userEvent.click(tab(/^Dependencies/));
+    const header = screen.getByRole("region", { name: "Dependencies score" });
+    expect(within(header).getByText("Not measured: the registry can't be reached.")).toBeTruthy();
+    expect(within(header).getByText(/How to measure it:/)).toBeTruthy();
   });
 });

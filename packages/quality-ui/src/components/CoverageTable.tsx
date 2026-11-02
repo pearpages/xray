@@ -15,6 +15,7 @@ const PAGE = 25;
 
 interface CoverageData {
   files: string[];
+  lines: number;
   rows: CoverageRow[];
   untested: number;
   missing: string[];
@@ -23,21 +24,25 @@ interface CoverageData {
 }
 
 type View = "tested" | "untested";
+type Row = CoverageRow & { missing: number; gain: number };
 
 /**
- * Files by line coverage, least covered first. Files no test loads (their size estimated) are a
- * second view: in a project with few tests they would fill the table and hide the weak tested ones.
+ * Files by the lines no test runs, the most first: the top of the list is where a test raises the
+ * score most. Files no test loads (their size estimated) are a second view, so in a project with few
+ * tests they don't bury the weak tested ones.
  */
 export function CoverageTable({ metric }: { metric: MetricResult }) {
-  const [sort, setSort] = useState<DataGridSort>({ column: "percent", direction: "ascending" });
+  const [sort, setSort] = useState<DataGridSort>({ column: "missing", direction: "descending" });
   const [view, setView] = useState<View>("tested");
   const [page, setPage] = useState(1);
   const data = metric.data as CoverageData | undefined;
-  const tested = (data?.rows ?? []).filter((row) => !row.untested);
-  const untested = (data?.rows ?? []).filter((row) => row.untested);
+  const total = Math.max(1, data?.lines ?? 1);
+  const all: Row[] = (data?.rows ?? []).map((row) => ({ ...row, missing: row.lines - row.covered, gain: Math.round(((row.lines - row.covered) / total) * 1000) / 10 }));
+  const tested = all.filter((row) => !row.untested);
+  const untested = all.filter((row) => row.untested);
   const current = view === "untested" ? untested : tested;
   const rows = useMemo(() => {
-    const key = sort.column as keyof CoverageRow;
+    const key = sort.column as keyof Row;
     const sorted = [...current].sort((a, b) =>
       typeof a[key] === "number" ? (a[key] as number) - (b[key] as number) || b.lines - a.lines : String(a[key]).localeCompare(String(b[key])),
     );
@@ -48,13 +53,20 @@ export function CoverageTable({ metric }: { metric: MetricResult }) {
 
   return (
     <section aria-labelledby="coverage-heading" className="coverage">
-      <Heading level={2} size="md" id="coverage-heading">
-        Coverage
+      {(data.untested > 0 || data.missing.length > 0) && (
+        <Alert tone="info" title="What this number can't see">
+          {data.missing.length > 0 && `${data.missing.length} file(s) belong to projects without a coverage report and aren't counted. `}
+          {data.untested > 0 &&
+            `${data.untested} file(s) are loaded by no test, so the report doesn't list them: they count as 0 %, their size estimated from their code. For exact numbers, make your test runner report every file (Vitest: coverage.include).`}
+        </Alert>
+      )}
+      <Heading level={3} size="sm" id="coverage-heading">
+        Files, the most uncovered lines first
       </Heading>
       <Text tone="muted" size="sm">
-        From {data.files.join(", ")}, {new Date(data.reportDate).toLocaleDateString()}.
-        {data.untested > 0 && ` ${data.untested} file(s) no test loads count as 0 %, their lines estimated.`}
-        {data.missing.length > 0 && ` ${data.missing.length} file(s) belong to projects without a report and aren't counted.`}
+        From {data.files.join(", ")}, {new Date(data.reportDate).toLocaleDateString()}. <strong>Lines:</strong> the lines your test runner
+        instruments (statements; ≈ marks an estimate). <strong>Covered:</strong> lines that ran with every branch taken. <strong>Gain:</strong>{" "}
+        points the score would win if the file were fully covered.
       </Text>
       {untested.length > 0 && (
         <SegmentedControl<View>
@@ -68,7 +80,7 @@ export function CoverageTable({ metric }: { metric: MetricResult }) {
           }}
           options={[
             { value: "tested", label: `Tested (${tested.length})` },
-            { value: "untested", label: `Untested (${untested.length})` },
+            { value: "untested", label: `Loaded by no test (${untested.length})` },
           ]}
         />
       )}
@@ -100,6 +112,9 @@ export function CoverageTable({ metric }: { metric: MetricResult }) {
           <DataGridColumn id="percent" allowsSorting align="end">
             Coverage
           </DataGridColumn>
+          <DataGridColumn id="missing" allowsSorting align="end">
+            Gain
+          </DataGridColumn>
         </DataGridHeader>
         <DataGridBody items={shown.items} emptyMessage="No instrumented file">
           {(row) => (
@@ -112,6 +127,7 @@ export function CoverageTable({ metric }: { metric: MetricResult }) {
               <DataGridCell align="end">
                 {row.untested ? <Badge tone="error">no test loads it</Badge> : <Badge tone={tone(row.percent)}>{`${row.percent} %`}</Badge>}
               </DataGridCell>
+              <DataGridCell align="end">{row.gain > 0 ? `+${row.gain}` : "–"}</DataGridCell>
             </DataGridRow>
           )}
         </DataGridBody>

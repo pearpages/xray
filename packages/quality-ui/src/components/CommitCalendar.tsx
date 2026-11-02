@@ -45,11 +45,12 @@ export function CommitCalendar({ activity, windowMonths, generatedAt }: Props) {
   return (
     <section aria-labelledby="calendar-heading" className="commit-calendar">
       <Heading level={3} size="sm" id="calendar-heading">
-        Commits per day
+        When the code changed
       </Heading>
       <Text tone="muted" size="sm">
-        {total} commit(s) in the last {windowMonths} months, on {Object.keys(activity).length} day(s)
-        {busiest ? `; the busiest, ${busiest[0]}, had ${busiest[1]}` : ""}. A stronger colour is a busier day, relative to that one.
+        One square per day: {total} commit(s) in the last {windowMonths} months, on {Object.keys(activity).length} day(s)
+        {busiest ? `; the busiest, ${busiest[0]}, had ${busiest[1]}` : ""}. A stronger colour is a busier day, relative to that one. Long
+        quiet stretches and sudden bursts show where the hotspots' commits came from.
       </Text>
       <div className="commit-calendar__scroll">
         <Heatmap

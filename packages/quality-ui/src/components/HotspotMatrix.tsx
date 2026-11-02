@@ -1,3 +1,4 @@
+import { Heading } from "@pearpages/pulp-react/heading";
 import { Text } from "@pearpages/pulp-react/text";
 import type { HotspotRow } from "@xray/quality";
 import "./HotspotMatrix.css";
@@ -47,11 +48,15 @@ export function HotspotMatrix({ rows, selected, onSelect }: Props) {
   const max = Math.max(1, ...counts.flat());
   return (
     <div className="hotspot-matrix">
+      <Heading level={3} size="sm">
+        Where the files sit
+      </Heading>
       <table className="hotspot-matrix__table">
         <caption>
           <Text as="span" size="sm" tone="muted">
-            Files by commits (across) and complexity (down). A stronger colour holds more files; the top right is often changed and complex. Pick a cell
-            to list its files.
+            Every changed file by commits (across) and complexity (down, the most complex at the top); each cell counts files and a stronger colour holds
+            more. Files bottom left are simple and rarely changed; the top right, busy and complex, is where refactoring pays first. Pick a cell to list its
+            files.
           </Text>
         </caption>
         <thead>

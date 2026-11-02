@@ -12,7 +12,7 @@ const files = () => within(screen.getByRole("grid")).getAllByRole("rowheader").m
 describe("HotspotsTable", () => {
   it("orders files by hotspot and re-sorts by any column", async () => {
     render(<HotspotsTable metric={hotspotsMetric()} />);
-    expect(screen.getByText(/Commits in the last 12 months × complexity, for the 3 files changed in that time; the\s+hottest first\./)).toBeTruthy();
+    expect(screen.getByText(/The 3 files changed in the last 12 months\./)).toBeTruthy();
     expect(files()).toEqual(["src/cart/reduce.ts", "src/cart/total.ts", "src/app.ts"]);
 
     await userEvent.click(screen.getByRole("columnheader", { name: /Commits/ }));

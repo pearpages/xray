@@ -48,6 +48,7 @@ export async function analyzeQuality(root: string, config: QualityConfig, analyz
     generatedAt: new Date().toISOString(),
     score: globalScore(metrics, weights),
     weights,
+    scoring: { codeFiles: files.length, severityPenalty: config.severityPenalty },
     metrics,
   };
 }

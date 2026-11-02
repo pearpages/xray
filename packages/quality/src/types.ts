@@ -50,5 +50,7 @@ export interface QualityReport {
   /** Weighted average of the available metrics, 0–100; null when none ran. */
   score: number | null;
   weights: Record<string, number>;
+  /** What the findings formula used, so a reader can say what a finding costs (ADR-0014). */
+  scoring?: { codeFiles: number; severityPenalty: Record<Severity, number> };
   metrics: MetricResult[];
 }

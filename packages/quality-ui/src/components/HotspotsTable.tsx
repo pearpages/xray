@@ -31,13 +31,6 @@ export function HotspotsTable({ metric, generatedAt }: { metric: MetricResult; g
 
   return (
     <section aria-labelledby="hotspots-heading" className="hotspots">
-      <Heading level={2} size="md" id="hotspots-heading">
-        Hotspots
-      </Heading>
-      <Text tone="muted" size="sm">
-        Commits in the last {data.windowMonths} months × complexity, for the {data.rows.length} files changed in that time; the
-        hottest first.
-      </Text>
       {data.activity && generatedAt && <CommitCalendar activity={data.activity} windowMonths={data.windowMonths} generatedAt={generatedAt} />}
       <HotspotMatrix
         rows={data.rows}
@@ -55,6 +48,14 @@ export function HotspotsTable({ metric, generatedAt }: { metric: MetricResult; g
           </button>
         </Text>
       )}
+      <Heading level={3} size="sm" id="hotspots-heading">
+        The files, the hottest first
+      </Heading>
+      <Text tone="muted" size="sm">
+        The {data.rows.length} files changed in the last {data.windowMonths} months. <strong>Commits:</strong> commits that touched the file.{" "}
+        <strong>Complexity:</strong> the cyclomatic complexity of its functions, added up: roughly, how many paths a test has to cover.{" "}
+        <strong>Hotspot:</strong> the two multiplied.
+      </Text>
       <DataGrid
         aria-labelledby="hotspots-heading"
         sort={sort}

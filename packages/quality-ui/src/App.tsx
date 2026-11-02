@@ -7,8 +7,10 @@ import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "re
 import { Spinner } from "@pearpages/pulp-react/spinner";
 import { AppHeader } from "./components/AppHeader";
 import { FileProfileSheet } from "./components/FileProfileSheet";
+import { MetricHeader } from "./components/MetricHeader";
+import { Overview, weakestFirst } from "./components/Overview";
+import { ScoreChip } from "./components/ScoreChip";
 import { Findings } from "./components/Findings";
-import { Overview } from "./components/Overview";
 import { readReportFiles, ReportLoader } from "./components/ReportLoader";
 import { byRepo, type MetricResult, type QualityReport } from "./reports";
 import { browserStorage, loadSaved, save } from "./storage";
@@ -104,8 +106,9 @@ export function App({ storage = browserStorage() }: Props) {
     );
   }
 
-  const measured = report.metrics.filter((metric) => metric.status === "ok");
-  const tabs = ["overview", ...measured.map((metric) => metric.id), "findings"];
+  // Every metric has a tab, the weakest first; an unmeasured one says why and how to measure it.
+  const ordered = weakestFirst(report.metrics);
+  const tabs = ["overview", ...ordered.map((metric) => metric.id), "findings"];
   const current = tabs.includes(tab) ? tab : "overview";
   const findings = report.metrics.reduce((sum, metric) => sum + metric.findings.length, 0);
 
@@ -137,9 +140,9 @@ export function App({ storage = browserStorage() }: Props) {
           <Tabs value={current} onValueChange={setTab} activation="manual" className="app__tabs">
             <Tabs.List aria-label="Report sections" className="app__tablist">
               <Tabs.Tab value="overview">Overview</Tabs.Tab>
-              {measured.map((metric) => (
-                <Tabs.Tab key={metric.id} value={metric.id}>
-                  {metric.name}
+              {ordered.map((metric) => (
+                <Tabs.Tab key={metric.id} value={metric.id} className="app__tab">
+                  {metric.name} <ScoreChip score={metric.score} />
                 </Tabs.Tab>
               ))}
               <Tabs.Tab value="findings">{`Findings (${findings})`}</Tabs.Tab>
@@ -147,12 +150,17 @@ export function App({ storage = browserStorage() }: Props) {
             <Tabs.Panel value="overview">
               <Overview report={report} history={history} tabs={tabs} />
             </Tabs.Panel>
-            {measured.map((metric) => (
+            {ordered.map((metric) => (
               <Tabs.Panel key={metric.id} value={metric.id}>
                 {current === metric.id && (
-                  <Suspense fallback={<Spinner label={`Loading ${metric.name}`} />}>
-                    {VIEWS[metric.id]?.(metric, report) ?? <Findings report={report} metric={metric.id} />}
-                  </Suspense>
+                  <div className="app__metric">
+                    <MetricHeader metric={metric} report={report} history={history} />
+                    {metric.status === "ok" && (
+                      <Suspense fallback={<Spinner label={`Loading ${metric.name}`} />}>
+                        {VIEWS[metric.id]?.(metric, report) ?? <Findings report={report} metric={metric.id} />}
+                      </Suspense>
+                    )}
+                  </div>
                 )}
               </Tabs.Panel>
             ))}

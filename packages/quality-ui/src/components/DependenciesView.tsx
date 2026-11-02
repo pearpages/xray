@@ -63,7 +63,7 @@ export function DependenciesView({ metric }: { metric: MetricResult }) {
   return (
     <div className="dependencies">
       <section aria-labelledby="vulnerabilities-heading" className="dependencies__section">
-        <Heading level={2} size="md" id="vulnerabilities-heading">
+        <Heading level={3} size="sm" id="vulnerabilities-heading">
           Vulnerable packages
         </Heading>
         <Text tone="muted" size="sm">
@@ -96,7 +96,7 @@ export function DependenciesView({ metric }: { metric: MetricResult }) {
         <Paged label="Vulnerable packages" page={shown.page} count={shown.count} total={vulnerable.length} size={PAGE} onPageChange={setPage} />
       </section>
       <section aria-labelledby="outdated-heading" className="dependencies__section">
-        <Heading level={2} size="md" id="outdated-heading">
+        <Heading level={3} size="sm" id="outdated-heading">
           A major version behind
         </Heading>
         {data.outdated === null ? (

@@ -177,6 +177,8 @@ describe("analyzeQuality", () => {
     const report = await analyzeQuality(repo.root, loadQualityConfig(repo.root));
     expect(report).toMatchObject({ version: 1, repo: { dirty: false }, weights: { hotspots: 1, architecture: 1, dependencies: 1, coverage: 1, duplication: 1, lint: 1 } });
     expect(report.repo.commit).toMatch(/^[0-9a-f]{40}$/);
+    expect(report.scoring).toEqual({ codeFiles: report.scoring!.codeFiles, severityPenalty: { high: 10, medium: 3, low: 1 } });
+    expect(report.scoring!.codeFiles).toBeGreaterThan(0);
     expect(report.metrics.map((metric) => [metric.id, metric.status])).toEqual([
       ["hotspots", "ok"],
       ["architecture", "ok"],

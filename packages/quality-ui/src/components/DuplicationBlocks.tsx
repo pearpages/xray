@@ -30,8 +30,8 @@ export function DuplicationBlocks({ metric }: { metric: MetricResult }) {
 
   return (
     <section aria-labelledby="duplication-heading" className="duplication">
-      <Heading level={2} size="md" id="duplication-heading">
-        Duplication
+      <Heading level={3} size="sm" id="duplication-heading">
+        Copied blocks, the biggest first
       </Heading>
       <Text tone="muted" size="sm">
         {data.duplicatedLines} of {data.lines} lines of code ({data.percent} %) are copies, in {data.clones.length} block(s), the biggest

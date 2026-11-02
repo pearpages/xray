@@ -64,8 +64,8 @@ sees the report. Never open a public issue for an unfixed vulnerability.
 - Runtime dependencies are kept minimal: `dependency-cruiser`, `ts-morph`, `typescript` (core) and
   `commander` (cli); the quality tool adds `jscpd` 4 and `ts-morph`, never installed by the Action.
   The comment script uses Node's built-in `fetch`, no Octokit.
-- The quality UI also depends on `@pearpages/modals` and `@pearpages/heatmap` (pulp's own vendors, at
-  the versions pulp uses), for their stylesheets.
+- The quality UI also depends on `@pearpages/modals`, `@pearpages/heatmap` and `@pearpages/pulp-icons`
+  (pulp's own packages, at the versions pulp uses), for their stylesheets and the info icon.
 - Development only, never installed by the Action: React, Vite and pulp (quality-ui), vitest with
   `@vitest/coverage-v8`, and `jsdom` + Testing Library for the UI's component tests.
 - `package-lock.json` is committed; CI and the Action install with `npm ci`.

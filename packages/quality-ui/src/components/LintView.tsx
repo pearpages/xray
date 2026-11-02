@@ -23,7 +23,7 @@ export function LintView({ metric, report }: { metric: MetricResult; report: Qua
   return (
     <div className="lint">
       <section aria-labelledby="lint-runs-heading" className="lint__section">
-        <Heading level={2} size="md" id="lint-runs-heading">
+        <Heading level={3} size="sm" id="lint-runs-heading">
           Runs
         </Heading>
         <Text tone="muted" size="sm">
@@ -63,7 +63,7 @@ export function LintView({ metric, report }: { metric: MetricResult; report: Qua
       </section>
       {data.rules.length > 0 && (
         <section aria-labelledby="lint-rules-heading" className="lint__section">
-          <Heading level={2} size="md" id="lint-rules-heading">
+          <Heading level={3} size="sm" id="lint-rules-heading">
             Most frequent
           </Heading>
           <ol className="lint__rules">

@@ -246,7 +246,8 @@ xray-quality
 
 The report has the repository path, the analysed commit (and whether the tree had uncommitted
 changes), the date, a global score, and one result per metric: score, one-sentence summary and
-findings (`file`, `line`, `high`/`medium`/`low`, message) and how long it took. A metric that can't
+findings (`file`, `line`, `high`/`medium`/`low`, message) and how long it took. `scoring` records
+the number of code files and the severity penalties, so the UI can say what each finding costs. A metric that can't
 run (no network, no features defined, no lcov report, ESLint/TypeScript not installed) is
 *unavailable* with the reason, and the global score averages the others.
 
@@ -265,18 +266,21 @@ Findings formula: `100 − (10·high + 3·medium + 1·low) / (code files / 100)`
 **The UI** (`npm run dev -w @xray/quality-ui`, or `npm run build -w @xray/quality-ui` for a static
 build in `packages/quality-ui/dist/`): open one or more reports with the button or by dropping them
 (anywhere on the page once one is open). The header names the repository, commit and date and
-switches between repositories and reports. An **Overview** tab shows the global score, one card per
-metric (a one-line summary, its findings, how it's scored) and, with several reports of one
-repository, the score per commit (and each metric's, on the same scale, or as a table); each card
-opens the metric's own tab: the hotspots (commits per day as a calendar, files by commits ×
-complexity as a grid whose cells filter the table, then the table), architecture violations by feature (one closed
-section each, the worst first), vulnerable packages and the majors behind, coverage per file (the
-least covered tested files, and apart the files no test loads), duplicated blocks with both copies
-side by side, or each ESLint/tsc run with the most frequent rules.
-**Findings** lists them all, filterable by severity and metric. Any file path opens the file's
-profile beside the page: its hotspot, coverage, copies, deep imports and findings. Long lists come a page at a time,
-and the open tab is in the URL (`#coverage`), so Back works. Reports never leave the browser: it
-keeps the open ones (in localStorage) until you press *Close all*, so a reload doesn't lose them.
+switches between repositories and reports. Every metric has a tab, its score beside its name, the
+weakest first. The **Overview** says what holds the global score down and shows a card per metric,
+the weakest first: its score and band (good from 80, fair from 50, poor below), a one-line
+reading, what moves the score, and an (i) that explains how it is scored. Each metric's tab opens
+the same way (the score, a verdict, what it measures, what moves the score, the next steps, the
+most useful first), then its own view: the hotspots (commits per day, files by commits ×
+complexity, the table), architecture violations by feature, vulnerable packages and the majors
+behind, coverage per file (the most uncovered lines first, with the points each would win), the
+biggest duplicated blocks, or each ESLint/tsc run with the most frequent rules. An unmeasured
+metric's tab says why and how to measure it. With several reports of one repository, every score
+shows how much it moved since the one before, and the Overview charts them. Any file path opens
+the file's profile beside the page. **Findings** lists them all, filterable by severity and metric.
+Long lists come a page at a time, and the open tab is in the URL (`#coverage`), so Back works.
+Reports never leave the browser: it keeps the open ones (in localStorage) until you press *Close
+all*, so a reload doesn't lose them.
 
 ### Configuration (`quality` in `xray.config.json`)
 

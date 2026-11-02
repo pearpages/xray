@@ -77,3 +77,8 @@
   outline: 2px solid var(--color-border-focus);
   outline-offset: 2px;
 }
+
+.hotspot-matrix {
+  display: grid;
+  gap: var(--space-2);
+}
