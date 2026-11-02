@@ -1,0 +1,23 @@
+/* Looks like the path it is; reads as a link on hover and focus. */
+.file-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.file-link:hover code,
+.file-link:focus-visible code {
+  color: var(--color-action-primary);
+  text-decoration: underline;
+}
+
+.file-link:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-surface);
+}

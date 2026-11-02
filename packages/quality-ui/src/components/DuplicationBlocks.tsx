@@ -5,6 +5,7 @@ import { Text } from "@pearpages/pulp-react/text";
 import type { Clone } from "@xray/quality";
 import { useState } from "react";
 import { pageOf, type MetricResult } from "../reports";
+import { FileLink } from "./FileLink";
 import { Paged } from "./Paged";
 import "./DuplicationBlocks.css";
 
@@ -50,11 +51,15 @@ export function DuplicationBlocks({ metric }: { metric: MetricResult }) {
                 </CardHeader>
                 <CardBody>
                   <div className="duplication__pair">
-                    <code className="duplication__copy">{where(clone.a)}</code>
+                    <span className="duplication__copy">
+                      <FileLink file={clone.a.file} label={where(clone.a)} />
+                    </span>
                     <span className="duplication__same" aria-label="is the same as">
                       =
                     </span>
-                    <code className="duplication__copy">{where(clone.b)}</code>
+                    <span className="duplication__copy">
+                      <FileLink file={clone.b.file} label={where(clone.b)} />
+                    </span>
                   </div>
                 </CardBody>
               </Card>

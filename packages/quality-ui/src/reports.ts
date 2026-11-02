@@ -117,3 +117,58 @@ export function pageOf<T>(items: T[], page: number, size: number): { items: T[];
   const current = Math.min(Math.max(1, page), count);
   return { items: items.slice((current - 1) * size, current * size), page: current, count };
 }
+
+interface HotspotFacts {
+  churn: number;
+  complexity: number;
+  hotspot: number;
+}
+
+interface CoverageFacts {
+  lines: number;
+  covered: number;
+  percent: number;
+  untested?: boolean;
+}
+
+interface Side {
+  file: string;
+  start: number;
+  end: number;
+}
+
+export interface FileProfile {
+  file: string;
+  hotspot?: HotspotFacts & { windowMonths: number };
+  coverage?: CoverageFacts;
+  /** Blocks of this file copied elsewhere (or within it): here, and the other copy. */
+  copies: { here: Side; there: Side; lines: number; tokens: number }[];
+  /** Deep imports this file makes into other features, and the ones made into it. */
+  imports: { file: string; imports: string; line?: number }[];
+  importedBy: { file: string; imports: string; line?: number }[];
+  findings: FindingRow[];
+}
+
+/** Everything a report knows about one file, across metrics. */
+export function fileProfile(report: QualityReport, file: string): FileProfile {
+  const data = (id: string) => report.metrics.find((metric) => metric.id === id && metric.status === "ok")?.data as Record<string, unknown> | undefined;
+  const hotspots = data("hotspots") as { rows?: ({ file: string } & HotspotFacts)[]; windowMonths?: number } | undefined;
+  const hot = hotspots?.rows?.find((row) => row.file === file);
+  const coverage = (data("coverage") as { rows?: ({ file: string } & CoverageFacts)[] } | undefined)?.rows?.find((row) => row.file === file);
+  const clones = ((data("duplication") as { clones?: { a: Side; b: Side; lines: number; tokens: number }[] } | undefined)?.clones ?? []).flatMap((clone) => [
+    ...(clone.a.file === file ? [{ here: clone.a, there: clone.b, lines: clone.lines, tokens: clone.tokens }] : []),
+    ...(clone.b.file === file ? [{ here: clone.b, there: clone.a, lines: clone.lines, tokens: clone.tokens }] : []),
+  ]);
+  const deep = ((data("architecture") as { violations?: { imports: { file: string; imports: string; line?: number }[] }[] } | undefined)?.violations ?? []).flatMap(
+    (group) => group.imports,
+  );
+  return {
+    file,
+    ...(hot && hotspots ? { hotspot: { churn: hot.churn, complexity: hot.complexity, hotspot: hot.hotspot, windowMonths: hotspots.windowMonths ?? 12 } } : {}),
+    ...(coverage ? { coverage: { lines: coverage.lines, covered: coverage.covered, percent: coverage.percent, ...(coverage.untested ? { untested: true } : {}) } } : {}),
+    copies: clones,
+    imports: deep.filter((item) => item.file === file),
+    importedBy: deep.filter((item) => item.imports === file),
+    findings: findingRows(report).filter((row) => row.file === file),
+  };
+}

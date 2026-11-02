@@ -252,7 +252,7 @@ run (no network, no features defined, no lcov report, ESLint/TypeScript not inst
 
 | Metric | What it measures | Score |
 |---|---|---|
-| **Hotspots** | Per code file, commits in the window × the sum of its functions' cyclomatic complexity. | Findings formula |
+| **Hotspots** | Per code file, commits in the window × the sum of its functions' cyclomatic complexity. The report also keeps the commits per day, for the UI's calendar. | Findings formula |
 | **Architecture** | Features (`xray.features.json` features that declare `files`, else folders matching `features`) import each other only through a public API (`index.*`, or a map feature's entry points). Deep imports are medium, two features importing each other high. | Findings formula |
 | **Dependencies** | `audit` of production dependencies and `outdated`, with the package manager the lockfile names (npm, pnpm). Read-only; needs the registry. | `100 − 15·high − 5·medium − 1·low` |
 | **Coverage** | Lines covered in your lcov reports (a line with an untaken branch isn't covered). xray never runs the tests: run them with coverage first. A code file of a project with a report that isn't in it was loaded by no test: 0 %, its lines estimated, high. Files under `fileThreshold` % are medium, under `highThreshold` % high. | % of instrumented lines covered |
@@ -268,11 +268,13 @@ build in `packages/quality-ui/dist/`): open one or more reports with the button 
 switches between repositories and reports. An **Overview** tab shows the global score, one card per
 metric (a one-line summary, its findings, how it's scored) and, with several reports of one
 repository, the score per commit (and each metric's, on the same scale, or as a table); each card
-opens the metric's own tab: the hotspots table, architecture violations by feature (one closed
+opens the metric's own tab: the hotspots (commits per day as a calendar, files by commits ×
+complexity as a grid whose cells filter the table, then the table), architecture violations by feature (one closed
 section each, the worst first), vulnerable packages and the majors behind, coverage per file (the
 least covered tested files, and apart the files no test loads), duplicated blocks with both copies
 side by side, or each ESLint/tsc run with the most frequent rules.
-**Findings** lists them all, filterable by severity and metric. Long lists come a page at a time,
+**Findings** lists them all, filterable by severity and metric. Any file path opens the file's
+profile beside the page: its hotspot, coverage, copies, deep imports and findings. Long lists come a page at a time,
 and the open tab is in the URL (`#coverage`), so Back works. Reports never leave the browser: it
 keeps the open ones (in localStorage) until you press *Close all*, so a reload doesn't lose them.
 

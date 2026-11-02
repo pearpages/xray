@@ -4,7 +4,7 @@ import { architecture } from "./analyzers/architecture.js";
 import { createDependencies, parseAudit, parseOutdated, worstPerPackage, type Runner } from "./analyzers/dependencies.js";
 import { hotspots, type HotspotRow } from "./analyzers/hotspots.js";
 import { loadQualityConfig, type QualityConfig } from "./config.js";
-import { codeFiles } from "./files.js";
+import { codeFiles, git } from "./files.js";
 import { analyzeQuality } from "./report.js";
 import { findingsScore, globalScore } from "./score.js";
 import type { AnalyzerContext, MetricResult } from "./types.js";
@@ -54,6 +54,10 @@ describe("hotspots", () => {
     // simple.ts changed as often but has complexity 1: below minComplexity, not a finding.
     expect(result.findings.map((f) => [f.file, f.severity])).toEqual([["src/hot.ts", "high"]]);
     expect(result.score).toBe(90);
+    // Five commits, all made today (committer date, as git prints it).
+    const activity = (result.data as { activity: Record<string, number> }).activity;
+    const today = git(repo.root, ["log", "-1", "--format=%cs"]);
+    expect(activity).toEqual({ [today]: 5 });
   });
 });
 

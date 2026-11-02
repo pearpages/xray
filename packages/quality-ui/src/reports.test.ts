@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { byRepo, evolution, filterFindings, findingRows, parseReport, tone, type QualityReport } from "./reports.js";
+import { byRepo, evolution, fileProfile, filterFindings, findingRows, parseReport, tone, type QualityReport } from "./reports.js";
 
 const report = (commit: string, generatedAt: string, score: number, name = "shop"): QualityReport => ({
   version: 1,
@@ -46,5 +46,22 @@ describe("reports", () => {
 
   it("bands scores", () => {
     expect([tone(95), tone(60), tone(10), tone(null)]).toEqual(["success", "warning", "error", "neutral"]);
+  });
+});
+
+describe("fileProfile", () => {
+  it("gathers what every metric knows about one file", async () => {
+    const { architectureMetric, coverageMetric, duplicationMetric, hotspotsMetric, report: fixture } = await import("./testing/fixtures.js");
+    const full = fixture({ metrics: [hotspotsMetric(), architectureMetric(), coverageMetric(), duplicationMetric()] });
+    const reduce = fileProfile(full, "src/cart/reduce.ts");
+    expect(reduce.hotspot).toEqual({ churn: 18, complexity: 216, hotspot: 3888, windowMonths: 12 });
+    expect(reduce.coverage).toEqual({ lines: 4, covered: 4, percent: 100 });
+    expect(reduce.copies).toEqual([{ here: { file: "src/cart/reduce.ts", start: 10, end: 21 }, there: { file: "src/cart/undo.ts", start: 3, end: 14 }, lines: 12, tokens: 240 }]);
+    expect(reduce.findings.map((row) => row.message)).toEqual(["18 commits × complexity 216"]);
+
+    const cart = fileProfile(full, "src/features/cart/Cart.tsx");
+    expect(cart.imports).toEqual([{ file: "src/features/cart/Cart.tsx", imports: "src/features/catalogue/list.ts", line: 3 }]);
+    expect(fileProfile(full, "src/features/catalogue/list.ts").importedBy).toHaveLength(1);
+    expect(fileProfile(full, "src/cart/total.ts").coverage?.untested).toBe(true);
   });
 });

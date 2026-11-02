@@ -1,0 +1,79 @@
+.hotspot-matrix {
+  overflow-x: auto;
+}
+
+.hotspot-matrix__table {
+  border-collapse: separate;
+  /* A 2 px surface gap between cells. */
+  border-spacing: 2px;
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.hotspot-matrix__table caption {
+  caption-side: top;
+  padding-bottom: var(--space-2);
+  text-align: start;
+}
+
+.hotspot-matrix__table th {
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-text-muted);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.hotspot-matrix__table th[scope="row"] {
+  text-align: end;
+}
+
+.hotspot-matrix__cell {
+  min-width: 3.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: var(--radius-surface);
+  text-align: center;
+}
+
+/* pulp's sequential data scale; text keeps at least 5.4:1 on every step, light and dark. */
+.hotspot-matrix__cell[data-level="0"] {
+  background: var(--color-data-sequential-0);
+}
+
+.hotspot-matrix__cell[data-level="1"] {
+  background: var(--color-data-sequential-1);
+  color: var(--color-text-default);
+}
+
+.hotspot-matrix__cell[data-level="2"] {
+  background: var(--color-data-sequential-2);
+  color: var(--color-text-default);
+}
+
+.hotspot-matrix__cell[data-level="3"] {
+  background: var(--color-data-sequential-3);
+  color: var(--color-text-on-inverse);
+}
+
+.hotspot-matrix__cell[data-level="4"] {
+  background: var(--color-data-sequential-4);
+  color: var(--color-text-on-inverse);
+}
+
+.hotspot-matrix__cell button {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hotspot-matrix__cell button:focus-visible,
+.hotspot-matrix__cell button[aria-pressed="true"] {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}

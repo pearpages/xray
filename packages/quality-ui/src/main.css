@@ -1,5 +1,7 @@
 @import "@pearpages/pulp-css";
 @import "@pearpages/pulp-react/styles.css";
+@import "@pearpages/modals/styles.css" layer(vendor);
+@import "@pearpages/heatmap/styles.css" layer(vendor);
 
 body {
   background: var(--color-surface-base);

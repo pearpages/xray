@@ -4,6 +4,7 @@ import { Heading } from "@pearpages/pulp-react/heading";
 import { Text } from "@pearpages/pulp-react/text";
 import type { FeatureViolations } from "@xray/quality";
 import type { MetricResult } from "../reports";
+import { FileLink } from "./FileLink";
 import "./ArchitectureViolations.css";
 
 interface ArchitectureData {
@@ -53,11 +54,7 @@ export function ArchitectureViolations({ metric }: { metric: MetricResult }) {
                       <ul className="architecture__imports">
                         {group.imports.map((item) => (
                           <li key={`${item.file}:${item.imports}`}>
-                            <code>
-                              {item.file}
-                              {item.line ? `:${item.line}` : ""}
-                            </code>{" "}
-                            → <code>{item.imports}</code>
+                            <FileLink file={item.file} line={item.line} /> → <FileLink file={item.imports} />
                           </li>
                         ))}
                       </ul>

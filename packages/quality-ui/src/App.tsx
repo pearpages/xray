@@ -1,15 +1,18 @@
 import { Alert } from "@pearpages/pulp-react/alert";
+import { DialogSystem } from "@pearpages/pulp-react/dialog";
 import { EmptyState } from "@pearpages/pulp-react/empty-state";
 import { Heading } from "@pearpages/pulp-react/heading";
 import { Tabs } from "@pearpages/pulp-react/tabs";
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Spinner } from "@pearpages/pulp-react/spinner";
 import { AppHeader } from "./components/AppHeader";
+import { FileProfileSheet } from "./components/FileProfileSheet";
 import { Findings } from "./components/Findings";
 import { Overview } from "./components/Overview";
 import { readReportFiles, ReportLoader } from "./components/ReportLoader";
 import { byRepo, type MetricResult, type QualityReport } from "./reports";
 import { browserStorage, loadSaved, save } from "./storage";
+import { FileProfileContext } from "./fileProfileContext";
 import { useHashTab } from "./useHashTab";
 import "./App.css";
 
@@ -28,7 +31,7 @@ const LintView = lazy(() => import("./components/LintView").then((m) => ({ defau
 
 /** A metric's own view; metrics without one show their findings. */
 const VIEWS: Record<string, (metric: MetricResult, report: QualityReport) => ReactNode> = {
-  hotspots: (metric) => <HotspotsTable metric={metric} />,
+  hotspots: (metric, report) => <HotspotsTable metric={metric} generatedAt={report.generatedAt} />,
   dependencies: (metric) => <DependenciesView metric={metric} />,
   lint: (metric, report) => <LintView metric={metric} report={report} />,
   architecture: (metric) => <ArchitectureViolations metric={metric} />,
@@ -46,6 +49,7 @@ export function App({ storage = browserStorage() }: Props) {
   const [tab, setTab] = useHashTab("overview");
   const [dropping, setDropping] = useState(false);
   const [dropErrors, setDropErrors] = useState<string[]>([]);
+  const [file, setFile] = useState<string>();
 
   const add = (loaded: QualityReport[]) => setReports((current) => [...current, ...loaded]);
 
@@ -106,52 +110,57 @@ export function App({ storage = browserStorage() }: Props) {
   const findings = report.metrics.reduce((sum, metric) => sum + metric.findings.length, 0);
 
   return (
-    <main className={`app${dropping ? " app--dropping" : ""}`}>
-      <AppHeader
-        report={report}
-        repositories={[...groups.keys()]}
-        history={history}
-        kept={kept}
-        onRepository={(name) => {
-          setRepo(name);
-          setCommit(undefined);
-        }}
-        onReport={setCommit}
-        onLoad={add}
-        onCloseAll={() => {
-          setReports([]);
-          setTab("overview");
-        }}
-      />
-      {dropErrors.map((error) => (
-        <Alert key={error} tone="error">
-          {error}
-        </Alert>
-      ))}
-      <Tabs value={current} onValueChange={setTab} activation="manual" className="app__tabs">
-        <Tabs.List aria-label="Report sections" className="app__tablist">
-          <Tabs.Tab value="overview">Overview</Tabs.Tab>
-          {measured.map((metric) => (
-            <Tabs.Tab key={metric.id} value={metric.id}>
-              {metric.name}
-            </Tabs.Tab>
+    <DialogSystem>
+      <FileProfileContext.Provider value={setFile}>
+        <main className={`app${dropping ? " app--dropping" : ""}`}>
+          <AppHeader
+            report={report}
+            repositories={[...groups.keys()]}
+            history={history}
+            kept={kept}
+            onRepository={(name) => {
+              setRepo(name);
+              setCommit(undefined);
+            }}
+            onReport={setCommit}
+            onLoad={add}
+            onCloseAll={() => {
+              setReports([]);
+              setTab("overview");
+            }}
+          />
+          {dropErrors.map((error) => (
+            <Alert key={error} tone="error">
+              {error}
+            </Alert>
           ))}
-          <Tabs.Tab value="findings">{`Findings (${findings})`}</Tabs.Tab>
-        </Tabs.List>
-        <Tabs.Panel value="overview">
-          <Overview report={report} history={history} tabs={tabs} />
-        </Tabs.Panel>
-        {measured.map((metric) => (
-          <Tabs.Panel key={metric.id} value={metric.id}>
-            {current === metric.id && (
-              <Suspense fallback={<Spinner label={`Loading ${metric.name}`} />}>
-                {VIEWS[metric.id]?.(metric, report) ?? <Findings report={report} metric={metric.id} />}
-              </Suspense>
-            )}
-          </Tabs.Panel>
-        ))}
-        <Tabs.Panel value="findings">{current === "findings" && <Findings report={report} />}</Tabs.Panel>
-      </Tabs>
-    </main>
+          <Tabs value={current} onValueChange={setTab} activation="manual" className="app__tabs">
+            <Tabs.List aria-label="Report sections" className="app__tablist">
+              <Tabs.Tab value="overview">Overview</Tabs.Tab>
+              {measured.map((metric) => (
+                <Tabs.Tab key={metric.id} value={metric.id}>
+                  {metric.name}
+                </Tabs.Tab>
+              ))}
+              <Tabs.Tab value="findings">{`Findings (${findings})`}</Tabs.Tab>
+            </Tabs.List>
+            <Tabs.Panel value="overview">
+              <Overview report={report} history={history} tabs={tabs} />
+            </Tabs.Panel>
+            {measured.map((metric) => (
+              <Tabs.Panel key={metric.id} value={metric.id}>
+                {current === metric.id && (
+                  <Suspense fallback={<Spinner label={`Loading ${metric.name}`} />}>
+                    {VIEWS[metric.id]?.(metric, report) ?? <Findings report={report} metric={metric.id} />}
+                  </Suspense>
+                )}
+              </Tabs.Panel>
+            ))}
+            <Tabs.Panel value="findings">{current === "findings" && <Findings report={report} />}</Tabs.Panel>
+          </Tabs>
+          <FileProfileSheet report={report} file={file} onClose={() => setFile(undefined)} />
+        </main>
+      </FileProfileContext.Provider>
+    </DialogSystem>
   );
 }

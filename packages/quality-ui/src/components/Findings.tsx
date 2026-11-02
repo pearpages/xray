@@ -6,6 +6,7 @@ import { Select } from "@pearpages/pulp-react/select";
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@pearpages/pulp-react/table";
 import { useState } from "react";
 import { filterFindings, findingRows, pageOf, type QualityReport, type Severity } from "../reports";
+import { FileLink } from "./FileLink";
 import { Paged } from "./Paged";
 import "./Findings.css";
 
@@ -80,10 +81,7 @@ export function Findings({ report, metric: fixed }: Props) {
               </TableCell>
               {!fixed && <TableCell>{row.metricName}</TableCell>}
               <TableCell rowHeader>
-                <code>
-                  {row.file}
-                  {row.line ? `:${row.line}` : ""}
-                </code>
+                <FileLink file={row.file} line={row.line} />
               </TableCell>
               <TableCell>{row.message}</TableCell>
             </TableRow>

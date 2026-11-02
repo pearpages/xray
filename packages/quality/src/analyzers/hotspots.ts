@@ -14,16 +14,24 @@ export interface HotspotRow {
   hotspot: number;
 }
 
-/** Commits per file since `months` ago, paths relative to the root. */
-export function churnSince(root: string, months: number): Map<string, number> {
+/** Commits since `months` ago touching the root: per file (paths relative to it) and per day (`YYYY-MM-DD`, committer date). */
+export function commitLog(root: string, months: number): { churn: Map<string, number>; days: Record<string, number> } {
   const since = new Date();
   since.setMonth(since.getMonth() - months);
-  const log = git(root, ["log", `--since=${since.toISOString()}`, "--no-merges", "--name-only", "--relative", "--format=%x00"]);
+  const log = git(root, ["log", `--since=${since.toISOString()}`, "--no-merges", "--name-only", "--relative", "--format=%x00%cs", "--", "."]);
   const churn = new Map<string, number>();
-  for (const commit of log.split("\0")) {
-    for (const file of new Set(commit.split("\n").filter(Boolean))) churn.set(file, (churn.get(file) ?? 0) + 1);
+  const days: Record<string, number> = {};
+  for (const commit of log.split("\0").filter(Boolean)) {
+    const [day, ...files] = commit.split("\n").filter(Boolean);
+    if (day) days[day] = (days[day] ?? 0) + 1;
+    for (const file of new Set(files)) churn.set(file, (churn.get(file) ?? 0) + 1);
   }
-  return churn;
+  return { churn, days };
+}
+
+/** Commits per file since `months` ago, paths relative to the root. */
+export function churnSince(root: string, months: number): Map<string, number> {
+  return commitLog(root, months).churn;
 }
 
 export const hotspots: Analyzer = {
@@ -32,7 +40,7 @@ export const hotspots: Analyzer = {
   phase: 1,
   async analyze({ root, config, codeFiles }) {
     const settings = config.hotspots;
-    const churn = churnSince(root, settings.windowMonths);
+    const { churn, days } = commitLog(root, settings.windowMonths);
     // Parsed one file at a time, without types: complexity needs only the syntax.
     const project = new Project({ compilerOptions: { allowJs: true } });
     const rows: HotspotRow[] = [];
@@ -70,7 +78,8 @@ export const hotspots: Analyzer = {
           : `${findings.length} hotspot file(s); the hottest is ${top!.file} (${rows[0]!.hotspot}).`,
       findings,
       status: "ok",
-      data: { rows: rows.filter((row) => row.complexity > 0), windowMonths: settings.windowMonths },
+      // `activity`: commits per day in the window, for a calendar.
+      data: { rows: rows.filter((row) => row.complexity > 0), windowMonths: settings.windowMonths, activity: days },
     };
   },
 };

@@ -2,3 +2,13 @@
   display: grid;
   gap: var(--space-3);
 }
+
+.hotspots__clear {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-action-primary);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

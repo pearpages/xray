@@ -26,3 +26,18 @@ describe("HotspotsTable", () => {
     expect(container.innerHTML).toBe("");
   });
 });
+
+describe("HotspotMatrix", () => {
+  it("counts files by commits and complexity, and filters the table to a cell", async () => {
+    render(<HotspotsTable metric={hotspotsMetric()} />);
+    // reduce.ts: 18 commits × 216; total.ts: 4 × 30; app.ts: 9 × 2.
+    const reduce = screen.getByRole("button", { name: "1 file(s) with 11–20 commits and complexity 200+" });
+    expect(reduce.closest("td")?.getAttribute("data-level")).toBe("4");
+    expect(screen.getByRole("button", { name: "1 file(s) with 3–5 commits and complexity 25–49" })).toBeTruthy();
+    await userEvent.click(reduce);
+    expect(reduce.getAttribute("aria-pressed")).toBe("true");
+    expect(files()).toEqual(["src/cart/reduce.ts"]);
+    await userEvent.click(screen.getByRole("button", { name: "Show every file" }));
+    expect(files()).toHaveLength(3);
+  });
+});

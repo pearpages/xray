@@ -7,6 +7,7 @@ import { Text } from "@pearpages/pulp-react/text";
 import type { CoverageRow } from "@xray/quality";
 import { useMemo, useState } from "react";
 import { pageOf, tone, type MetricResult } from "../reports";
+import { FileLink } from "./FileLink";
 import { Paged } from "./Paged";
 import "./CoverageTable.css";
 
@@ -103,7 +104,9 @@ export function CoverageTable({ metric }: { metric: MetricResult }) {
         <DataGridBody items={shown.items} emptyMessage="No instrumented file">
           {(row) => (
             <DataGridRow id={row.id}>
-              <DataGridCell>{row.file}</DataGridCell>
+              <DataGridCell>
+                <FileLink file={row.file} />
+              </DataGridCell>
               <DataGridCell align="end">{row.untested ? `≈ ${row.lines}` : row.lines}</DataGridCell>
               <DataGridCell align="end">{row.covered}</DataGridCell>
               <DataGridCell align="end">

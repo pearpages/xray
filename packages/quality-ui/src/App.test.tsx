@@ -112,4 +112,14 @@ describe("App", () => {
     await userEvent.click(tab("Duplication"));
     expect(await screen.findByRole("heading", { level: 2, name: "Duplication" })).toBeTruthy();
   });
+
+  it("opens a file's profile from any file path", async () => {
+    render(<App storage={new MemoryStorage()} />);
+    await open(reportFile(report()));
+    await userEvent.click(tab(/Findings/));
+    await userEvent.click(screen.getByRole("button", { name: "src/cart/reduce.ts, open its profile" }));
+    const sheet = await screen.findByRole("dialog", { name: "src/cart/reduce.ts" });
+    expect(within(sheet).getByText("18 commits in 12 months × complexity 216 = 3888")).toBeTruthy();
+    expect(within(sheet).getByRole("heading", { name: "Findings (1)" })).toBeTruthy();
+  });
 });
