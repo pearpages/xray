@@ -10,6 +10,7 @@ item, and add a dated line at the top of **Done**.
 
 ## Done
 
+- [x] 2026-11-02: Released v0.5.1 (coverage counts the files no test loads, ADR-0018); `v0` moved to it.
 - [x] 2026-11-02: Coverage on a real repo: the owner ran bitepals' web tests with coverage. Coverage scored 76 over only the 373 files tests loaded; 316 web files were absent. Now a file of a project with a report but not in it counts as 0 %, its lines estimated from its transpiled code and the report's own ratio, and `coverage.exclude` leaves tooling out ([ADR-0018](docs/adr/0018-untested-files-count.md)): bitepals 60 (204 untested files, biggest `lib/activity/queries.ts`), xray 80. 139 tests.
 - [x] 2026-11-02: Released v0.5.0 (quality phase 2, UI reports kept across reloads, the Action without root dev dependencies and leaving merged or closed PRs alone); `v0` moved to it.
 - [x] 2026-11-02: Action measured (P6) on pearpages/dummy#8, same diff as #3 with `bundle: "true"`: 58 packages, install + build 3.3 s (v0.4.0: 4.5 s), analysis 16.9 s, job 30 s; report identical to v0's. Guard checked on GitHub: after closing #8, a re-run logged "#8 is closed, leaving its comment as it is" and the comment's `updated_at` didn't change. #8 closed, its branch deleted.
