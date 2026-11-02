@@ -66,3 +66,54 @@ export function tone(score: number | null): "success" | "warning" | "error" | "n
   if (score === null) return "neutral";
   return score >= 80 ? "success" : score >= 50 ? "warning" : "error";
 }
+
+const plural = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
+const fileName = (path: string) => path.split("/").pop() ?? path;
+
+/** One line per metric for the overview, from its data; the analyzer's own summary when there is none. */
+export function shortSummary(metric: MetricResult): string {
+  if (metric.status === "unavailable") return metric.reason ?? "Not measured.";
+  const data = (metric.data ?? {}) as Record<string, unknown>;
+  const count = (key: string) => (Array.isArray(data[key]) ? (data[key] as unknown[]).length : 0);
+  switch (metric.id) {
+    case "hotspots": {
+      const rows = (data.rows ?? []) as { file: string }[];
+      return metric.findings.length === 0
+        ? "No file is both often changed and complex."
+        : `${plural(metric.findings.length, "hotspot")}; the hottest is ${fileName(rows[0]?.file ?? metric.findings[0]!.file)}.`;
+    }
+    case "architecture":
+      return `${plural(count("features"), "feature")} · ${plural(metric.findings.filter((f) => f.severity === "medium").length, "deep import")} · ${plural(count("cycles"), "cycle")}`;
+    case "dependencies": {
+      const outdated = Array.isArray(data.outdated) ? (data.outdated as { major: boolean }[]).filter((row) => row.major).length : 0;
+      return `${plural(count("vulnerabilities"), "vulnerable package")} · ${outdated} a major behind`;
+    }
+    case "coverage":
+      return `${data.percent} % of lines covered · ${plural(Number(data.untested ?? 0), "file")} no test loads`;
+    case "duplication":
+      return `${data.percent} % of the code is copied · ${plural(count("clones"), "block")}`;
+    case "lint": {
+      const errors = metric.findings.filter((f) => f.severity === "medium").length;
+      return `${plural(errors, "error")} · ${plural(metric.findings.length - errors, "warning")}`;
+    }
+    default:
+      return metric.summary.split(/(?<=\.)\s/)[0] ?? metric.summary;
+  }
+}
+
+/** How each metric turns into a score, for the overview's tooltips (ADR-0014, 0016, 0018). */
+export const SCORING: Record<string, string> = {
+  hotspots: "100 minus 10 per high, 3 per medium and 1 per low hotspot, per 100 files of code.",
+  architecture: "100 minus 3 per deep import and 10 per cycle between features, per 100 files of code.",
+  dependencies: "100 minus 15 per high or critical, 5 per moderate and 1 per low vulnerability or major behind.",
+  coverage: "The share of instrumented lines covered; a file no test loads counts as 0 %.",
+  duplication: "100 minus 4 per percent of the code that is a copy.",
+  lint: "100 minus 3 per error and 1 per warning, per 100 files of code.",
+};
+
+/** Items of one page (1-based) and the page count. */
+export function pageOf<T>(items: T[], page: number, size: number): { items: T[]; page: number; count: number } {
+  const count = Math.max(1, Math.ceil(items.length / size));
+  const current = Math.min(Math.max(1, page), count);
+  return { items: items.slice((current - 1) * size, current * size), page: current, count };
+}

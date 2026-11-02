@@ -1,27 +1,33 @@
+import { Alert } from "@pearpages/pulp-react/alert";
 import { EmptyState } from "@pearpages/pulp-react/empty-state";
 import { Heading } from "@pearpages/pulp-react/heading";
-import { Inline } from "@pearpages/pulp-react/inline";
-import { Select } from "@pearpages/pulp-react/select";
-import { Stack } from "@pearpages/pulp-react/stack";
-import { Text } from "@pearpages/pulp-react/text";
-import { Button } from "@pearpages/pulp-react/button";
-import { useEffect, useMemo, useState } from "react";
+import { Tabs } from "@pearpages/pulp-react/tabs";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { AppHeader } from "./components/AppHeader";
 import { ArchitectureViolations } from "./components/ArchitectureViolations";
 import { CoverageTable } from "./components/CoverageTable";
 import { DuplicationBlocks } from "./components/DuplicationBlocks";
 import { Findings } from "./components/Findings";
 import { HotspotsTable } from "./components/HotspotsTable";
-import { ReportLoader } from "./components/ReportLoader";
-import { ScoreEvolution } from "./components/ScoreEvolution";
-import { ScoreOverview } from "./components/ScoreOverview";
-import { byRepo, evolution, type QualityReport } from "./reports";
+import { Overview } from "./components/Overview";
+import { readReportFiles, ReportLoader } from "./components/ReportLoader";
+import { byRepo, type MetricResult, type QualityReport } from "./reports";
 import { browserStorage, loadSaved, save } from "./storage";
+import { useHashTab } from "./useHashTab";
 import "./App.css";
 
 interface Props {
   /** Where reports are kept between visits; the browser's localStorage by default. */
   storage?: Storage | undefined;
 }
+
+/** A metric's own view; metrics without one show their findings. */
+const VIEWS: Record<string, (metric: MetricResult) => ReactNode> = {
+  hotspots: (metric) => <HotspotsTable metric={metric} />,
+  architecture: (metric) => <ArchitectureViolations metric={metric} />,
+  coverage: (metric) => <CoverageTable metric={metric} />,
+  duplication: (metric) => <DuplicationBlocks metric={metric} />,
+};
 
 export function App({ storage = browserStorage() }: Props) {
   const [reports, setReports] = useState<QualityReport[]>(() => loadSaved(storage));
@@ -30,73 +36,111 @@ export function App({ storage = browserStorage() }: Props) {
   const groups = useMemo(() => byRepo(reports), [reports]);
   const [repo, setRepo] = useState<string>();
   const [commit, setCommit] = useState<string>();
+  const [tab, setTab] = useHashTab("overview");
+  const [dropping, setDropping] = useState(false);
+  const [dropErrors, setDropErrors] = useState<string[]>([]);
+
+  const add = (loaded: QualityReport[]) => setReports((current) => [...current, ...loaded]);
+
+  // Once reports are open, files can be dropped anywhere on the page.
+  useEffect(() => {
+    if (reports.length === 0) return;
+    const over = (event: DragEvent) => {
+      if (!event.dataTransfer?.types.includes("Files")) return;
+      event.preventDefault();
+      setDropping(true);
+    };
+    const leave = (event: DragEvent) => {
+      if (!event.relatedTarget) setDropping(false);
+    };
+    const drop = (event: DragEvent) => {
+      if (!event.dataTransfer?.files.length) return;
+      event.preventDefault();
+      setDropping(false);
+      void readReportFiles(Array.from(event.dataTransfer.files)).then(({ loaded, problems }) => {
+        setDropErrors(problems);
+        if (loaded.length) add(loaded);
+      });
+    };
+    window.addEventListener("dragover", over);
+    window.addEventListener("dragleave", leave);
+    window.addEventListener("drop", drop);
+    return () => {
+      window.removeEventListener("dragover", over);
+      window.removeEventListener("dragleave", leave);
+      window.removeEventListener("drop", drop);
+    };
+  }, [reports.length]);
 
   const repoName = repo && groups.has(repo) ? repo : [...groups.keys()][0];
   const history = repoName ? groups.get(repoName)! : [];
   const report = history.find((item) => `${item.repo.commit}|${item.generatedAt}` === commit) ?? history.at(-1);
-  const metric = (id: string) => report?.metrics.find((item) => item.id === id && item.status === "ok");
+
+  if (!report) {
+    return (
+      <main className="app">
+        <div className="app__start">
+          <Heading level={1} size="xl">
+            xray quality
+          </Heading>
+          <EmptyState
+            title="No report open"
+            description="Run xray-quality on a repository (node packages/quality/dist/cli.js --cwd <repo> -o report.json), then open its JSON report here. It stays in this browser."
+          />
+          <ReportLoader onLoad={add} />
+        </div>
+      </main>
+    );
+  }
+
+  const measured = report.metrics.filter((metric) => metric.status === "ok");
+  const tabs = ["overview", ...measured.map((metric) => metric.id), "findings"];
+  const current = tabs.includes(tab) ? tab : "overview";
+  const findings = report.metrics.reduce((sum, metric) => sum + metric.findings.length, 0);
 
   return (
-    <main className="app">
-      <Stack gap={6}>
-      <Stack gap={2}>
-        <Heading level={1} size="xl">
-          xray quality
-        </Heading>
-        <ReportLoader onLoad={(loaded) => setReports((current) => [...current, ...loaded])} />
-        {reports.length > 0 && (
-          <Inline gap={3} align="center">
-            <Text tone="muted" size="sm">
-              {kept
-                ? `${reports.length} report(s) open, kept in this browser until you close them.`
-                : `${reports.length} report(s) open. This browser can't keep them, so they close when you leave.`}
-            </Text>
-            <Button variant="ghost" size="sm" onClick={() => setReports([])}>
-              Close all
-            </Button>
-          </Inline>
-        )}
-      </Stack>
-
-      {!report ? (
-        <EmptyState title="No report open" description="Run xray-quality on a repository, then open its JSON report here." />
-      ) : (
-        <>
-          <Stack gap={2}>
-            <Inline gap={4} align="end">
-              {groups.size > 1 && (
-                <Select label="Repository" size="sm" value={repoName} onChange={(event) => { setRepo(event.target.value); setCommit(undefined); }}>
-                  {[...groups.keys()].map((name) => (
-                    <option key={name}>{name}</option>
-                  ))}
-                </Select>
-              )}
-              {history.length > 1 && (
-                <Select label="Report" size="sm" value={`${report.repo.commit}|${report.generatedAt}`} onChange={(event) => setCommit(event.target.value)}>
-                  {history.map((item) => (
-                    <option key={`${item.repo.commit}|${item.generatedAt}`} value={`${item.repo.commit}|${item.generatedAt}`}>
-                      {item.repo.commit.slice(0, 7)} · {item.generatedAt.slice(0, 10)}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Inline>
-            <Text tone="muted" size="sm">
-              {report.repo.path} · {report.repo.branch ? `${report.repo.branch} · ` : ""}
-              <code>{report.repo.commit.slice(0, 7)}</code> · {new Date(report.generatedAt).toLocaleString()}
-              {report.repo.dirty ? " · with uncommitted changes" : ""}
-            </Text>
-          </Stack>
-          <ScoreOverview report={report} />
-          {history.length > 1 && <ScoreEvolution points={evolution(history)} />}
-          {metric("hotspots") && <HotspotsTable metric={metric("hotspots")!} />}
-          {metric("architecture") && <ArchitectureViolations metric={metric("architecture")!} />}
-          {metric("coverage") && <CoverageTable metric={metric("coverage")!} />}
-          {metric("duplication") && <DuplicationBlocks metric={metric("duplication")!} />}
-          <Findings report={report} />
-        </>
-      )}
-      </Stack>
+    <main className={`app${dropping ? " app--dropping" : ""}`}>
+      <AppHeader
+        report={report}
+        repositories={[...groups.keys()]}
+        history={history}
+        kept={kept}
+        onRepository={(name) => {
+          setRepo(name);
+          setCommit(undefined);
+        }}
+        onReport={setCommit}
+        onLoad={add}
+        onCloseAll={() => {
+          setReports([]);
+          setTab("overview");
+        }}
+      />
+      {dropErrors.map((error) => (
+        <Alert key={error} tone="error">
+          {error}
+        </Alert>
+      ))}
+      <Tabs value={current} onValueChange={setTab} activation="manual" className="app__tabs">
+        <Tabs.List aria-label="Report sections" className="app__tablist">
+          <Tabs.Tab value="overview">Overview</Tabs.Tab>
+          {measured.map((metric) => (
+            <Tabs.Tab key={metric.id} value={metric.id}>
+              {metric.name}
+            </Tabs.Tab>
+          ))}
+          <Tabs.Tab value="findings">{`Findings (${findings})`}</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="overview">
+          <Overview report={report} history={history} tabs={tabs} />
+        </Tabs.Panel>
+        {measured.map((metric) => (
+          <Tabs.Panel key={metric.id} value={metric.id}>
+            {current === metric.id && (VIEWS[metric.id]?.(metric) ?? <Findings report={report} metric={metric.id} />)}
+          </Tabs.Panel>
+        ))}
+        <Tabs.Panel value="findings">{current === "findings" && <Findings report={report} />}</Tabs.Panel>
+      </Tabs>
     </main>
   );
 }

@@ -28,3 +28,27 @@ describe("Findings", () => {
     expect(screen.getByText("No findings match these filters")).toBeTruthy();
   });
 });
+
+describe("Findings on a metric's tab", () => {
+  it("shows only that metric's findings, without the metric filter, 25 to a page", async () => {
+    const many = report({
+      metrics: [
+        {
+          id: "lint",
+          name: "Lint and types",
+          score: 50,
+          summary: "",
+          status: "ok",
+          findings: Array.from({ length: 30 }, (_, i) => ({ file: `src/f${i}.ts`, line: 1, severity: "medium" as const, message: `error ${i}` })),
+        },
+      ],
+    });
+    render(<Findings report={many} metric="lint" />);
+    expect(screen.queryByLabelText("Metric")).toBeNull();
+    expect(screen.getByText("30 of 30 findings")).toBeTruthy();
+    expect(screen.getAllByRole("row")).toHaveLength(26); // header + 25
+    await userEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(screen.getByText("26–30 of 30")).toBeTruthy();
+    expect(screen.getByText("error 29")).toBeTruthy();
+  });
+});

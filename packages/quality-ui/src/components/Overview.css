@@ -1,0 +1,68 @@
+.overview {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.overview__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--space-4);
+}
+
+.overview__metric {
+  color: inherit;
+  text-decoration: none;
+}
+
+.overview__summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.overview__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.overview__how {
+  align-self: flex-start;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+.score {
+  display: block;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.score--md {
+  font-size: var(--font-size-3xl);
+}
+
+.score--lg {
+  font-size: calc(var(--font-size-3xl) * 2);
+}
+
+.score--success {
+  color: var(--color-status-success-text);
+}
+
+.score--warning {
+  color: var(--color-status-warning-text);
+}
+
+.score--error {
+  color: var(--color-status-error-text);
+}
+
+.score--neutral {
+  color: var(--color-status-neutral-text);
+}

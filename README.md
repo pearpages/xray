@@ -263,13 +263,16 @@ Findings formula: `100 − (10·high + 3·medium + 1·low) / (code files / 100)`
 100 files costs 10 points. Global score: the weighted average of the metrics that ran.
 
 **The UI** (`npm run dev -w @xray/quality-ui`, or `npm run build -w @xray/quality-ui` for a static
-build in `packages/quality-ui/dist/`): open one or more reports with the button or by dropping them.
-It shows the global score and a card per metric, the hotspots table, architecture violations by
-feature, coverage per file (the least covered tested files, and apart the files no test loads), the
-biggest duplicated blocks with both copies side by side, all findings filterable by severity and
-metric, and, with several reports of one
-repository, the score per commit. Reports never leave the browser: it keeps the open ones (in
-localStorage) until you press *Close all*, so a reload doesn't lose them.
+build in `packages/quality-ui/dist/`): open one or more reports with the button or by dropping them
+(anywhere on the page once one is open). The header names the repository, commit and date and
+switches between repositories and reports. An **Overview** tab shows the global score, one card per
+metric (a one-line summary, its findings, how it's scored) and, with several reports of one
+repository, the score per commit; each card opens the metric's own tab: the hotspots table,
+architecture violations by feature, coverage per file (the least covered tested files, and apart the
+files no test loads), duplicated blocks with both copies side by side, or the metric's findings.
+**Findings** lists them all, filterable by severity and metric. Long lists come a page at a time,
+and the open tab is in the URL (`#coverage`), so Back works. Reports never leave the browser: it
+keeps the open ones (in localStorage) until you press *Close all*, so a reload doesn't lose them.
 
 ### Configuration (`quality` in `xray.config.json`)
 

@@ -6,10 +6,11 @@ import { SegmentedControl } from "@pearpages/pulp-react/segmented-control";
 import { Text } from "@pearpages/pulp-react/text";
 import type { CoverageRow } from "@xray/quality";
 import { useMemo, useState } from "react";
-import { tone, type MetricResult } from "../reports";
+import { pageOf, tone, type MetricResult } from "../reports";
+import { Paged } from "./Paged";
 import "./CoverageTable.css";
 
-const LIMIT = 50;
+const PAGE = 25;
 
 interface CoverageData {
   files: string[];
@@ -29,6 +30,7 @@ type View = "tested" | "untested";
 export function CoverageTable({ metric }: { metric: MetricResult }) {
   const [sort, setSort] = useState<DataGridSort>({ column: "percent", direction: "ascending" });
   const [view, setView] = useState<View>("tested");
+  const [page, setPage] = useState(1);
   const data = metric.data as CoverageData | undefined;
   const tested = (data?.rows ?? []).filter((row) => !row.untested);
   const untested = (data?.rows ?? []).filter((row) => row.untested);
@@ -38,8 +40,9 @@ export function CoverageTable({ metric }: { metric: MetricResult }) {
     const sorted = [...current].sort((a, b) =>
       typeof a[key] === "number" ? (a[key] as number) - (b[key] as number) || b.lines - a.lines : String(a[key]).localeCompare(String(b[key])),
     );
-    return (sort.direction === "descending" ? sorted.reverse() : sorted).slice(0, LIMIT).map((row) => ({ ...row, id: row.file }));
+    return (sort.direction === "descending" ? sorted.reverse() : sorted).map((row) => ({ ...row, id: row.file }));
   }, [current, sort]);
+  const shown = pageOf(rows, page, PAGE);
   if (!data) return null;
 
   return (
@@ -51,7 +54,6 @@ export function CoverageTable({ metric }: { metric: MetricResult }) {
         From {data.files.join(", ")}, {new Date(data.reportDate).toLocaleDateString()}.
         {data.untested > 0 && ` ${data.untested} file(s) no test loads count as 0 %, their lines estimated.`}
         {data.missing.length > 0 && ` ${data.missing.length} file(s) belong to projects without a report and aren't counted.`}
-        {current.length > LIMIT && ` Showing ${LIMIT} of ${current.length}.`}
       </Text>
       {untested.length > 0 && (
         <SegmentedControl<View>
@@ -59,7 +61,10 @@ export function CoverageTable({ metric }: { metric: MetricResult }) {
           className="coverage__view"
           size="sm"
           value={view}
-          onValueChange={setView}
+          onValueChange={(next) => {
+            setView(next);
+            setPage(1);
+          }}
           options={[
             { value: "tested", label: `Tested (${tested.length})` },
             { value: "untested", label: `Untested (${untested.length})` },
@@ -71,7 +76,16 @@ export function CoverageTable({ metric }: { metric: MetricResult }) {
           It may describe code that has changed since. Run the tests with coverage again.
         </Alert>
       )}
-      <DataGrid aria-labelledby="coverage-heading" sort={sort} onSortChange={setSort} density="compact" stickyHeader>
+      <DataGrid
+        aria-labelledby="coverage-heading"
+        sort={sort}
+        onSortChange={(next) => {
+          setSort(next);
+          setPage(1);
+        }}
+        density="compact"
+        stickyHeader
+      >
         <DataGridHeader>
           <DataGridColumn id="file" isRowHeader allowsSorting>
             File
@@ -86,7 +100,7 @@ export function CoverageTable({ metric }: { metric: MetricResult }) {
             Coverage
           </DataGridColumn>
         </DataGridHeader>
-        <DataGridBody items={rows} emptyMessage="No instrumented file">
+        <DataGridBody items={shown.items} emptyMessage="No instrumented file">
           {(row) => (
             <DataGridRow id={row.id}>
               <DataGridCell>{row.file}</DataGridCell>
@@ -99,6 +113,7 @@ export function CoverageTable({ metric }: { metric: MetricResult }) {
           )}
         </DataGridBody>
       </DataGrid>
+      <Paged label="Coverage" page={shown.page} count={shown.count} total={rows.length} size={PAGE} onPageChange={setPage} />
     </section>
   );
 }

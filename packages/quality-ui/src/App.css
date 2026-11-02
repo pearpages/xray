@@ -1,5 +1,34 @@
 .app {
+  display: grid;
+  gap: var(--space-5);
   max-width: 72rem;
   margin: 0 auto;
   padding: var(--space-6) var(--space-4);
+}
+
+/* Grid children may shrink below their content, so a wide tab list scrolls instead of widening the page. */
+.app > * {
+  min-width: 0;
+}
+
+.app__start {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* Eight tabs don't fit a phone: the list scrolls sideways instead of wrapping. */
+.app__tablist {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.app__tabs [role="tabpanel"] {
+  padding-top: var(--space-5);
+}
+
+/* While files are dragged over the page, the whole page is the drop target. */
+.app--dropping {
+  outline: 2px dashed var(--color-border-focus);
+  outline-offset: calc(var(--space-2) * -1);
+  border-radius: var(--radius-surface);
 }

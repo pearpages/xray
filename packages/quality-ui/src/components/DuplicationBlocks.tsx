@@ -3,10 +3,12 @@ import { Card, CardBody, CardHeader } from "@pearpages/pulp-react/card";
 import { Heading } from "@pearpages/pulp-react/heading";
 import { Text } from "@pearpages/pulp-react/text";
 import type { Clone } from "@xray/quality";
-import type { MetricResult } from "../reports";
+import { useState } from "react";
+import { pageOf, type MetricResult } from "../reports";
+import { Paged } from "./Paged";
 import "./DuplicationBlocks.css";
 
-const LIMIT = 20;
+const PAGE = 10;
 
 interface DuplicationData {
   percent: number;
@@ -17,11 +19,13 @@ interface DuplicationData {
 
 const where = (side: Clone["a"]) => `${side.file}:${side.start}–${side.end}`;
 
-/** The biggest copied blocks, each copy next to the other. */
+/** Copied blocks, the biggest first, each copy next to the other. */
 export function DuplicationBlocks({ metric }: { metric: MetricResult }) {
+  const [page, setPage] = useState(1);
   const data = metric.data as DuplicationData | undefined;
   if (!data) return null;
-  const shown = data.clones.slice(0, LIMIT);
+  const paged = pageOf(data.clones, page, PAGE);
+  const shown = paged.items;
 
   return (
     <section aria-labelledby="duplication-heading" className="duplication">
@@ -29,8 +33,8 @@ export function DuplicationBlocks({ metric }: { metric: MetricResult }) {
         Duplication
       </Heading>
       <Text tone="muted" size="sm">
-        {data.duplicatedLines} of {data.lines} lines of code ({data.percent} %) are copies.{" "}
-        {data.clones.length > shown.length ? `The ${shown.length} biggest of ${data.clones.length} blocks.` : `${data.clones.length} block(s).`}
+        {data.duplicatedLines} of {data.lines} lines of code ({data.percent} %) are copies, in {data.clones.length} block(s), the biggest
+        first.
       </Text>
       {shown.length === 0 ? (
         <Text>No duplicated block.</Text>
@@ -58,6 +62,7 @@ export function DuplicationBlocks({ metric }: { metric: MetricResult }) {
           ))}
         </ol>
       )}
+      <Paged label="Duplicated blocks" page={paged.page} count={paged.count} total={data.clones.length} size={PAGE} onPageChange={setPage} />
     </section>
   );
 }

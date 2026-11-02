@@ -5,9 +5,12 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
+- [ ] **Quality UI study, part B**: Dependencies view (vulnerable packages by severity, majors behind), Lint and types view (rules by count, each run's status), Architecture as an Accordion per feature, per-metric lines in the evolution chart.
+- [ ] **Quality UI study, part C**: a file profile (a Sheet with everything about one file, opened from any table), a churn × complexity matrix on the data scale, a commit calendar (pulp Heatmap; the report needs commits per day).
 
 ## Done
 
+- [x] 2026-11-02: Quality UI structure (study part A): a header with the repository, commit and pickers; pulp Tabs (Overview, one per measured metric, Findings) kept in the URL fragment; an Overview with the global score first and metric cards that open their tab (one-line summaries, neutral findings badges plus a high count, "how it's scored" tooltips); Pagination on findings and every long table; files dropped anywhere once a report is open. bitepals: one 36 000 px page (40 screens) became tabs of 1 to 3 screens (Architecture 5, until its accordion). Checked at 1280 and 375 px. 33 UI tests.
 - [x] 2026-11-02: pearpages/fourpass#134's xray comment restored by the owner (updated 15:21): the full report rebuilt from the PR head against `main` before the merge. Unlike the decisions line below says, it carries no "restored" note: that step was part of the command refused to the session.
 - [x] 2026-11-02: Quality UI views for phase 2: coverage per file (tested files least covered first; files no test loads in a second view, so 207 untested bitepals files don't hide the weak tested ones) and the 20 biggest duplicated blocks with both copies side by side (stacked on phones). Checked in the browser with bitepals' real report, desktop and 375 px. 30 UI tests. Lint and types has no view of its own: its findings already name file, line and rule.
 - [x] 2026-11-02: Released v0.5.1 (coverage counts the files no test loads, ADR-0018); `v0` moved to it.
