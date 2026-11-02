@@ -5,10 +5,10 @@ item, and add a dated line at the top of **Done**.
 
 ## Open
 
-- [ ] **Restore pearpages/fourpass#134's xray comment** (the owner runs it: GitHub writes from the session were refused): the rebuilt report is ready, see the 2026-11-02 decisions line.
 
 ## Done
 
+- [x] 2026-11-02: pearpages/fourpass#134's xray comment restored by the owner (updated 15:21): the full report rebuilt from the PR head against `main` before the merge. Unlike the decisions line below says, it carries no "restored" note: that step was part of the command refused to the session.
 - [x] 2026-11-02: Quality UI views for phase 2: coverage per file (tested files least covered first; files no test loads in a second view, so 207 untested bitepals files don't hide the weak tested ones) and the 20 biggest duplicated blocks with both copies side by side (stacked on phones). Checked in the browser with bitepals' real report, desktop and 375 px. 30 UI tests. Lint and types has no view of its own: its findings already name file, line and rule.
 - [x] 2026-11-02: Released v0.5.1 (coverage counts the files no test loads, ADR-0018); `v0` moved to it.
 - [x] 2026-11-02: Coverage on a real repo: the owner ran bitepals' web tests with coverage. Coverage scored 76 over only the 373 files tests loaded; 316 web files were absent. Now a file of a project with a report but not in it counts as 0 %, its lines estimated from its transpiled code and the report's own ratio, and `coverage.exclude` leaves tooling out ([ADR-0018](docs/adr/0018-untested-files-count.md)): bitepals 60 (204 untested files, biggest `lib/activity/queries.ts`), xray 80. 139 tests.
