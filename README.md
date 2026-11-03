@@ -263,7 +263,7 @@ run (no network, no features defined, no lcov report, ESLint/TypeScript not inst
 Findings formula: `100 − (10·high + 3·medium + 1·low) / (code files / 100)`, so one high finding per
 100 files costs 10 points. Global score: the weighted average of the metrics that ran.
 
-**The UI** (`npm run dev -w @xray/quality-ui`, or `npm run build -w @xray/quality-ui` for a static
+**The UI** (`npm run ui`, or `npm run build -w @xray/quality-ui` for a static
 build in `packages/quality-ui/dist/`): open one or more reports with the button or by dropping them
 (anywhere on the page once one is open). The header names the repository, commit and date and
 switches between repositories and reports. Every metric has a tab, its score beside its name, the

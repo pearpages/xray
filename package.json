@@ -14,6 +14,7 @@
     "xray": "node packages/cli/dist/index.js",
     "build:action": "tsc -b packages/core packages/cli packages/action",
     "quality": "node packages/quality/dist/cli.js",
+    "ui": "npm run dev -w @xray/quality-ui",
     "coverage": "vitest run --coverage"
   },
   "devDependencies": {
