@@ -1,4 +1,4 @@
-# 0019. Work is tracked in GitHub Issues
+# 0020. Work is tracked in GitHub Issues
 
 - **Date:** 2026-11-04
 - **Status:** Accepted

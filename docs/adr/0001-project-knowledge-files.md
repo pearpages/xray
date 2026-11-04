@@ -1,7 +1,7 @@
 # 0001. Project knowledge lives in principles, architecture, decisions, tasks and security
 
 - **Date:** 2026-11-01
-- **Status:** Accepted; its `tasks.md` part superseded by 0019
+- **Status:** Accepted; its `tasks.md` part superseded by 0020
 
 ## Context
 
