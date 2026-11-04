@@ -3,7 +3,7 @@
 How xray is built. It explains *how* things work. The rules that follow from it are in
 [principles.md](principles.md), the reasons for each choice in
 [decisions.md](decisions.md), the security surface in [security.md](security.md), and open
-work in [tasks.md](tasks.md). When code and this file disagree, the code is right and this
+work in [GitHub Issues](https://github.com/pearpages/xray/issues). When code and this file disagree, the code is right and this
 file is a bug.
 
 ## Shape

@@ -47,11 +47,11 @@ the install + build time and the whole job time with the figures in ADR-0003; a 
 reopens that decision (bundling, or trimming dependencies) instead of being accepted silently.
 *Why:* the Action rebuilds xray on every PR in every consumer repo, so each new dependency is
 paid many times. [ADR-0003](docs/adr/0003-action-builds-at-runtime.md) *Check:* review; the
-measurement goes in the analysis's Done line in tasks.md.
+measurement goes in the PR that closes the analysis's issue.
 
 ## Process
 
 **P7. Knowledge lives in its file.** How to work → `AGENTS.md`; rules → here; how it is
-built → `architecture.md`; why → an ADR; work → `tasks.md`; risk → `security.md`.
+built → `architecture.md`; why → an ADR; work → GitHub Issues; risk → `security.md`.
 *Why:* a session log in the agent file hides decisions from the next person.
 [ADR-0001](docs/adr/0001-project-knowledge-files.md)
