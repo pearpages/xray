@@ -375,6 +375,9 @@ files, and `--format agent` prints only findings, in a few hundred tokens:
   (`AgentReport`, `AgentFinding`, `AgentAnalyzerSummary`, `AgentSeverity`); nothing else in
   `@xray/core` is a supported import ([ADR-0019](docs/adr/0019-json-output-contract.md)).
 
+[docs/foundry.md](docs/foundry.md) works this through for one pipeline, foundry: who runs each
+call, real outputs, prompt lines for the implementer and reviewer, and a driver helper.
+
 One call per moment of a pipeline:
 
 ```bash
