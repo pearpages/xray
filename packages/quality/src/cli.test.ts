@@ -51,6 +51,23 @@ describe("xray-quality", () => {
   });
 });
 
+describe("xray-quality -f graph (ADR-0023)", () => {
+  it("prints the repository's import graph with repo-relative paths", () => {
+    fixture = new GitFixture()
+      .write({ "src/a.ts": 'import { b } from "./b";\nexport const a = b;\n', "src/b.ts": "export const b = 1;\n" })
+      .commit("base");
+    // Run from another folder: paths must still be repo-relative (principle P4).
+    const result = spawnSync(process.execPath, [CLI, "--cwd", fixture.root, "-f", "graph"], { encoding: "utf8", cwd: tmpdir() });
+    expect(result.status).toBe(0);
+    const graph = JSON.parse(result.stdout) as { version: number; tool: string; commit: string; modules: string[]; edges: { from: string; to: string }[] };
+    expect(graph.version).toBe(1);
+    expect(graph.tool).toBe("xray-quality");
+    expect(graph.commit).toMatch(/^[0-9a-f]{40}$/);
+    expect(graph.modules).toEqual(["src/a.ts", "src/b.ts"]);
+    expect(graph.edges).toEqual([{ from: "src/a.ts", to: "src/b.ts", typeOnly: false, dynamic: false }]);
+  });
+});
+
 describe("xray-quality for agents (ADR-0021)", () => {
   // Two files with churn × complexity high enough to be graded.
   const busy = () => {

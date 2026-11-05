@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs the xray CLI from a checkout of pearpages/xray kept in the plugin's data folder.
 # Usage: xray.sh <data-dir> <xray arguments...>
+#        xray.sh <data-dir> quality <xray-quality arguments...>   (whole repository; -f graph for imports)
 # Clones and builds on first use, then follows XRAY_REF (default v0, the latest release) of XRAY_REPO
 # (default the GitHub repository), rebuilding only when it moves.
 # Without network it keeps using the last build. Build output goes to stderr; xray's output to stdout.
@@ -33,4 +34,8 @@ if [ "$(cat "$checkout/.xray-built" 2>/dev/null)" != "$head" ]; then
   echo "$head" > "$checkout/.xray-built"
 fi
 
+if [ "${1:-}" = "quality" ]; then
+  shift
+  exec node "$checkout/packages/quality/dist/cli.js" "$@"
+fi
 exec node "$checkout/packages/cli/dist/index.js" "$@"

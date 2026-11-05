@@ -43,6 +43,9 @@ The report goes where `-o` says. The UI is a
   where fork PRs get a read-only token (the comment step then only warns; the report stays in the
   job summary); using it on `pull_request_target` would give fork code a
   write token alongside the checkout and is not supported.
+- **Graph format** (`xray-quality -f graph`) prints file paths and imports the report already reads,
+  with no new input; `xray.sh quality` runs the same built clone as the plugin's skills
+  ([ADR-0023](docs/adr/0023-data-for-other-skills.md)).
 - **Agent format** (`--format agent`, both CLIs) prints the same findings as the other formats,
   with no new input. `--only bundle` does not enable the bundle analysis: running the project's
   scripts still needs `--bundle` (ADR-0021). `--files` values are matched against tracked paths and

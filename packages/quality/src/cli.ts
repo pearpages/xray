@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
 import { Command, CommanderError, InvalidArgumentError } from "commander";
-import { agentReport, isSeverity, SEVERITIES, type AgentSeverity } from "@xray/core";
+import { agentReport, buildDependencyGraph, isSeverity, SEVERITIES, type AgentSeverity } from "@xray/core";
 import { loadQualityConfig } from "./config.js";
+import { git } from "./files.js";
 import { writeReport } from "./output.js";
 import { ANALYZERS } from "./registry.js";
 import { analyzeQuality } from "./report.js";
@@ -14,7 +15,7 @@ interface Options {
   only?: string[];
   files?: string[];
   cache: boolean;
-  format: "json" | "agent";
+  format: "json" | "agent" | "graph";
   minSeverity?: AgentSeverity;
   top?: number;
 }
@@ -48,7 +49,7 @@ const program = new Command()
   .option("-C, --cwd <dir>", "root of the repository to analyse", process.cwd())
   .option("-o, --out <file>", "write the report to a file instead of stdout")
   .option("-c, --config <file>", "config with a `quality` section (default: xray.config.json in --cwd)")
-  .option("-f, --format <format>", "json | agent (findings only, for tools)", "json")
+  .option("-f, --format <format>", "json | agent (findings only, for tools) | graph (the import graph)", "json")
   .option("--only <ids>", `run only these metrics, comma separated: ${IDS.join(", ")}`, parseOnly)
   .option("--files <paths...>", "report findings for these files, folders or globs only (scores become null)")
   .option("--no-cache", "don't read or write .xray/cache/ (git churn by commit)")
@@ -56,10 +57,25 @@ const program = new Command()
   .option("--top <n>", "agent format: most findings kept (default 10)", parseTop)
   .exitOverride()
   .action(async (options: Options) => {
-    if (options.format !== "json" && options.format !== "agent") {
+    if (options.format !== "json" && options.format !== "agent" && options.format !== "graph") {
       program.error(`Unknown format: ${options.format}`, { exitCode: 2 });
     }
     const root = resolve(options.cwd);
+    if (options.format === "graph") {
+      // The whole repository's imports for other tools (ADR-0023): no metric runs.
+      const graph = await buildDependencyGraph(root, loadQualityConfig(root, options.config).xray);
+      let commit = "unknown";
+      try {
+        commit = git(root, ["rev-parse", "HEAD"]);
+      } catch {
+        // Not a git repository: the graph is still valid.
+      }
+      const output = { version: 1, tool: "xray-quality", commit, modules: [...graph.modules].sort(), edges: graph.edges };
+      const json = `${JSON.stringify(output, null, 2)}\n`;
+      if (options.out) writeReport(options.out, json);
+      else process.stdout.write(json);
+      return;
+    }
     const analyzers = options.only ? ANALYZERS.filter((analyzer) => options.only!.includes(analyzer.id)) : ANALYZERS;
     const report = await analyzeQuality(root, loadQualityConfig(root, options.config), analyzers, {
       ...(options.files ? { files: options.files } : {}),

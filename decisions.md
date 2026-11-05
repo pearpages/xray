@@ -33,6 +33,7 @@ accepted.
 | [0020](docs/adr/0020-work-in-github-issues.md) | Work is tracked in GitHub Issues, not `tasks.md` | Accepted | 2026-11-04 |
 | [0021](docs/adr/0021-agent-mode.md) | Agent mode: `--only`, `--files`, `--format agent` (amends 0019) | Accepted | 2026-11-05 |
 | [0022](docs/adr/0022-npm-as-package-manager.md) | xray itself uses npm, not pnpm | Accepted | 2026-11-05 |
+| [0023](docs/adr/0023-data-for-other-skills.md) | xray supplies data to other skills: `xray.sh quality` and `-f graph` | Accepted | 2026-11-05 |
 
 ## Format
 
