@@ -4,3 +4,4 @@ dist/
 coverage/
 xray-report.md
 packages/quality-ui/tmp-reports/
+.DS_Store
