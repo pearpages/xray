@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { XrayConfig } from "../config.js";
 import { git, showFile, type ChangedFile } from "../git.js";
-import type { Light } from "../risk/analyze.js";
+import type { Light } from "../risk/lights.js";
 import { buildAt, BuildError, type BuildPlan } from "./build.js";
 import { measure, type BuildMeasure, type Sizes } from "./measure.js";
 

@@ -8,7 +8,9 @@ import type { Unit } from "../interactions/units.js";
 import { cyclomaticComplexity } from "./complexity.js";
 import { loadCoverage } from "./coverage.js";
 
-export type Light = "green" | "yellow" | "red";
+import { evidenceStrength, worst, type Light } from "./lights.js";
+
+export { evidenceStrength, worst, type Light };
 
 /** The strongest sign that a test exercises a unit; no test is run to find it. */
 export type TestEvidence =
@@ -30,6 +32,8 @@ export type TestEvidence =
 export interface UnitRisk {
   id: string;
   file: string;
+  /** First line of the unit's statement, 1-based. */
+  line: number;
   name: string;
   change: "modified" | "added";
   light: Light;
@@ -56,19 +60,6 @@ export interface RiskAnalysis {
   /** lcov reports read, relative to the analysed root. */
   coverageFiles: string[];
   skipped?: { reason: "too-many-units"; limit: number };
-}
-
-const ORDER: Record<Light, number> = { green: 0, yellow: 1, red: 2 };
-
-export function worst(lights: Light[]): Light {
-  return lights.reduce<Light>((a, b) => (ORDER[b] > ORDER[a] ? b : a), "green");
-}
-
-/** Coverage counts like the static kinds: all changed lines run = direct, some = indirect, none = none. */
-export function evidenceStrength(evidence: TestEvidence): Exclude<TestEvidence["kind"], "coverage"> {
-  if (evidence.kind !== "coverage") return evidence.kind;
-  if (evidence.covered === 0) return "none";
-  return evidence.covered === evidence.total ? "direct" : "indirect";
 }
 
 /** The ADR-0007 table. */
@@ -198,6 +189,7 @@ export function analyzeRisk(
     result.units.push({
       id: unit.id,
       file: unit.file,
+      line: unit.statement.getStartLineNumber(),
       name: unit.name,
       change: before ? "modified" : "added",
       light: lightFor(evidenceStrength(evidence), complexity, settings),

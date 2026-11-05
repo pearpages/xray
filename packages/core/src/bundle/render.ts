@@ -1,5 +1,5 @@
 import { inlineCode } from "../dependencies/render.js";
-import type { Light } from "../risk/analyze.js";
+import type { Light } from "../risk/lights.js";
 import type { BundleAnalysis } from "./analyze.js";
 
 const DOT: Record<Light, string> = { green: "🟢", yellow: "🟡", red: "🔴" };

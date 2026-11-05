@@ -1,7 +1,8 @@
 import { inlineCode } from "../dependencies/render.js";
-import { splitUnitId } from "../interactions/analyze.js";
+import { splitUnitId } from "../interactions/ids.js";
 import { disambiguators } from "../interactions/render.js";
-import { evidenceStrength, type Light, type RiskAnalysis, type TestEvidence, type UnitRisk } from "./analyze.js";
+import type { RiskAnalysis, TestEvidence, UnitRisk } from "./analyze.js";
+import { evidenceStrength, type Light } from "./lights.js";
 
 const DOT: Record<Light, string> = { green: "🟢", yellow: "🟡", red: "🔴" };
 const VERDICT: Record<Light, string> = { green: "Low risk", yellow: "Medium risk", red: "High risk" };

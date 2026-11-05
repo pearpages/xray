@@ -1,6 +1,7 @@
 import { matchesGlob } from "node:path";
 import type { XrayConfig } from "../config.js";
 import type { ChangedCode } from "./changed-code.js";
+import { splitUnitId } from "./ids.js";
 import { featuresFor, loadFeatureMap, type FeatureDefinition } from "./features.js";
 import { isEntryUnit, type Unit } from "./units.js";
 import { walkDown, walkUp, type DownWalk, type Interaction, type UpWalk } from "./walk.js";
@@ -43,10 +44,7 @@ export interface InteractionsAnalysis {
   warnings: string[];
 }
 
-export function splitUnitId(id: string): { file: string; name: string } {
-  const at = id.lastIndexOf("#");
-  return { file: id.slice(0, at), name: id.slice(at + 1) };
-}
+export { splitUnitId };
 
 /** Edges of an upward walk that lie on a path starting at one of `starts`. */
 function reachableFrom(starts: string[], interactions: Interaction[]): Interaction[] {
