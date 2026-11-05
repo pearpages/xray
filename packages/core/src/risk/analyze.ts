@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { basename, dirname, extname, join } from "node:path";
 import type { XrayConfig } from "../config.js";
-import { isTestFile } from "../dependencies/analyze.js";
+import { isTestFile } from "../files.js";
 import type { InteractionsAnalysis } from "../interactions/analyze.js";
 import type { ChangedCode } from "../interactions/changed-code.js";
 import type { Unit } from "../interactions/units.js";

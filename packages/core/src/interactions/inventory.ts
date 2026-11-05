@@ -1,6 +1,6 @@
 import { matchesGlob, resolve } from "node:path";
 import type { XrayConfig } from "../config.js";
-import { isTestFile } from "../dependencies/analyze.js";
+import { isStoryFile, isTestFile } from "../files.js";
 import { loadFeatureMap, type FeatureDefinition, type FeatureMapStatus } from "./features.js";
 import { loadProject } from "./project.js";
 import { isEntryUnit, UnitIndex, type Unit } from "./units.js";
@@ -33,8 +33,6 @@ export interface Inventory {
   uncovered: string[];
 }
 
-const STORY_FILE = /\.stories\.[cm]?[jt]sx?$/;
-
 function covers(feature: FeatureDefinition, unit: { id: string; file: string }): boolean {
   return (
     feature.entryPoints.includes(unit.id) ||
@@ -50,7 +48,7 @@ function covers(feature: FeatureDefinition, unit: { id: string; file: string }):
 export function inventory(cwd: string, config: XrayConfig): Inventory {
   const settings = config.interactions;
   const ignored = (file: string) =>
-    isTestFile(file) || STORY_FILE.test(file) || settings.ignore.some((glob) => matchesGlob(file, glob));
+    isTestFile(file) || isStoryFile(file) || settings.ignore.some((glob) => matchesGlob(file, glob));
   const loaded = loadProject(cwd, config);
   const units = new UnitIndex(loaded.fileOf);
   const walker = new Walker(loaded.project, loaded.resolveModule, units, loaded.fileOf, ignored);

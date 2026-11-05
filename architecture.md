@@ -32,7 +32,7 @@ flowchart LR
   subgraph core_internals["packages/core/src"]
     git["git.ts<br/>merge base, changed files"]
     config["config.ts<br/>xray.config.json"]
-    deps["dependencies/<br/>analyze.ts · render.ts"]
+    deps["dependencies/<br/>graph · neighbourhood · boundaries · analyze · render"]
     inter["interactions/<br/>changed-code · project · units · walk · features · render"]
     risk["risk/<br/>complexity · analyze · render"]
     api["api/<br/>exports · compare · usages · analyze · render"]
@@ -51,7 +51,8 @@ flowchart LR
 |---|---|
 | `packages/core/src/git.ts` | Resolving the merge base (`<base>` or `origin/<base>`), the changed files and changed line ranges (diff to the working tree + untracked files, relative to the analysed folder), and file contents on the base |
 | `packages/core/src/config.ts` | `xray.config.json` loading and defaults (`roots`, `tsConfig`, `exclude`, `dependencies.*`, `interactions.*`) |
-| `packages/core/src/dependencies/` | Analysis 1: cruise the project, keep changed modules + direct neighbours, render the Mermaid flowchart; `boundaries.ts`: features (feature map or folders) and the imports that skip a feature's public API or form a cycle, used by the PR report on changed files and by quality's architecture metric on all |
+| `packages/core/src/dependencies/` | Analysis 1. `graph.ts`: cruise the project (per workspace package, `paths` and package names as aliases) and normalise every path to repo-relative POSIX (`repoPathResolver`), `buildDependencyGraph` (also what quality's architecture metric uses); `neighbourhood.ts`: what the diagram shows (changed modules + direct neighbours, barrel importers, folder level for big PRs); `boundaries.ts`: features (feature map or folders) and the imports that skip a feature's public API or form a cycle, used by the PR report on changed files and by quality's architecture metric on all; `analyze.ts` wires them; `render.ts` draws the Mermaid flowchart |
+| `packages/core/src/files.ts` | What kind of file a path is (`isCodeFile`, `isTestFile`, `isStoryFile`), shared by every analysis and the quality report |
 | `packages/core/src/agent/` | The agent format ([ADR-0021](docs/adr/0021-agent-mode.md)): `types.ts` (types only), `report.ts` (sort, `--min-severity`, `--top`, `truncated`), `pr.ts` (the PR results → findings mapping) |
 | `packages/core/src/workspaces.ts` | Workspace discovery (`pnpm-workspace.yaml`, `workspaces`) and mapping package names and subpath exports to files, for both analyses (CI has no `node_modules`) |
 | `packages/core/src/interactions/project.ts` | Loading the ts-morph project: the root tsconfig, or every workspace package at a workspace root, each file resolving imports with its package's own options (`paths`), and workspace package names resolved to source |

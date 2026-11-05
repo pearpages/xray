@@ -1,14 +1,11 @@
 import { join, matchesGlob } from "node:path";
 import { Project, type SourceFile } from "ts-morph";
 import type { XrayConfig } from "../config.js";
-import { isTestFile } from "../dependencies/analyze.js";
+import { isCodeFile, isStoryFile, isTestFile } from "../files.js";
 import { showFile, type ChangedFile, type LineRange } from "../git.js";
 import { loadProject, type LoadedProject } from "./project.js";
 import { unitsOf, UnitIndex, type Unit } from "./units.js";
 import { Walker } from "./walk.js";
-
-const CODE_FILE = /\.(c|m)?[jt]sx?$/;
-const STORY_FILE = /\.stories\.[cm]?[jt]sx?$/;
 
 /**
  * The PR's code as the ts-morph analyses see it, loaded once and shared:
@@ -70,8 +67,8 @@ export function loadChangedCode(
 ): ChangedCode | undefined {
   const settings = config.interactions;
   const ignored = (file: string) =>
-    isTestFile(file) || STORY_FILE.test(file) || settings.ignore.some((glob) => matchesGlob(file, glob));
-  const codeChanges = changed.filter((file) => CODE_FILE.test(file.path) && !ignored(file.path));
+    isTestFile(file) || isStoryFile(file) || settings.ignore.some((glob) => matchesGlob(file, glob));
+  const codeChanges = changed.filter((file) => isCodeFile(file.path) && !ignored(file.path));
   if (codeChanges.length === 0) return undefined;
 
   const loaded = loadProject(cwd, config);
