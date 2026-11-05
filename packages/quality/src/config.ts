@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { isAbsolute, join } from "node:path";
-import { resolveConfig, type XrayConfig, type XrayConfigInput } from "@xray/core";
+import { DEFAULT_BOUNDARIES, resolveConfig, type BoundaryConfig, type XrayConfig, type XrayConfigInput } from "@xray/core";
 import type { Severity } from "./types.js";
 
 export interface QualityConfig {
@@ -14,16 +14,8 @@ export interface QualityConfig {
     minComplexity: number;
     thresholds: Record<Severity, number>;
   };
-  architecture: {
-    /** Globs of feature folders. */
-    features: string[];
-    /** Globs, relative to a feature folder, of the files that are its public API. */
-    publicApi: string[];
-    /** Names of folders among the features that are shared code, importable by any feature. */
-    shared: string[];
-    /** Use xray.features.json features that declare `files`, when present. */
-    useFeatureMap: boolean;
-  };
+  /** Feature boundaries; core reads the same section, so the PR report checks them too. */
+  architecture: BoundaryConfig;
   dependencies: {
     outdated: boolean;
     /** Audit devDependencies too; by default only what ships (production dependencies). */
@@ -67,12 +59,7 @@ export const DEFAULT_QUALITY: Omit<QualityConfig, "xray"> = {
   weights: {},
   severityPenalty: { high: 10, medium: 3, low: 1 },
   hotspots: { windowMonths: 12, minChurn: 2, minComplexity: 10, thresholds: { high: 1000, medium: 300, low: 100 } },
-  architecture: {
-    features: ["**/features/*"],
-    publicApi: ["index.{ts,tsx,js,jsx,mts,mjs}"],
-    shared: ["_*", "shared", "common"],
-    useFeatureMap: true,
-  },
+  architecture: DEFAULT_BOUNDARIES,
   dependencies: { outdated: true, dev: false, timeoutSeconds: 180 },
   coverage: {
     fileThreshold: 50,
@@ -94,12 +81,7 @@ export function resolveQualityConfig(input: QualityConfigInput, xray: XrayConfig
       ...input.hotspots,
       thresholds: { ...d.hotspots.thresholds, ...input.hotspots?.thresholds },
     },
-    architecture: {
-      features: input.architecture?.features ?? d.architecture.features,
-      publicApi: input.architecture?.publicApi ?? d.architecture.publicApi,
-      shared: input.architecture?.shared ?? d.architecture.shared,
-      useFeatureMap: input.architecture?.useFeatureMap ?? d.architecture.useFeatureMap,
-    },
+    architecture: { ...xray.boundaries, ...input.architecture },
     dependencies: { ...d.dependencies, ...input.dependencies },
     coverage: { ...d.coverage, ...input.coverage },
     duplication: { ...d.duplication, ...input.duplication },

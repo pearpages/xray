@@ -3,6 +3,7 @@ export * from "./git.js";
 export * from "./report.js";
 export * from "./dependencies/analyze.js";
 export * from "./dependencies/render.js";
+export * from "./dependencies/boundaries.js";
 export * from "./interactions/analyze.js";
 export * from "./interactions/features.js";
 export * from "./interactions/inventory.js";
