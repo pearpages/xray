@@ -68,4 +68,4 @@ Node 24 is pinned in `mise.toml` (`mise exec -- <cmd>` if the shell has no defau
   keep `typescript` on 6.x ([ADR-0002](docs/adr/0002-typescript-6-for-dependency-cruiser.md)).
 - Graph paths come out as `../../private/var/…` and dependents go missing when `--cwd` is not the
   process cwd → dependency-cruiser reports `resolved` relative to the process cwd, not `baseDir` →
-  every path goes through `repoPathResolver` in `packages/core/src/dependencies/analyze.ts`.
+  every path goes through `repoPathResolver` in `packages/core/src/dependencies/graph.ts`.

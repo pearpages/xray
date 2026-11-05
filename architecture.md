@@ -66,7 +66,7 @@ flowchart LR
 | `packages/core/src/interactions/render.ts` | The Interactions section: table, sequence diagrams, warnings |
 | `packages/core/src/interactions/inventory.ts` | `--inventory`: entry point candidates and checks of the feature map, for the skill |
 | `.claude-plugin/marketplace.json`, `plugins/xray/` | Claude Code plugin with two skills: `features` writes `xray.features.json`, `explain` turns a report into a reviewer's briefing ([ADR-0006](docs/adr/0006-feature-map-skill-plugin.md)) |
-| `plugins/xray/scripts/xray.sh` | Runs xray for the plugin's skills from a clone kept in the plugin's data folder, built on first use |
+| `plugins/xray/scripts/xray.sh` | Runs xray for the plugin's skills from a clone kept in the plugin's data folder, built on first use; `xray.sh <data-dir> quality …` runs `xray-quality` instead, for other skills ([ADR-0023](docs/adr/0023-data-for-other-skills.md)) |
 | `packages/core/src/testing/` | Test-only helpers (a throwaway git repository); not built |
 | `packages/core/src/report.ts` | `ReportSection`, the hidden `<!-- xray:report -->` marker, the report frame |
 | `packages/core/src/pr.ts` | `analyzePullRequest` (with `only`; ts-morph analyses imported on demand), `XrayResult` (`version: 1`), `reportSections`, `renderMarkdown` |
@@ -140,6 +140,8 @@ and adds the repo's commit and the weighted global score. The UI only reads the 
 and ESLint limit their work to it, the others run whole; the report then drops findings outside it
 and sets every score to null. Hotspots reads git churn through `.xray/cache/` (keyed by HEAD, window
 and day). `--format agent` turns the metrics into core's `AgentReport` ([ADR-0021](docs/adr/0021-agent-mode.md)).
+`--format graph` runs no metric: it prints `buildDependencyGraph`'s modules and edges as versioned
+JSON, for skills outside xray ([ADR-0023](docs/adr/0023-data-for-other-skills.md)).
 
 ## Build, test, deploy
 

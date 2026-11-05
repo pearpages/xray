@@ -375,6 +375,12 @@ files, and `--format agent` prints only findings, in a few hundred tokens:
   (`AgentReport`, `AgentFinding`, `AgentAnalyzerSummary`, `AgentSeverity`); nothing else in
   `@xray/core` is a supported import ([ADR-0019](docs/adr/0019-json-output-contract.md)).
 
+`xray-quality -f graph` prints the whole repository's import graph instead of a report:
+`{ version, tool, commit, modules, edges }`, with repo-relative paths and edges
+`{ from, to, typeOnly, dynamic }` ([ADR-0023](docs/adr/0023-data-for-other-skills.md)). Skills
+outside this repo reach it, and the quality report, through the plugin's script:
+`xray.sh <data-dir> quality -C <repo> -f graph`.
+
 [docs/foundry.md](docs/foundry.md) works this through for one pipeline, foundry: who runs each
 call, real outputs, prompt lines for the implementer and reviewer, and a driver helper.
 
