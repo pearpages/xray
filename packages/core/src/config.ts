@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { DEFAULT_BOUNDARIES, type BoundaryConfig } from "./dependencies/boundaries.js";
 
 export interface DependenciesConfig {
   /** Upper bound of nodes in the diagram; neighbours beyond it are summarised. */
@@ -74,6 +75,8 @@ export interface XrayConfig {
   interactions: InteractionsConfig;
   risk: RiskConfig;
   bundle: BundleConfig;
+  /** Feature boundaries, from the `quality.architecture` section: both reports check them. */
+  boundaries: BoundaryConfig;
 }
 
 export const CONFIG_FILE = "xray.config.json";
@@ -87,11 +90,13 @@ export const DEFAULT_ENTRY_GLOBS = [
   "**/pages/**",
 ];
 
-export type XrayConfigInput = Partial<Omit<XrayConfig, "dependencies" | "interactions" | "risk" | "bundle">> & {
+export type XrayConfigInput = Partial<Omit<XrayConfig, "dependencies" | "interactions" | "risk" | "bundle" | "boundaries">> & {
   bundle?: Partial<BundleConfig>;
   dependencies?: Partial<DependenciesConfig>;
   interactions?: Partial<InteractionsConfig>;
   risk?: Partial<RiskConfig>;
+  /** Only its `architecture` is read here; `@xray/quality` reads the rest. */
+  quality?: { architecture?: Partial<BoundaryConfig> };
 };
 
 export function resolveConfig(cwd: string, input: XrayConfigInput = {}): XrayConfig {
@@ -130,6 +135,7 @@ export function resolveConfig(cwd: string, input: XrayConfigInput = {}): XrayCon
       thresholdPercent: input.bundle?.thresholdPercent ?? 5,
       timeoutMinutes: input.bundle?.timeoutMinutes ?? 10,
     },
+    boundaries: { ...DEFAULT_BOUNDARIES, ...input.quality?.architecture },
   };
 }
 

@@ -6,6 +6,7 @@ import ts from "typescript";
 import type { XrayConfig } from "../config.js";
 import type { ChangedFile, ChangeStatus } from "../git.js";
 import { discoverWorkspace, workspaceAliases } from "../workspaces.js";
+import { checkBoundaries, detectFeatures } from "./boundaries.js";
 
 export type NodeKind = "source" | "test" | "external" | "group";
 
@@ -423,5 +424,10 @@ export async function analyzeDependencies(
       return false;
     }
   };
-  return { ...selectNeighbourhood(graph, changed, config.dependencies.maxNodes, isBarrel), warnings };
+  const neighbourhood = selectNeighbourhood(graph, changed, config.dependencies.maxNodes, isBarrel);
+  const codeFiles = [...graph.modules].filter((file) => !isTestFile(file)).sort();
+  const { features } = detectFeatures(cwd, config.interactions.featureMap, config.boundaries, codeFiles);
+  const touched = new Set(changed.filter((file) => file.status !== "deleted").map((file) => file.path));
+  const boundaries = features.length >= 2 ? checkBoundaries(cwd, features, graph.edges, touched).violations : undefined;
+  return { ...neighbourhood, ...(boundaries ? { boundaries } : {}), warnings };
 }
