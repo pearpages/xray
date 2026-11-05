@@ -1,3 +1,4 @@
+import type { Cache } from "./cache.js";
 import type { QualityConfig } from "./config.js";
 
 export type Severity = "high" | "medium" | "low";
@@ -33,6 +34,13 @@ export interface AnalyzerContext {
   config: QualityConfig;
   /** Code files under the root (tracked, not tests, stories, generated or ignored). */
   codeFiles: string[];
+  /**
+   * `--files`: the files whose findings are reported. An analyzer may limit its work to them;
+   * the report drops other findings either way. Undefined: the whole repository.
+   */
+  scope?: (file: string) => boolean;
+  /** Repo-wide inputs keyed by commit (`.xray/cache/`); a disabled cache always computes. */
+  cache?: Cache;
 }
 
 export interface Analyzer {
@@ -53,4 +61,6 @@ export interface QualityReport {
   /** What the findings formula used, so a reader can say what a finding costs (ADR-0014). */
   scoring?: { codeFiles: number; severityPenalty: Record<Severity, number> };
   metrics: MetricResult[];
+  /** `--files`: findings are limited to these, and every score is null (a slice is not the repository). */
+  scope?: { files: string[] };
 }

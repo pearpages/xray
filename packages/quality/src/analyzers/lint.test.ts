@@ -34,6 +34,25 @@ const TSCONFIG = JSON.stringify({ compilerOptions: { strict: true, noEmit: true,
 const runs = (data: unknown) => (data as { runs: LintRun[] }).runs.map(({ tool, target, status, errors, warnings }) => ({ tool, target, status, errors, warnings }));
 
 describe("lint and types", () => {
+  it("runs ESLint on the scoped files only (--files)", async () => {
+    const repo = install(
+      (fixture = new GitFixture()
+        .write({
+          ".gitignore": "node_modules\n",
+          "package.json": JSON.stringify({ type: "module" }),
+          "eslint.config.js": ESLINT_CONFIG({ "no-unused-vars": "error" }),
+          "scripts/a.js": "let a = 1;\n",
+          "scripts/b.js": "let b = 1;\n",
+        })
+        .commit("base")),
+      "eslint",
+    );
+    const config = loadQualityConfig(repo.root);
+    config.lint.typescript = false;
+    const result = await lint.analyze({ root: repo.root, config, codeFiles: codeFiles(repo.root, config.ignore), scope: (file) => file === "scripts/b.js" });
+    expect(result.findings.map((finding) => finding.file)).toEqual(["scripts/b.js"]);
+  });
+
   it("reports the project's ESLint errors and warnings and its TypeScript errors, writing nothing", async () => {
     const repo = install(
       (fixture = new GitFixture()

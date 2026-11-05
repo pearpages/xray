@@ -69,8 +69,10 @@ export const coverage: Analyzer = {
   id: "coverage",
   name: "Coverage",
   phase: 2,
-  async analyze({ root, config, codeFiles }) {
+  async analyze({ root, config, codeFiles: all, scope }) {
     const settings = config.coverage;
+    // Scoped: only those files are read and rated (the report drops the rest anyway).
+    const codeFiles = scope ? all.filter(scope) : all;
     const { coverage: report, files } = loadCoverage(root, settings.files);
     if (!report) {
       const where = settings.files?.join(", ") ?? "coverage/lcov.info (at the root or in a workspace package)";
@@ -84,7 +86,7 @@ export const coverage: Analyzer = {
       if (!entry) absent.push(file);
       else if (entry.lines.size > 0) rows.push(fileCoverage(file, entry));
     }
-    if (rows.length === 0) return unavailable("coverage", "Coverage", `${files.join(", ")} covers none of the code files`);
+    if (rows.length === 0 && !all.some((file) => (report.get(file)?.lines.size ?? 0) > 0)) return unavailable("coverage", "Coverage", `${files.join(", ")} covers none of the code files`);
 
     // A file inside a project that has a report, but absent from it, was loaded by no test: 0 %.
     // Its instrumented lines are estimated with the report's own ratio to source lines (ADR-0018).
