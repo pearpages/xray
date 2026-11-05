@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { basename, dirname, extname, join, matchesGlob, posix } from "node:path";
 import { loadFeatureMap } from "../interactions/features.js";
-import type { BoundaryViolation, DependencyEdge } from "./analyze.js";
+import type { BoundaryViolation } from "./analyze.js";
+import type { DependencyEdge } from "./graph.js";
 
 /**
  * Feature boundaries (ADR-0021): which folders or feature-map features are features, and the

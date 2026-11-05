@@ -158,7 +158,7 @@ describe("per-package tsconfig paths", () => {
 
 describe("pathAliases", () => {
   it("turns tsconfig paths into resolver aliases, longest first", async () => {
-    const { pathAliases } = await import("./dependencies/analyze.js");
+    const { pathAliases } = await import("./dependencies/graph.js");
     const aliases = pathAliases({ paths: { "@/*": ["./src/*"], "@/assets/*": ["./assets/*"], "env": ["./env.ts"] } }, "/repo/app");
     expect(Object.entries(aliases)).toEqual([
       ["@/assets", "/repo/app/assets"],

@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { analyzePullRequest, renderMarkdown, resolveConfig } from "../index.js";
-import { isReExportOnly, MAX_BARREL_IMPORTERS, packageName, selectNeighbourhood, type Graph } from "./analyze.js";
+import { packageName, type Graph } from "./graph.js";
+import { isReExportOnly, MAX_BARREL_IMPORTERS, selectNeighbourhood } from "./neighbourhood.js";
 
 describe("packageName", () => {
   it("keeps the package part of a specifier", () => {

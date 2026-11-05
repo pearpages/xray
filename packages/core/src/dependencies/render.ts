@@ -1,5 +1,6 @@
 import { dirname, basename } from "node:path";
-import type { DependencyAnalysis, DependencyNode } from "./analyze.js";
+import type { DependencyAnalysis } from "./analyze.js";
+import type { DependencyNode } from "./neighbourhood.js";
 
 const CLASS_DEFS = [
   "classDef modified fill:#fde68a,stroke:#b45309,stroke-width:2px,color:#000",

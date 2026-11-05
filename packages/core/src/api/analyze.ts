@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { SourceFile } from "ts-morph";
-import { isTestFile } from "../dependencies/analyze.js";
+import { isTestFile } from "../files.js";
 import { showFile, type ChangedFile } from "../git.js";
 import type { ChangedCode } from "../interactions/changed-code.js";
 import { discoverWorkspace } from "../workspaces.js";
