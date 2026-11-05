@@ -10,8 +10,10 @@ file is a bug.
 
 An npm workspaces monorepo in TypeScript (ESM, `NodeNext`), Node 24. It ships as:
 
-- **`@xray/core`**: a library. Entry point `analyzePullRequest({ cwd, base })` → `XrayResult`;
-  `renderMarkdown(result)` → the report.
+- **`@xray/core`**: a library. Entry point `analyzePullRequest({ cwd, base, only })` → `XrayResult`;
+  `renderMarkdown(result)` → the report. Subpaths: `@xray/core/pr` (the PR report without a static
+  path to ts-morph, what the CLI imports) and `@xray/core/agent` (the agent format's types only, the
+  one import outside tools may use, [ADR-0021](docs/adr/0021-agent-mode.md)).
 - **`@xray/cli`**: the `xray [base]` binary (`packages/cli/src/index.ts`, commander).
 - **`@xray/quality`**: the `xray-quality` binary and library: whole-repository scores
   ([ADR-0014](docs/adr/0014-project-quality-tool.md)), built on core's exports.
@@ -49,7 +51,8 @@ flowchart LR
 |---|---|
 | `packages/core/src/git.ts` | Resolving the merge base (`<base>` or `origin/<base>`), the changed files and changed line ranges (diff to the working tree + untracked files, relative to the analysed folder), and file contents on the base |
 | `packages/core/src/config.ts` | `xray.config.json` loading and defaults (`roots`, `tsConfig`, `exclude`, `dependencies.*`, `interactions.*`) |
-| `packages/core/src/dependencies/` | Analysis 1: cruise the project, keep changed modules + direct neighbours, render the Mermaid flowchart |
+| `packages/core/src/dependencies/` | Analysis 1: cruise the project, keep changed modules + direct neighbours, render the Mermaid flowchart; `boundaries.ts`: features (feature map or folders) and the imports that skip a feature's public API or form a cycle, used by the PR report on changed files and by quality's architecture metric on all |
+| `packages/core/src/agent/` | The agent format ([ADR-0021](docs/adr/0021-agent-mode.md)): `types.ts` (types only), `report.ts` (sort, `--min-severity`, `--top`, `truncated`), `pr.ts` (the PR results → findings mapping) |
 | `packages/core/src/workspaces.ts` | Workspace discovery (`pnpm-workspace.yaml`, `workspaces`) and mapping package names and subpath exports to files, for both analyses (CI has no `node_modules`) |
 | `packages/core/src/interactions/project.ts` | Loading the ts-morph project: the root tsconfig, or every workspace package at a workspace root, each file resolving imports with its package's own options (`paths`), and workspace package names resolved to source |
 | `packages/core/src/interactions/changed-code.ts` | Loading the PR's code once for the ts-morph analyses: the project, the touched units, their base versions and removed units |
@@ -65,10 +68,11 @@ flowchart LR
 | `plugins/xray/scripts/xray.sh` | Runs xray for the plugin's skills from a clone kept in the plugin's data folder, built on first use |
 | `packages/core/src/testing/` | Test-only helpers (a throwaway git repository); not built |
 | `packages/core/src/report.ts` | `ReportSection`, the hidden `<!-- xray:report -->` marker, the report frame |
-| `packages/core/src/index.ts` | `analyzePullRequest`, `reportSections`, `renderMarkdown` and re-exports |
-| `packages/quality/src/` | `analyzers/` (one file per metric: hotspots, architecture, dependencies, coverage, duplication, lint), `registry.ts` (the list), `score.ts` (findings formula, global score), `config.ts` (the `quality` section), `files.ts` (tracked code files), `report.ts` (runs the analyzers, repo info), `output.ts` (writes the report, creating folders), `cli.ts` |
+| `packages/core/src/pr.ts` | `analyzePullRequest` (with `only`; ts-morph analyses imported on demand), `XrayResult` (`version: 1`), `reportSections`, `renderMarkdown` |
+| `packages/core/src/index.ts` | Re-exports everything, `pr.ts` included |
+| `packages/quality/src/` | `analyzers/` (one file per metric: hotspots, architecture, dependencies, coverage, duplication, lint), `registry.ts` (the list), `score.ts` (findings formula, global score), `config.ts` (the `quality` section), `files.ts` (tracked code files), `report.ts` (runs the analyzers, `--files` scope, repo info), `cache.ts` (`.xray/cache/`, ignored by its own `.gitignore`), `output.ts` (writes the report, creating folders), `cli.ts` (`--only`, `--files`, `--format json|agent`) |
 | `packages/quality-ui/src/` | `reports.ts` (parsing, grouping by repository, evolution, filters), `storage.ts` (the open reports in localStorage, tolerant of a full or blocked one) and `explain.ts` (what each metric measures, how it is scored, its verdict, what moves its score and the next steps, from the report's own data), `useHashTab.ts` (the open tab in the URL fragment), `AppHeader`, `Overview` (weakest first), `MetricHeader` (the same opening on every metric tab), `InfoButton` (pulp IconButton + Popover) and `ScoreChip` (the score in each tab's label), one component per metric view (hotspots, architecture, dependencies, coverage, duplication, lint), loaded when its tab opens, `ScoreEvolution` (an SVG line chart: the global score, then one small chart per metric on the same scale, because pulp's accents don't pass as six categorical series), `HotspotMatrix` (files by commits × complexity on pulp's sequential data scale) and `CommitCalendar` (pulp Heatmap), `FileProfileSheet` (a pulp Sheet with everything about one file, opened from any `FileLink` through `fileProfileContext`), `Findings` and `Paged` (pulp Pagination under any long list), each with its own `.css`, on pulp components and tokens; component tests in jsdom with Testing Library |
-| `packages/cli/src/index.ts` | Argument parsing, `--format markdown|json`, `--out` |
+| `packages/cli/src/index.ts` | Argument parsing, `--format markdown|json|agent`, `--only`, `--out`; exit 0 when the analysis ran, 1 on failure, 2 on a usage error |
 | `packages/action/src/` | Reading the PR number from `GITHUB_EVENT_PATH`, finding/updating the comment via the REST API, truncating to 65 536 chars |
 | `.github/workflows/` | `ci.yml` (build + tests) and `xray.yml` (runs the Action on this repo's PRs) |
 
@@ -107,8 +111,12 @@ flowchart LR
 7. `analyzeBundle` (only when enabled) checks out the merge base and `HEAD` in throwaway worktrees,
    installs and builds each, measures the output, compares chunks by hash-less name, and attributes
    bytes to packages through source maps ([ADR-0009](docs/adr/0009-bundle-size-analysis.md)).
-8. `reportSections` renders each analysis to a section; `renderReport` adds the marker and header.
-9. In CI, the Action runs the CLI with `--head` set to the PR's head commit (the checkout itself is
+8. With `only`, unselected analyses are skipped and absent from `XrayResult`; ts-morph is imported
+   only when interactions, risk or API is selected (risk alone still computes the interactions it
+   needs). Feature boundaries are checked on the full graph, reported only for imports from changed
+   files (`dependencies.boundaries`, undefined with fewer than two features).
+9. `reportSections` renders each analysis to a section (only those present); `renderReport` adds the marker and header.
+10. In CI, the Action runs the CLI with `--head` set to the PR's head commit (the checkout itself is
    GitHub's temporary merge commit), writes the report to `$RUNNER_TEMP`, appends it to the job
    summary, and the comment script PATCHes the existing comment carrying the marker or POSTs a new one. A 403/404
    from the API (read-only token on fork PRs) is a warning, not a failure. It first reads the PR's
@@ -127,6 +135,10 @@ files; lint and types runs the analysed repo's own `eslint` and `tsc --noEmit` (
 `node_modules`, one run per ESLint config folder and per tsconfig, errors attributed to a file's
 nearest tsconfig, [ADR-0016](docs/adr/0016-quality-phase-2.md)). `analyzeQuality` times each metric
 and adds the repo's commit and the weighted global score. The UI only reads the JSON.
+`--only` runs a subset of `ANALYZERS`. `--files` passes a scope to every analyzer: hotspots, coverage
+and ESLint limit their work to it, the others run whole; the report then drops findings outside it
+and sets every score to null. Hotspots reads git churn through `.xray/cache/` (keyed by HEAD, window
+and day). `--format agent` turns the metrics into core's `AgentReport` ([ADR-0021](docs/adr/0021-agent-mode.md)).
 
 ## Build, test, deploy
 

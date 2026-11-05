@@ -28,9 +28,12 @@ node packages/cli/dist/index.js main --cwd ../my-project
 ```
 xray [base]            base branch of the PR (default main; also tries origin/<base>)
   -C, --cwd <dir>      root of the repository to analyse
-  -f, --format <fmt>   markdown | json
+  -f, --format <fmt>   markdown | json | agent (findings only, see "Using xray from agents")
   -o, --out <file>     write the report to a file
   -c, --config <file>  config, relative to --cwd (default xray.config.json)
+  --only <ids>         run only these analyses: dependencies,interactions,risk,api,bundle
+  --min-severity <l>   agent format: high | medium | low (default medium)
+  --top <n>            agent format: most findings kept (default 10)
   --bundle             also install and build base and PR to compare bundle sizes
   --inventory          print entry point candidates and feature map checks as JSON (ignores base)
   --head <sha>         commit to report as the PR head (default HEAD; the Action passes the PR's head)
@@ -229,8 +232,9 @@ a report and its risks.
 
 A second tool in this repository scores the quality of a **whole repository** from 0 to 100, per
 metric and overall, so reports of successive commits can be compared. It reads the repository and
-never changes it ([ADR-0014](docs/adr/0014-project-quality-tool.md),
-[ADR-0015](docs/adr/0015-quality-phase-1-tuning.md)).
+writes only its own cache, `.xray/cache/` (git churn by commit), which ignores itself so git never
+shows it; `--no-cache` turns it off ([ADR-0014](docs/adr/0014-project-quality-tool.md),
+[ADR-0015](docs/adr/0015-quality-phase-1-tuning.md), [ADR-0021](docs/adr/0021-agent-mode.md)).
 
 ```bash
 npm ci && npm run build
@@ -242,6 +246,12 @@ xray-quality
   -C, --cwd <dir>      root of the repository to analyse
   -o, --out <file>     write the report to a file instead of stdout (folders are created)
   -c, --config <file>  config with a `quality` section (default: xray.config.json in --cwd)
+  -f, --format <fmt>   json | agent (findings only, see "Using xray from agents")
+  --only <ids>         run only these metrics: hotspots,architecture,dependencies,coverage,duplication,lint
+  --files <paths...>   findings for these files, folders or globs only; every score becomes null
+  --no-cache           don't read or write .xray/cache/
+  --min-severity <l>   agent format: high | medium | low (default medium)
+  --top <n>            agent format: most findings kept (default 10)
 ```
 
 The report has the repository path, the analysed commit (and whether the tree had uncommitted
@@ -325,6 +335,61 @@ read as for the PR report.
 - `lint.eslint` / `lint.typescript`: run the project's ESLint / `tsc --noEmit`. `timeoutSeconds`:
   per run.
 - `ignore`: globs left out of every metric, on top of tests, stories, declarations and build output.
+
+## Using xray from agents
+
+Both CLIs serve tools that call them many times per task, such as an agent pipeline
+([ADR-0021](docs/adr/0021-agent-mode.md)). `--only` runs just the analyses asked for (`--only
+dependencies` never loads the TypeScript code model), `--files` limits the quality report to some
+files, and `--format agent` prints only findings, in a few hundred tokens:
+
+```json
+{
+  "version": 1,
+  "tool": "xray",
+  "commit": "4f2c…",
+  "analyzers": [
+    { "analyzer": "api", "status": "ok", "summary": "API is breaking: 1 breaking of 2 export and 0 endpoint change(s).", "findings": 2 }
+  ],
+  "findings": [
+    { "analyzer": "api", "file": "src/math.ts", "severity": "high", "message": "export `add` changed (breaking): new required parameter `round`; used by 3 file(s)" }
+  ],
+  "truncated": 0
+}
+```
+
+- `findings`: `{ analyzer, file, line?, severity, message }`, at or above `--min-severity`
+  (default `medium`), high first, at most `--top` (default 10); `truncated` counts the ones `--top`
+  cut. `analyzers` lists every selected analyzer, with `status` `ok` or `unavailable` and one line.
+- PR severities: a breaking export or endpoint is **high**, one to review **medium**, an addition
+  **low**; a red unit (risk) **high**, a yellow one **medium**; an import from a changed file into
+  another feature's internals **medium**, a cycle between features **high** (the quality report's
+  architecture rules, from `quality.architecture`); an invalid feature map **medium**, a unit in no
+  feature **low**; a red / yellow bundle **high** / **medium**, a new or re-versioned dependency
+  **low**. A failed bundle build is `unavailable`, with the reason.
+- **Exit codes:** 0 whenever the analysis ran, whatever it found (the caller decides what blocks);
+  1 when xray failed (not a git repository, unknown base…); 2 for a wrong flag or value.
+- **Contract:** every JSON output carries `version` (`xray -f json`, `xray-quality` and the agent
+  format); it changes only when a field is removed, renamed or changes meaning, or a severity
+  mapping changes. The agent format's types are importable, types only, from `@xray/core/agent`
+  (`AgentReport`, `AgentFinding`, `AgentAnalyzerSummary`, `AgentSeverity`); nothing else in
+  `@xray/core` is a supported import ([ADR-0019](docs/adr/0019-json-output-contract.md)).
+
+One call per moment of a pipeline:
+
+```bash
+# Plan: where the code about to change is already hard to change
+node packages/quality/dist/cli.js --cwd ../app -f agent --only hotspots --files src/cart src/checkout/pay.ts
+
+# After each step: did it break a feature boundary?
+node packages/cli/dist/index.js main --cwd ../app -f agent --only dependencies
+
+# Before review: breaking API changes and untested risky code
+node packages/cli/dist/index.js main --cwd ../app -f agent --only api,risk
+
+# Final gate: bundle growth (installs and builds base and PR: it runs the project's scripts)
+node packages/cli/dist/index.js main --cwd ../app -f agent --only bundle --bundle
+```
 
 ## Development
 
