@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { cyclomaticComplexity, unitsOf } from "@xray/core";
 import { Project } from "ts-morph";
+import type { Cache } from "../cache.js";
 import { git } from "../files.js";
 import { findingsScore } from "../score.js";
 import type { Analyzer, Finding, Severity } from "../types.js";
@@ -29,6 +30,26 @@ export function commitLog(root: string, months: number): { churn: Map<string, nu
   return { churn, days };
 }
 
+/**
+ * `commitLog` through the cache: keyed by HEAD, the window and today's date (the window ends
+ * today), so a scoped run on the same commit skips the repo-wide `git log`.
+ */
+export function cachedCommitLog(root: string, months: number, cache?: Cache): ReturnType<typeof commitLog> {
+  if (!cache) return commitLog(root, months);
+  let head: string | undefined;
+  try {
+    head = git(root, ["rev-parse", "HEAD"]);
+  } catch {
+    head = undefined;
+  }
+  const key = head && `${head}-${months}m-${new Date().toISOString().slice(0, 10)}`;
+  const stored = cache.get("churn", key, () => {
+    const log = commitLog(root, months);
+    return { churn: [...log.churn], days: log.days };
+  });
+  return { churn: new Map(stored.churn), days: stored.days };
+}
+
 /** Commits per file since `months` ago, paths relative to the root. */
 export function churnSince(root: string, months: number): Map<string, number> {
   return commitLog(root, months).churn;
@@ -38,13 +59,13 @@ export const hotspots: Analyzer = {
   id: "hotspots",
   name: "Hotspots",
   phase: 1,
-  async analyze({ root, config, codeFiles }) {
+  async analyze({ root, config, codeFiles, scope, cache }) {
     const settings = config.hotspots;
-    const { churn, days } = commitLog(root, settings.windowMonths);
+    const { churn, days } = cachedCommitLog(root, settings.windowMonths, cache);
     // Parsed one file at a time, without types: complexity needs only the syntax.
     const project = new Project({ compilerOptions: { allowJs: true } });
     const rows: HotspotRow[] = [];
-    for (const file of codeFiles) {
+    for (const file of scope ? codeFiles.filter(scope) : codeFiles) {
       const commits = churn.get(file) ?? 0;
       if (commits === 0) continue;
       const source = project.addSourceFileAtPath(join(root, file));

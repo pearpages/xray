@@ -18,6 +18,7 @@ export interface LintRun {
 }
 
 const ESLINT_CONFIG = /(^|\/)(eslint\.config\.[cm]?[jt]s|\.eslintrc(\.(js|cjs|json|ya?ml))?)$/;
+const LINTABLE = /\.(c|m)?[jt]sx?$/;
 const toPosix = (path: string) => path.split(sep).join("/");
 /** Root-relative path of a file a tool reported; tools may print the real path of a symlinked root (P4). */
 export function relativeTo(root: string, file: string): string {
@@ -109,7 +110,7 @@ export const lint: Analyzer = {
   id: "lint",
   name: "Lint and types",
   phase: 2,
-  async analyze({ root, config, codeFiles }) {
+  async analyze({ root, config, codeFiles, scope }) {
     const settings = config.lint;
     const timeout = settings.timeoutSeconds * 1000;
     const tracked = git(root, ["ls-files", "--", "."]).split("\n").filter((file) => file && !file.includes("node_modules/"));
@@ -135,7 +136,11 @@ export const lint: Analyzer = {
         // A folder with its own config is linted from there, not again from its parent.
         const nested = dirs.filter((other) => other !== dir && (dir === "." || other.startsWith(`${dir}/`)));
         const ignores = nested.flatMap((other) => ["--ignore-pattern", `${toPosix(relative(cwd, join(root, other)))}/**`]);
-        const result = run(bin, [".", "--format", "json", "--no-error-on-unmatched-pattern", ...ignores], cwd);
+        // Scoped: lint just those files of this folder (ESLint skips the ones its config ignores).
+        const inDir = (file: string) => (dir === "." || file.startsWith(`${dir}/`)) && nearestDir(file, dirs) === dir;
+        const targets = scope ? tracked.filter((file) => LINTABLE.test(file) && scope(file) && inDir(file)).map((file) => toPosix(relative(cwd, join(root, file)))) : ["."];
+        if (targets.length === 0) continue;
+        const result = run(bin, [...targets, "--format", "json", "--no-error-on-unmatched-pattern", ...ignores], cwd);
         let parsed: EslintResult[] | undefined;
         try {
           parsed = JSON.parse(result.stdout) as EslintResult[];

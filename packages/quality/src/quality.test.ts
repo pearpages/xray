@@ -172,7 +172,7 @@ describe("dependencies", () => {
 });
 
 describe("analyzeQuality", () => {
-  it("reports the commit, every metric and a global score, and never changes the repo", async () => {
+  it("reports the commit, every metric and a global score, and changes nothing but its ignored cache", async () => {
     const repo = (fixture = new GitFixture().write(FEATURES).commit("base"));
     const report = await analyzeQuality(repo.root, loadQualityConfig(repo.root));
     expect(report).toMatchObject({ version: 1, repo: { dirty: false }, weights: { hotspots: 1, architecture: 1, dependencies: 1, coverage: 1, duplication: 1, lint: 1 } });
@@ -190,7 +190,9 @@ describe("analyzeQuality", () => {
     const ran = report.metrics.filter((metric) => metric.score !== null);
     expect(report.score).toBe(Math.round(ran.reduce((sum, metric) => sum + metric.score!, 0) / ran.length));
     const { execFileSync } = await import("node:child_process");
-    expect(execFileSync("git", ["status", "--porcelain", "--ignored"], { cwd: repo.root, encoding: "utf8" })).toBe("");
+    // Only `.xray/` (the churn cache, ADR-0021), which ignores itself.
+    expect(execFileSync("git", ["status", "--porcelain", "--ignored"], { cwd: repo.root, encoding: "utf8" })).toBe("!! .xray/\n");
+    expect(execFileSync("git", ["status", "--porcelain"], { cwd: repo.root, encoding: "utf8" })).toBe("");
   });
 
   it("reads weights and thresholds from the quality section of xray.config.json", () => {
