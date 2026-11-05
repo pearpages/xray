@@ -29,7 +29,9 @@ accepted.
 | [0016](docs/adr/0016-quality-phase-2.md) | Quality phase 2: coverage, duplication, lint and types as built | Accepted | 2026-11-02 |
 | [0017](docs/adr/0017-leave-closed-prs-alone.md) | The Action leaves merged and closed PRs' comments alone | Accepted | 2026-11-02 |
 | [0018](docs/adr/0018-untested-files-count.md) | Coverage counts the files no test loads | Accepted | 2026-11-02 |
+| [0019](docs/adr/0019-json-output-contract.md) | The JSON outputs are a versioned contract for outside tools | Proposed | 2026-11-04 |
 | [0020](docs/adr/0020-work-in-github-issues.md) | Work is tracked in GitHub Issues, not `tasks.md` | Accepted | 2026-11-04 |
+| [0021](docs/adr/0021-agent-mode.md) | Agent mode: `--only`, `--files`, `--format agent` (amends 0019) | Accepted | 2026-11-05 |
 
 ## Format
 
