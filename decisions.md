@@ -32,7 +32,7 @@ accepted.
 | [0019](docs/adr/0019-json-output-contract.md) | The JSON outputs are a versioned contract for outside tools | Proposed | 2026-11-04 |
 | [0020](docs/adr/0020-work-in-github-issues.md) | Work is tracked in GitHub Issues, not `tasks.md` | Accepted | 2026-11-04 |
 | [0021](docs/adr/0021-agent-mode.md) | Agent mode: `--only`, `--files`, `--format agent` (amends 0019) | Accepted | 2026-11-05 |
-| [0022](docs/adr/0022-npm-as-package-manager.md) | xray itself uses npm, not pnpm | Proposed | 2026-11-05 |
+| [0022](docs/adr/0022-npm-as-package-manager.md) | xray itself uses npm, not pnpm | Accepted | 2026-11-05 |
 
 ## Format
 
