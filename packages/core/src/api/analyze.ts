@@ -141,6 +141,4 @@ export function analyzeApi(
 }
 
 /** Usages in tests are listed apart: they break the suite, not the product. */
-export function splitUsages(usedBy: string[]): { code: string[]; tests: string[] } {
-  return { code: usedBy.filter((file) => !isTestFile(file)), tests: usedBy.filter(isTestFile) };
-}
+export { splitUsages } from "./usage-split.js";

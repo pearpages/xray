@@ -5,7 +5,6 @@ import extractTSConfig from "dependency-cruiser/config-utl/extract-ts-config";
 import ts from "typescript";
 import type { XrayConfig } from "../config.js";
 import type { ChangedFile, ChangeStatus } from "../git.js";
-import { readCompilerOptions } from "../interactions/project.js";
 import { discoverWorkspace, workspaceAliases } from "../workspaces.js";
 
 export type NodeKind = "source" | "test" | "external" | "group";
@@ -41,7 +40,32 @@ export interface DependencyAnalysis {
   outsideGraph: ChangedFile[];
   /** Nodes left out because the diagram hit `maxNodes`. */
   omittedNodes: number;
+  /**
+   * Imports from changed files that break feature boundaries (ADR-0021); undefined when the
+   * project has fewer than two features, so there are no boundaries to check.
+   */
+  boundaries?: BoundaryViolation[];
   warnings: string[];
+}
+
+export interface BoundaryViolation {
+  /** `deep`: into another feature's internals; `cycle`: two features importing each other. */
+  kind: "deep" | "cycle";
+  /** The importing file. */
+  file: string;
+  line?: number;
+  /** The imported file. */
+  imports: string;
+  message: string;
+}
+
+/** A tsconfig's compiler options, `extends` resolved; plain `typescript`, so the graph never loads ts-morph. */
+function readCompilerOptions(tsConfigPath: string): ts.CompilerOptions | undefined {
+  const parsed = ts.getParsedCommandLineOfConfigFile(tsConfigPath, {}, {
+    ...ts.sys,
+    onUnRecoverableConfigFileDiagnostic: () => undefined,
+  });
+  return parsed?.options;
 }
 
 const TEST_FILE = /(^|\/)__tests__\/|\.(test|spec)\.[cm]?[jt]sx?$/;

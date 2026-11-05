@@ -1,5 +1,6 @@
 import { inlineCode } from "../dependencies/render.js";
-import { splitUsages, type ApiAnalysis, type ApiChange } from "./analyze.js";
+import type { ApiAnalysis, ApiChange } from "./analyze.js";
+import { splitUsages } from "./usage-split.js";
 import type { Compatibility } from "./compare.js";
 
 const DOT: Record<Compatibility, string> = { compatible: "🟢", review: "🟡", breaking: "🔴" };
