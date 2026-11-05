@@ -31,7 +31,11 @@ sees the report. Never open a public issue for an unfixed vulnerability.
   install or change anything. It also runs the repository's **own** ESLint and `tsc --noEmit` from
   its `node_modules`: ESLint configs are code, so this is the same trust as running the project's
   lint; tsc runs with `--incremental false --composite false` so no `.tsbuildinfo` is written
-  ([ADR-0016](docs/adr/0016-quality-phase-2.md)). Nothing is written under the analysed root; the report goes where `-o` says. The UI is a
+  ([ADR-0016](docs/adr/0016-quality-phase-2.md)). The only thing written under the analysed root is
+its cache, `.xray/cache/` (git churn keyed by commit, window and day) with `.xray/.gitignore`
+(`*`), so it is never committed or reported as a change; a missing, unreadable or corrupt entry is
+recomputed, never trusted, and `--no-cache` turns it off ([ADR-0021](docs/adr/0021-agent-mode.md)).
+The report goes where `-o` says. The UI is a
   static page that reads report files locally and keeps the open ones in the browser's localStorage
   (that origin only; *Close all* removes them).
 - **Write token in CI.** The Action uses `GITHUB_TOKEN` with `pull-requests: write` to create or
@@ -39,6 +43,10 @@ sees the report. Never open a public issue for an unfixed vulnerability.
   where fork PRs get a read-only token (the comment step then only warns; the report stays in the
   job summary); using it on `pull_request_target` would give fork code a
   write token alongside the checkout and is not supported.
+- **Agent format** (`--format agent`, both CLIs) prints the same findings as the other formats,
+  with no new input. `--only bundle` does not enable the bundle analysis: running the project's
+  scripts still needs `--bundle` (ADR-0021). `--files` values are matched against tracked paths and
+  handed to the project's own ESLint as file arguments, without a shell.
 - **Shell injection.** `action.yml` passes inputs (`base`, `config`) to scripts through `env`, never
   by interpolating workflow expressions into `run:` bodies.
 - **Report content.** File paths from the PR end up in the comment's Markdown and Mermaid labels.
