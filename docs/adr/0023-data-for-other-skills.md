@@ -1,7 +1,7 @@
 # 0023. xray supplies data to other skills: `xray.sh quality` and `-f graph`
 
 - **Date:** 2026-11-05
-- **Status:** Accepted
+- **Status:** Accepted; its "skills stay outside xray" part superseded by [0024](0024-language-agnostic-skills-in-the-plugin.md)
 
 ## Context
 

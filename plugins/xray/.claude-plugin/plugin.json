@@ -1,9 +1,9 @@
 {
   "name": "xray",
-  "description": "Create and update xray's feature map (xray.features.json) so PR reports name your product's features.",
+  "description": "Feature map and PR briefings for xray's reports, plus a project tour and a diagram check that work on any language.",
   "author": { "name": "pearpages" },
   "homepage": "https://github.com/pearpages/xray",
   "repository": "https://github.com/pearpages/xray",
   "license": "MIT",
-  "keywords": ["xray", "pull-requests", "react", "typescript", "feature-map"]
+  "keywords": ["xray", "pull-requests", "react", "typescript", "feature-map", "onboarding", "diagrams"]
 }
