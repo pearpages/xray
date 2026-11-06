@@ -171,7 +171,7 @@ build xray into the plugin's data folder (about a minute), then reuse that build
 
 - **`/xray:features`** (or "create the xray feature map"): reads your code, writes
   `xray.features.json`, checks it, and leaves it for you to review and commit.
-- **`/xray:explain`** (or "explain this xray report", "is this PR risky?"): turns a PR's report
+- **`/xray:explain-pr`** (or "explain this xray report", "is this PR risky?"): turns a PR's report
   into a reviewer's briefing: what the PR does for users, where it reaches, and for every 🔴/🟡
   unit a concrete next step (which test to add and which case it must cover), read from the diff
   and from what the existing tests actually check. It reads the report from the PR comment, or runs
@@ -225,7 +225,7 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
    `bundle: "true"` and check out with `persist-credentials: false`
    ([ADR-0009](docs/adr/0009-bundle-size-analysis.md)).
 
-Claude skills: ✅ `/xray:features` writes and updates the feature map; ✅ `/xray:explain` explains
+Claude skills: ✅ `/xray:features` writes and updates the feature map; ✅ `/xray:explain-pr` explains
 a report and its risks.
 
 ## Project quality

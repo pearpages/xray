@@ -1,5 +1,5 @@
 ---
-name: explain
+name: explain-pr
 description: Explain an xray pull request report (dependencies, interactions, impact and risk) in plain language and say what to do about its risks. Use when asked what an xray report or comment means, whether a PR is risky, which features a PR affects, or which tests to add before merging.
 argument-hint: "[PR number or URL; default: the current branch]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/xray.sh *) Bash(gh pr view *) Bash(gh pr diff *) Bash(git diff *) Bash(git merge-base *) Bash(git rev-parse *) Read Grep Glob

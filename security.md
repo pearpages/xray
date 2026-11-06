@@ -60,7 +60,7 @@ The report goes where `-o` says. The UI is a
   `XRAY_REPO`) into the plugin's data folder, runs `npm ci` and the build there, and runs the CLI's
   read-only modes (`--inventory`, `--format json`). That is the same trust as installing the plugin.
   `features` may run that script plus Read, Grep and Glob, and writes only `xray.features.json`
-  for the user to review and commit. `explain` may also run read-only `gh pr view`/`gh pr diff`
+  for the user to review and commit. `explain-pr` may also run read-only `gh pr view`/`gh pr diff`
   and `git diff`; it writes nothing and never posts to the PR.
 
 ## Secrets
