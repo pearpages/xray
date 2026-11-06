@@ -65,7 +65,7 @@ flowchart LR
 | `packages/core/src/interactions/features.ts`, `analyze.ts` | The feature map, and grouping touched units into features (map features, entry points, shared hubs) |
 | `packages/core/src/interactions/render.ts` | The Interactions section: table, sequence diagrams, warnings |
 | `packages/core/src/interactions/inventory.ts` | `--inventory`: entry point candidates and checks of the feature map, for the skill |
-| `.claude-plugin/marketplace.json`, `plugins/xray/` | Claude Code plugin with two skills: `features` writes `xray.features.json`, `explain` turns a report into a reviewer's briefing ([ADR-0006](docs/adr/0006-feature-map-skill-plugin.md)) |
+| `.claude-plugin/marketplace.json`, `plugins/xray/` | Claude Code plugin with two skills: `features` writes `xray.features.json`, `explain-pr` turns a report into a reviewer's briefing ([ADR-0006](docs/adr/0006-feature-map-skill-plugin.md)) |
 | `plugins/xray/scripts/xray.sh` | Runs xray for the plugin's skills from a clone kept in the plugin's data folder, built on first use; `xray.sh <data-dir> quality …` runs `xray-quality` instead, for other skills ([ADR-0023](docs/adr/0023-data-for-other-skills.md)) |
 | `packages/core/src/testing/` | Test-only helpers (a throwaway git repository); not built |
 | `packages/core/src/report.ts` | `ReportSection`, the hidden `<!-- xray:report -->` marker, the report frame |
