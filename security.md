@@ -61,7 +61,11 @@ The report goes where `-o` says. The UI is a
   read-only modes (`--inventory`, `--format json`). That is the same trust as installing the plugin.
   `features` may run that script plus Read, Grep and Glob, and writes only `xray.features.json`
   for the user to review and commit. `explain-pr` may also run read-only `gh pr view`/`gh pr diff`
-  and `git diff`; it writes nothing and never posts to the PR.
+  and `git diff`; it writes nothing and never posts to the PR. `onboard` and `check-diagrams` run
+  their bundled Node scripts (read-only `git ls-files` and `git log`, no network, no
+  dependencies) and `xray.sh quality`; `onboard` writes only `docs/onboarding/`, and
+  `check-diagrams` edits Markdown diagrams only after the user agrees to each change
+  ([ADR-0024](docs/adr/0024-language-agnostic-skills-in-the-plugin.md)).
 
 ## Secrets
 

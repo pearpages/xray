@@ -177,6 +177,17 @@ build xray into the plugin's data folder (about a minute), then reuse that build
   and from what the existing tests actually check. It reads the report from the PR comment, or runs
   xray locally when the branch is checked out; it never posts to the PR.
 
+Two more skills work on **any language**, not only TypeScript/React. On TypeScript/JavaScript they
+use xray's exact numbers (churn × complexity, the real import graph); elsewhere they use their
+own scripts and say so ([ADR-0024](docs/adr/0024-language-agnostic-skills-in-the-plugin.md)):
+
+- **`/xray:onboard`** (or "give me a tour of this project", "where are the hard parts?"): maps the
+  project, finds its hotspots, explains each with one diagram, and writes an ordered reading path
+  to `docs/onboarding/`. It never changes source code.
+- **`/xray:check-diagrams`** (or "are the architecture diagrams up to date?"): checks every file
+  and folder your Markdown diagrams name, and on TypeScript/JavaScript every arrow against the real
+  imports, then offers fixes, one diagram at a time.
+
 To audit a map yourself, `xray --inventory` prints the entry point candidates, the map's status,
 entry points that no longer exist and pages no feature claims.
 
@@ -226,7 +237,8 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
    ([ADR-0009](docs/adr/0009-bundle-size-analysis.md)).
 
 Claude skills: ✅ `/xray:features` writes and updates the feature map; ✅ `/xray:explain-pr` explains
-a report and its risks.
+a report and its risks; ✅ `/xray:onboard` tours a project; ✅ `/xray:check-diagrams` keeps its code
+maps true.
 
 ## Project quality
 

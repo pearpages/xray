@@ -65,7 +65,9 @@ flowchart LR
 | `packages/core/src/interactions/features.ts`, `analyze.ts` | The feature map, and grouping touched units into features (map features, entry points, shared hubs) |
 | `packages/core/src/interactions/render.ts` | The Interactions section: table, sequence diagrams, warnings |
 | `packages/core/src/interactions/inventory.ts` | `--inventory`: entry point candidates and checks of the feature map, for the skill |
-| `.claude-plugin/marketplace.json`, `plugins/xray/` | Claude Code plugin with two skills: `features` writes `xray.features.json`, `explain-pr` turns a report into a reviewer's briefing ([ADR-0006](docs/adr/0006-feature-map-skill-plugin.md)) |
+| `.claude-plugin/marketplace.json`, `plugins/xray/` | Claude Code plugin with four skills: `features` writes `xray.features.json`, `explain-pr` turns a report into a reviewer's briefing ([ADR-0006](docs/adr/0006-feature-map-skill-plugin.md)); `onboard` tours any project and writes `docs/onboarding/`, `check-diagrams` checks a repo's code maps against its files and imports ([ADR-0024](docs/adr/0024-language-agnostic-skills-in-the-plugin.md)) |
+| `plugins/xray/skills/*/scripts/` | Dependency-free Node scripts for the language-agnostic skills: `hotspots.mjs` (churn × nesting-weighted size, fan-in, tests), `diagram-refs.mjs` (paths and arrows in Mermaid flowcharts); tested with the suite |
+| `plugins/xray/references/code-maps.md` | The plugin's drawing rules for code maps and hotspot diagrams, read by `onboard` and `check-diagrams` |
 | `plugins/xray/scripts/xray.sh` | Runs xray for the plugin's skills from a clone kept in the plugin's data folder, built on first use; `xray.sh <data-dir> quality …` runs `xray-quality` instead, for other skills ([ADR-0023](docs/adr/0023-data-for-other-skills.md)) |
 | `packages/core/src/testing/` | Test-only helpers (a throwaway git repository); not built |
 | `packages/core/src/report.ts` | `ReportSection`, the hidden `<!-- xray:report -->` marker, the report frame |
