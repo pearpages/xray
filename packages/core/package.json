@@ -21,7 +21,7 @@
     "dist"
   ],
   "dependencies": {
-    "dependency-cruiser": "^18.7.0",
+    "dependency-cruiser": "^18.7.2",
     "ts-morph": "^28.0.0",
     "typescript": "~6.0.3"
   },
