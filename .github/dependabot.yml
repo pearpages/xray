@@ -9,6 +9,8 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+        # Majors get their own PR (jscpd 4 → 5 broke the grouped one, #13).
+        update-types: ["minor", "patch"]
     ignore:
       # ADR-0002: TypeScript 7 has no JavaScript API; dependency-cruiser and ts-morph need 6.x.
       - dependency-name: typescript
@@ -20,3 +22,4 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+        update-types: ["minor", "patch"]

@@ -155,8 +155,10 @@ JSON, for skills outside xray ([ADR-0023](docs/adr/0023-data-for-other-skills.md
   Library, on each component). `npm run coverage` adds v8 coverage with a floor in
   `vitest.config.ts`. Unit tests for parsing, neighbourhood selection
   and comment truncation; an integration test that builds a temporary git repo with a feature
-  branch and runs `analyzePullRequest` end to end.
-- CI: `.github/workflows/ci.yml` runs `npm ci`, build and tests with coverage on pushes to `main` and on PRs.
+  branch and runs `analyzePullRequest` end to end. Run them once with `npm run build` then
+  `npm test -- --run` (the action and quality CLI tests import from `dist`); never plain
+  `npm test`, which watches.
+- CI: `.github/workflows/ci.yml` runs `npm ci`, build and tests with coverage on pushes to `main` and on PRs, with a read-only token.
 - Release: `vX.Y.Z` tags plus a moving `v0` ([ADR-0010](docs/adr/0010-versioning-and-releases.md));
   consumers use `@v0`. The Action builds itself on each run instead of shipping a committed `dist/`
   ([ADR-0003](docs/adr/0003-action-builds-at-runtime.md)), and the plugin's skills build the `v0`

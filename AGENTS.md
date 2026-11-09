@@ -20,6 +20,8 @@ by a future project-quality tool, so it returns data, not just Markdown.
 
 [README.md](README.md) is the user-facing entry point.
 
+Knowledge standard: craft v2 (`/craft:scaffold check` upgrades it)
+
 ## Working rules
 
 1. **Read `principles.md` before changing code or docs.** If a change would break a

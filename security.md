@@ -86,8 +86,8 @@ The report goes where `-o` says. The UI is a
 - `package-lock.json` is committed; CI and the Action install with `npm ci`.
 - Third-party actions (`actions/checkout`, `actions/setup-node`) are pinned by commit SHA, with the
   version in a comment, on their Node 24 releases.
-- Dependabot (`.github/dependabot.yml`) proposes npm and GitHub Actions updates weekly, grouped
-  per ecosystem, and never TypeScript 7 ([ADR-0002](docs/adr/0002-typescript-6-for-dependency-cruiser.md)).
+- Dependabot (`.github/dependabot.yml`) proposes npm and GitHub Actions updates weekly: minor and
+  patch updates grouped per ecosystem, each major in a PR of its own, and never TypeScript 7 ([ADR-0002](docs/adr/0002-typescript-6-for-dependency-cruiser.md)).
 
 ## Known risks
 
