@@ -35,6 +35,7 @@ accepted.
 | [0022](docs/adr/0022-npm-as-package-manager.md) | xray itself uses npm, not pnpm | Accepted | 2026-11-05 |
 | [0023](docs/adr/0023-data-for-other-skills.md) | xray supplies data to other skills: `xray.sh quality` and `-f graph` | Accepted; partly superseded by 0024 | 2026-11-05 |
 | [0024](docs/adr/0024-language-agnostic-skills-in-the-plugin.md) | The plugin hosts language-agnostic skills: onboard and check-diagrams | Accepted | 2026-11-06 |
+| [0025](docs/adr/0025-plugin-stays-about-analysis.md) | xray's plugin stays about analysis; workflow skills live in craft | Accepted | 2026-11-08 |
 
 ## Format
 
