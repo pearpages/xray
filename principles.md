@@ -15,7 +15,9 @@ CI step, hook).
 branch and returns data (`XrayResult`); it never reads `process.argv`, `GITHUB_*` variables or
 calls the GitHub API.
 *Why:* the core will be reused by a project-quality tool that is neither a CLI nor an Action.
-*Check:* `packages/core/package.json` does not depend on `@xray/cli` or `@xray/action`; review.
+*Check:* `packages/core/src/boundary.test.ts` reads the core's source as code and fails on an
+import of the CLI or Action, a read of `process.argv` or a `GITHUB_*` variable, or a GitHub API
+URL; `packages/core/package.json` does not depend on `@xray/cli` or `@xray/action`.
 
 **P2. Analysis and rendering are separate.** Each analysis returns a typed result
 (`DependencyAnalysis`, …) and a separate renderer turns it into Markdown; the JSON output
