@@ -146,3 +146,49 @@ describe("xray-quality for agents (ADR-0021)", () => {
     expect(run("--cwd", root, "--top", "-1").status).toBe(2);
   });
 });
+
+describe("xray-quality compare", () => {
+  const reportFile = (name: string, commit: string, findings: { file: string; severity: string; message: string }[]) => {
+    outDir ??= mkdtempSync(join(tmpdir(), "xray-quality-compare-"));
+    const file = join(outDir, name);
+    const metric = { id: "hotspots", name: "Hotspots", score: 60, summary: "", findings, status: "ok" };
+    writeFileSync(file, JSON.stringify({ version: 1, repo: { path: "/r", name: "r", commit, dirty: false }, generatedAt: "2026-11-10T00:00:00.000Z", score: 60, weights: {}, metrics: [metric] }));
+    return file;
+  };
+
+  it("prints what changed between two reports as JSON", () => {
+    const old = reportFile("old.json", "a", [{ file: "src/a.ts", severity: "high", message: "4 commits" }]);
+    const now = reportFile("new.json", "b", [{ file: "src/a.ts", severity: "high", message: "9 commits" }, { file: "src/b.ts", severity: "high", message: "2 commits" }]);
+    const result = run("compare", old, now);
+    expect(result.status).toBe(0);
+    const comparison = JSON.parse(result.stdout) as { version: number; added: { file: string }[]; fixed: unknown[] };
+    expect(comparison.version).toBe(1);
+    expect(comparison.added.map((finding) => finding.file)).toEqual(["src/b.ts"]);
+    expect(comparison.fixed).toEqual([]);
+  });
+
+  it("prints only the new problems in the agent format", () => {
+    const old = reportFile("old.json", "a", []);
+    const now = reportFile("new.json", "b", [{ file: "src/b.ts", severity: "high", message: "2 commits" }]);
+    const result = run("compare", old, now, "-f", "agent");
+    expect(result.status).toBe(0);
+    const agent = JSON.parse(result.stdout) as AgentReport;
+    expect(agent.commit).toBe("b");
+    expect(agent.findings.map((finding) => finding.file)).toEqual(["src/b.ts"]);
+  });
+
+  it("fails naming the file when it isn't a quality report", () => {
+    const old = reportFile("old.json", "a", []);
+    outDir ??= mkdtempSync(join(tmpdir(), "xray-quality-compare-"));
+    const bad = join(outDir, "bad.json");
+    writeFileSync(bad, JSON.stringify({ version: 2 }));
+    const result = run("compare", old, bad);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(`xray-quality: ${bad} is not a quality report (version 1)`);
+    expect(run("compare", old, join(outDir, "missing.json")).status).toBe(1);
+  });
+
+  it("is a usage error without two reports", () => {
+    expect(run("compare", "only-one.json").status).toBe(2);
+  });
+});

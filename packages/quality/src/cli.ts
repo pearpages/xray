@@ -1,12 +1,15 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Command, CommanderError, InvalidArgumentError } from "commander";
 import { agentReport, buildDependencyGraph, isSeverity, SEVERITIES, type AgentSeverity } from "@xray/core";
+import { compareReports } from "./compare.js";
 import { loadQualityConfig } from "./config.js";
 import { git } from "./files.js";
 import { writeReport } from "./output.js";
 import { ANALYZERS } from "./registry.js";
 import { analyzeQuality } from "./report.js";
+import type { QualityReport } from "./types.js";
 
 interface Options {
   cwd: string;
@@ -41,8 +44,24 @@ function parseTop(value: string): number {
   return top;
 }
 
+/** Reads a saved report: the one place a compared file is parsed. Throws a message naming the file. */
+function readReport(file: string): QualityReport {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(file, "utf8"));
+  } catch (error) {
+    throw new Error(`${file} can't be read as JSON: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  const report = parsed as Partial<QualityReport> | null;
+  if (report?.version !== 1 || !Array.isArray(report.metrics) || typeof report.repo?.commit !== "string") {
+    throw new Error(`${file} is not a quality report (version 1)`);
+  }
+  return report as QualityReport;
+}
+
 const program = new Command()
   .name("xray-quality")
+  .enablePositionalOptions()
   .description(
     "Score the quality of a whole repository and write a JSON report. Reads the repository; writes only its own ignored .xray/cache/.",
   )
@@ -102,6 +121,39 @@ const program = new Command()
       const scores = report.metrics.map((metric) => `${metric.name} ${metric.score ?? "n/a"}`).join(" · ");
       console.error(`xray-quality: ${report.score ?? "n/a"}/100 (${scores}) → ${options.out}`);
     }
+  });
+
+program
+  .command("compare")
+  .description("Say what changed between two saved reports: scores per metric, new and fixed problems (ADR-0027).")
+  .argument("<previous>", "the older report (JSON)")
+  .argument("<current>", "the newer report (JSON)")
+  .option("-f, --format <format>", "json | agent (the new problems only, for tools)", "json")
+  .option("-o, --out <file>", "write the comparison to a file instead of stdout")
+  .option("--min-severity <level>", "agent format: lowest severity kept, high | medium | low (default medium)", parseSeverity)
+  .option("--top <n>", "agent format: most findings kept (default 10)", parseTop)
+  .action((previous: string, current: string, options: Pick<Options, "out" | "minSeverity" | "top"> & { format: string }) => {
+    if (options.format !== "json" && options.format !== "agent") program.error(`Unknown format: ${options.format}`, { exitCode: 2 });
+    const comparison = compareReports(readReport(previous), readReport(current));
+    const output =
+      options.format === "agent"
+        ? agentReport(
+            "xray-quality",
+            comparison.current.commit,
+            [...new Set(comparison.added.map((finding) => finding.metric))].map((analyzer) => ({
+              analyzer,
+              status: "ok" as const,
+              summary: "new since the previous report",
+              findings: comparison.added
+                .filter((finding) => finding.metric === analyzer)
+                .map(({ metric, ...finding }) => ({ analyzer: metric, ...finding })),
+            })),
+            { minSeverity: options.minSeverity, top: options.top },
+          )
+        : comparison;
+    const json = `${JSON.stringify(output, null, 2)}\n`;
+    if (options.out) writeReport(options.out, json);
+    else process.stdout.write(json);
   });
 
 // Exit codes (ADR-0021): 0 when the report was made, whatever it found; 1 when it failed; 2 for usage errors.

@@ -264,7 +264,19 @@ xray-quality
   --no-cache           don't read or write .xray/cache/
   --min-severity <l>   agent format: high | medium | low (default medium)
   --top <n>            agent format: most findings kept (default 10)
+
+xray-quality compare <previous.json> <current.json>
+  -f, --format <fmt>   json (the comparison) | agent (the new problems only)
+  -o, --out <file>     write the comparison to a file instead of stdout
+  --min-severity <l>   agent format: high | medium | low (default medium)
+  --top <n>            agent format: most findings kept (default 10)
 ```
+
+`compare` says what changed between two saved reports: the global and per-metric scores before,
+after and the change, the problems `added` and `fixed` (worst first). A finding is the same
+problem when only its numbers or its line changed (a hotspot whose churn grew). A metric missing or
+unavailable in either report is `comparable: false`, with no score change and no findings listed,
+never a drop to 0 ([ADR-0027](docs/adr/0027-quality-snapshots.md)).
 
 The report has the repository path, the analysed commit (and whether the tree had uncommitted
 changes), the date, a global score, and one result per metric: score, one-sentence summary and
