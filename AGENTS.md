@@ -62,7 +62,9 @@ Node 24 is pinned in `mise.toml` (`mise exec -- <cmd>` if the shell has no defau
   `@xray/quality`'s), never the root's (ADR-0016).
 - Release, after merging to `main` with CI green
   ([ADR-0010](docs/adr/0010-versioning-and-releases.md)):
-  `git tag -a vX.Y.Z -m "vX.Y.Z" && git tag -f v0 vX.Y.Z && git push origin vX.Y.Z && git push -f origin v0`.
+  `git tag -a vX.Y.Z -m "vX.Y.Z" && git tag -f v0 vX.Y.Z && git push origin vX.Y.Z && git push -f origin v0`,
+  then `gh release create vX.Y.Z --title vX.Y.Z --notes-file <notes>` with notes for users
+  ([ADR-0026](docs/adr/0026-release-notes-on-github-releases.md)); `/craft:release` does both.
 
 ## Pitfalls that have bitten before
 
