@@ -37,6 +37,7 @@ accepted.
 | [0024](docs/adr/0024-language-agnostic-skills-in-the-plugin.md) | The plugin hosts language-agnostic skills: onboard and check-diagrams | Accepted | 2026-11-06 |
 | [0025](docs/adr/0025-plugin-stays-about-analysis.md) | xray's plugin stays about analysis; workflow skills live in craft | Accepted | 2026-11-08 |
 | [0026](docs/adr/0026-release-notes-on-github-releases.md) | Release notes live on GitHub Releases | Accepted | 2026-11-10 |
+| [0027](docs/adr/0027-quality-snapshots.md) | Quality snapshots: in the plugin's data folder, compared by finding identity | Accepted | 2026-11-10 |
 
 ## Format
 
