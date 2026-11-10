@@ -73,7 +73,7 @@ flowchart LR
 | `packages/core/src/report.ts` | `ReportSection`, the hidden `<!-- xray:report -->` marker, the report frame |
 | `packages/core/src/pr.ts` | `analyzePullRequest` (with `only`; ts-morph analyses imported on demand), `XrayResult` (`version: 1`), `reportSections`, `renderMarkdown` |
 | `packages/core/src/index.ts` | Re-exports everything, `pr.ts` included |
-| `packages/quality/src/` | `analyzers/` (one file per metric: hotspots, architecture, dependencies, coverage, duplication, lint), `registry.ts` (the list), `score.ts` (findings formula, global score), `config.ts` (the `quality` section), `files.ts` (tracked code files), `report.ts` (runs the analyzers, `--files` scope, repo info), `cache.ts` (`.xray/cache/`, ignored by its own `.gitignore`), `output.ts` (writes the report, creating folders), `cli.ts` (`--only`, `--files`, `--format json|agent`) |
+| `packages/quality/src/` | `analyzers/` (one file per metric: hotspots, architecture, dependencies, coverage, duplication, lint), `registry.ts` (the list), `score.ts` (findings formula, global score), `config.ts` (the `quality` section), `files.ts` (tracked code files), `report.ts` (runs the analyzers, `--files` scope, repo info), `cache.ts` (`.xray/cache/`, ignored by its own `.gitignore`), `output.ts` (writes the report, creating folders), `compare.ts` (`compareReports`: two reports in, score changes and added and fixed findings out, matched by `findingIdentity`; pure, [ADR-0027](docs/adr/0027-quality-snapshots.md)), `cli.ts` (`--only`, `--files`, `--format json|agent`, and the `compare` subcommand) |
 | `packages/quality-ui/src/` | `reports.ts` (parsing, grouping by repository, evolution, filters), `storage.ts` (the open reports in localStorage, tolerant of a full or blocked one) and `explain.ts` (what each metric measures, how it is scored, its verdict, what moves its score and the next steps, from the report's own data), `useHashTab.ts` (the open tab in the URL fragment), `AppHeader`, `Overview` (weakest first), `MetricHeader` (the same opening on every metric tab), `InfoButton` (pulp IconButton + Popover) and `ScoreChip` (the score in each tab's label), one component per metric view (hotspots, architecture, dependencies, coverage, duplication, lint), loaded when its tab opens, `ScoreEvolution` (an SVG line chart: the global score, then one small chart per metric on the same scale, because pulp's accents don't pass as six categorical series), `HotspotMatrix` (files by commits × complexity on pulp's sequential data scale) and `CommitCalendar` (pulp Heatmap), `FileProfileSheet` (a pulp Sheet with everything about one file, opened from any `FileLink` through `fileProfileContext`), `Findings` and `Paged` (pulp Pagination under any long list), each with its own `.css`, on pulp components and tokens; component tests in jsdom with Testing Library |
 | `packages/cli/src/index.ts` | Argument parsing, `--format markdown|json|agent`, `--only`, `--out`; exit 0 when the analysis ran, 1 on failure, 2 on a usage error |
 | `packages/action/src/` | Reading the PR number from `GITHUB_EVENT_PATH`, finding/updating the comment via the REST API, truncating to 65 536 chars |
@@ -144,6 +144,11 @@ and sets every score to null. Hotspots reads git churn through `.xray/cache/` (k
 and day). `--format agent` turns the metrics into core's `AgentReport` ([ADR-0021](docs/adr/0021-agent-mode.md)).
 `--format graph` runs no metric: it prints `buildDependencyGraph`'s modules and edges as versioned
 JSON, for skills outside xray ([ADR-0023](docs/adr/0023-data-for-other-skills.md)).
+`xray-quality compare <previous> <current>` parses each saved report once (`version: 1`, else exit
+1 naming the file) and prints `compareReports`' `QualityComparison`; one lookup table per report
+keeps 10,000 findings a side well under 100 ms. A finding's identity is its metric, file and
+message with the numbers removed; a metric missing or unavailable on either side is not comparable
+([ADR-0027](docs/adr/0027-quality-snapshots.md)).
 
 ## Build, test, deploy
 
