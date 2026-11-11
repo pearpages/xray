@@ -264,6 +264,8 @@ xray-quality
   --no-cache           don't read or write .xray/cache/
   --min-severity <l>   agent format: high | medium | low (default medium)
   --top <n>            agent format: most findings kept (default 10)
+  --snapshots <dir>    keep this report in <dir> (one per commit, the newest 30) and add
+                       `comparison`: what changed since the newest snapshot of an earlier commit
 
 xray-quality compare <previous.json> <current.json>
   -f, --format <fmt>   json (the comparison) | agent (the new problems only)
@@ -277,6 +279,12 @@ after and the change, the problems `added` and `fixed` (worst first). A finding 
 problem when only its numbers or its line changed (a hotspot whose churn grew). A metric missing or
 unavailable in either report is `comparable: false`, with no score change and no findings listed,
 never a drop to 0 ([ADR-0027](docs/adr/0027-quality-snapshots.md)).
+
+`--snapshots <dir>` keeps the history for you: each run is compared with the newest snapshot of an
+earlier commit (the report gains `comparison`, and stderr says `compared with <sha> (score +3, 2
+new, 1 fixed)`), then saved as `<time>-<sha>.json`, replacing one of the same commit; the newest 30
+are kept. A run with uncommitted changes, `--only` or `--files` is compared but not saved, so the
+history only holds whole runs of committed code.
 
 The report has the repository path, the analysed commit (and whether the tree had uncommitted
 changes), the date, a global score, and one result per metric: score, one-sentence summary and

@@ -8,6 +8,7 @@ import { loadQualityConfig } from "./config.js";
 import { git } from "./files.js";
 import { writeReport } from "./output.js";
 import { ANALYZERS } from "./registry.js";
+import { recordSnapshot } from "./snapshots.js";
 import { analyzeQuality } from "./report.js";
 import type { QualityReport } from "./types.js";
 
@@ -21,6 +22,7 @@ interface Options {
   format: "json" | "agent" | "graph";
   minSeverity?: AgentSeverity;
   top?: number;
+  snapshots?: string;
 }
 
 const IDS = ANALYZERS.map((analyzer) => analyzer.id);
@@ -63,7 +65,7 @@ const program = new Command()
   .name("xray-quality")
   .enablePositionalOptions()
   .description(
-    "Score the quality of a whole repository and write a JSON report. Reads the repository; writes only its own ignored .xray/cache/.",
+    "Score the quality of a whole repository and write a JSON report. Reads the repository; writes only its own ignored .xray/cache/, and --snapshots copies outside it.",
   )
   .option("-C, --cwd <dir>", "root of the repository to analyse", process.cwd())
   .option("-o, --out <file>", "write the report to a file instead of stdout")
@@ -74,6 +76,7 @@ const program = new Command()
   .option("--no-cache", "don't read or write .xray/cache/ (git churn by commit)")
   .option("--min-severity <level>", "agent format: lowest severity kept, high | medium | low (default medium)", parseSeverity)
   .option("--top <n>", "agent format: most findings kept (default 10)", parseTop)
+  .option("--snapshots <dir>", "keep this report in <dir> (one per commit, the newest 30) and add what changed since the last one")
   .exitOverride()
   .action(async (options: Options) => {
     if (options.format !== "json" && options.format !== "agent" && options.format !== "graph") {
@@ -100,6 +103,16 @@ const program = new Command()
       ...(options.files ? { files: options.files } : {}),
       cache: options.cache,
     });
+    if (options.snapshots) {
+      // Saved without the comparison; the printed report carries it (ADR-0027).
+      const outcome = recordSnapshot(resolve(options.snapshots), report, { save: !options.only && !options.files });
+      if (outcome.comparison) report.comparison = outcome.comparison;
+      const since = outcome.comparison
+        ? `compared with ${outcome.comparison.previous.commit.slice(0, 7)} (score ${outcome.comparison.score.change === null ? "n/a" : `${outcome.comparison.score.change >= 0 ? "+" : ""}${outcome.comparison.score.change}`}, ${outcome.comparison.added.length} new, ${outcome.comparison.fixed.length} fixed)`
+        : "no earlier snapshot to compare with";
+      const kept = outcome.saved ? `saved ${outcome.saved}` : `not saved (${{ dirty: "uncommitted changes", partial: "a partial run", "no-commit": "no commit" }[outcome.skipped!]})`;
+      console.error(`xray-quality: ${since}; ${kept}`);
+    }
     const output =
       options.format === "agent"
         ? agentReport(

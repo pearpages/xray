@@ -35,7 +35,12 @@ sees the report. Never open a public issue for an unfixed vulnerability.
 its cache, `.xray/cache/` (git churn keyed by commit, window and day) with `.xray/.gitignore`
 (`*`), so it is never committed or reported as a change; a missing, unreadable or corrupt entry is
 recomputed, never trusted, and `--no-cache` turns it off ([ADR-0021](docs/adr/0021-agent-mode.md)).
-The report goes where `-o` says. The UI is a
+The report goes where `-o` says. `--snapshots <dir>` writes a copy of each committed report into
+`<dir>`, the folder the caller names (the plugin passes its own data folder, outside the analysed
+repository), through a temp file and a rename, and deletes only snapshot-named files there
+(`<time>-<sha>.json`) beyond the newest 30; a damaged snapshot is skipped, never trusted;
+`compare` reads two report files and writes only where `-o` says
+([ADR-0027](docs/adr/0027-quality-snapshots.md)). The UI is a
   static page that reads report files locally and keeps the open ones in the browser's localStorage
   (that origin only; *Close all* removes them).
 - **Write token in CI.** The Action uses `GITHUB_TOKEN` with `pull-requests: write` to create or

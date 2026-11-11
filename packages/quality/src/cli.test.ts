@@ -192,3 +192,26 @@ describe("xray-quality compare", () => {
     expect(run("compare", "only-one.json").status).toBe(2);
   });
 });
+
+describe("xray-quality --snapshots", () => {
+  it("saves each commit's report and compares the next run with the last one", () => {
+    const { root } = repo();
+    outDir = mkdtempSync(join(tmpdir(), "xray-quality-snapshots-"));
+    const snapshots = join(outDir, "snapshots", "o-r");
+    const first = run("--cwd", root, "--only", "hotspots", "--snapshots", snapshots);
+    expect(first.status).toBe(0);
+    // --only is a partial run: compared, not saved.
+    expect(existsSync(snapshots) ? readdirSync(snapshots) : []).toEqual([]);
+
+    const base = JSON.parse(run("--cwd", root, "--snapshots", snapshots).stdout) as QualityReport;
+    expect(base.comparison).toBeUndefined();
+    fixture!.write({ "src/b.ts": "export const b = 2;\n" }).commit("second");
+    const second = run("--cwd", root, "--snapshots", snapshots);
+    expect(second.status).toBe(0);
+    const report = JSON.parse(second.stdout) as QualityReport;
+    expect(report.comparison?.previous.commit).toBe(base.repo.commit);
+    expect(report.comparison?.current.commit).toBe(report.repo.commit);
+    expect(readdirSync(snapshots)).toHaveLength(2);
+    expect(second.stderr).toContain(`xray-quality: compared with ${base.repo.commit.slice(0, 7)}`);
+  });
+});

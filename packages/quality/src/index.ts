@@ -4,6 +4,7 @@ export * from "./score.js";
 export * from "./report.js";
 export { writeReport } from "./output.js";
 export * from "./compare.js";
+export { KEEP, nodeFiles, recordSnapshot, type SnapshotFiles, type SnapshotOptions, type SnapshotOutcome } from "./snapshots.js";
 export { ANALYZERS } from "./registry.js";
 export { churnSince, commitLog, hotspots, type HotspotRow } from "./analyzers/hotspots.js";
 export { architecture, importLine, type Feature, type FeatureViolations } from "./analyzers/architecture.js";

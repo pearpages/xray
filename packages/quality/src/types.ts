@@ -1,5 +1,6 @@
 import type { Cache } from "./cache.js";
 import type { QualityConfig } from "./config.js";
+import type { QualityComparison } from "./compare.js";
 
 export type Severity = "high" | "medium" | "low";
 
@@ -63,4 +64,6 @@ export interface QualityReport {
   metrics: MetricResult[];
   /** `--files`: findings are limited to these, and every score is null (a slice is not the repository). */
   scope?: { files: string[] };
+  /** `--snapshots`: what changed since the newest snapshot of an earlier commit (ADR-0027). */
+  comparison?: QualityComparison;
 }
