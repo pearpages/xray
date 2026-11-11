@@ -38,12 +38,15 @@ It prints the **inventory** as JSON:
 3. **Understand each candidate.** Read every `entry-glob` candidate's file, and the `hub` and
    `unused-export` candidates that look like screens, routes or app roots. Learn what the user sees
    and does there: titles, buttons, routes, the text it renders. Read the README and any product
-   docs for the words the team uses. Done when you can say, for every `entry-glob` candidate, which
-   user task it serves.
+   docs for the words the team uses, and `GLOSSARY.md` at the repository root when it exists:
+   its terms win over the UI's and yours. Done when you can say, for every `entry-glob`
+   candidate, which user task it serves.
 4. **Group into features.** One feature per user task, not per component: a page and its modal
    for the same task are one feature; a page that serves two tasks may start two. For each:
    - `id`: kebab-case, stable. On an update, keep every existing id.
-   - `name`: two or three words in the team's language (the language of the UI and README).
+   - `name`: two or three words in the team's language: the `GLOSSARY.md` term when it has one,
+     else the language of the UI and README. On an update, a name that differs from the glossary
+     is kept and listed in the report for the team to decide.
    - `description`: one sentence on what the user can do.
    - `entryPoints`: candidate ids copied exactly from the inventory.
    - `files` (optional): narrow globs for code that belongs only to this feature but is reached
@@ -73,5 +76,5 @@ It prints the **inventory** as JSON:
 7. **Check it** by taking the inventory again. Done when `featureMap.status` is `found`,
    `unknownEntryPoints` is empty, and every id in `uncovered` is one of your reasoned omissions.
 8. **Report** to the user: a table of features (name, description, entry points), what changed if
-   this was an update, and the omissions with their reasons. The map is theirs to review and
-   commit.
+   this was an update, the omissions with their reasons, and any kept name that differs from
+   `GLOSSARY.md`. The map is theirs to review and commit.

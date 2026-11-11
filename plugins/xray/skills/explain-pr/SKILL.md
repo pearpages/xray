@@ -33,25 +33,37 @@ The report already has the tables; the briefing is what the tables don't say.
 
 Done when you have the report and know the PR's title and intent (its description).
 
-## 2. Read the change
+## 2. Read the project's own words
+
+Read these at the repository root when they exist; skip any that don't, without asking for them:
+
+- `GLOSSARY.md`: the team's terms. Use them in the briefing for features, units and behaviour,
+  never a synonym of your own.
+- `architecture.md`: only the parts about the modules the touched units live in: what each
+  module owns and which may depend on which. Use them to explain impact ("the pricing module,
+  which every checkout screen reads") and to flag a change that crosses a boundary it describes.
+
+Done when you know the project's name for each touched feature and module, or that it has none.
+
+## 3. Read the change
 
 Read the diff (`gh pr diff <pr>`, or `git diff $(git merge-base <base> HEAD)`) for every 🔴 and 🟡
 unit, and for each unit whose complexity grew: what branch, condition or case was added. Open the
 test files the report names as evidence to see what they actually check. Done when, for each of
 those units, you can say what new behaviour it has and whether any test exercises that behaviour.
 
-## 3. Write the briefing
+## 4. Write the briefing
 
-In the user's language, short, in this order:
+In the user's language and the project's terms from step 2, short, in this order:
 
 1. **What it does for users**, in one or two sentences, using the feature names (not file names).
 2. **Where it reaches**: for the features with the most touched units (three at most), the path
-   from the entry point to the change in plain words ("the Cart page shows prices through
-   `PriceTag`, which now formats with the selected currency"). Mention shared units (a hub "shared
-   by N") as "every screen that uses `useGame`".
+   from the entry point to the change in plain words, naming the modules as `architecture.md`
+   does ("the Cart page shows prices through `PriceTag`, which now formats with the selected
+   currency"). Mention shared units (a hub "shared by N") as "every screen that uses `useGame`".
 3. **Risks and next steps**, 🔴 first, then 🟡. For each: why (no test reaches it / complexity +N)
    and one concrete action: the test file to add or extend (by-name convention: `Cart.test.tsx`
-   next to `Cart.tsx`), and the case it must cover, taken from the new behaviour you read in step 2.
+   next to `Cart.tsx`), and the case it must cover, taken from the new behaviour you read in step 3.
    When a risk is acceptable (a one-line rename, a constant), say so and why.
 4. **Loose ends**, only if present: changed units not in the feature map (suggest `/xray:features`),
    removed units, warnings, nodes left out of a diagram.
