@@ -2,7 +2,7 @@
 name: quality-report
 description: Measure a TypeScript/JavaScript repository's quality and say what changed since the last time, then propose issues for the worst new problems. Use when asked how the code quality is, whether a repository got better or worse, what new problems or hotspots appeared, for a quality report, score or health check, or on /xray:quality-report. Runs xray-quality with a snapshot history kept in the plugin's data folder (one per commit, the newest 30), reports the score per metric with its change, the new and fixed problems, and hands at most 5 new high-severity problems to /craft:issue on the user's OK. Never fixes anything.
 argument-hint: "[repository root, default: current directory]"
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/xray.sh *) Bash(node ${CLAUDE_PLUGIN_ROOT}/skills/quality-report/scripts/digest.mjs *) Bash(git remote get-url *) Bash(git rev-parse *) Read
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/xray.sh *) Bash(node ${CLAUDE_PLUGIN_ROOT}/skills/quality-report/scripts/digest.mjs *) Bash(git -C * remote get-url origin) Bash(git rev-parse --show-toplevel) Read
 ---
 
 # Quality report: how the code is, and what changed
