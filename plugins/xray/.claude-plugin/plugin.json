@@ -1,9 +1,9 @@
 {
   "name": "xray",
-  "description": "Feature map and PR briefings for xray's reports, plus a project tour and a diagram check that work on any language.",
+  "description": "Feature map and PR briefings for xray's reports, a quality report that tracks change over time, plus a project tour and a diagram check that work on any language.",
   "author": { "name": "pearpages" },
   "homepage": "https://github.com/pearpages/xray",
   "repository": "https://github.com/pearpages/xray",
   "license": "MIT",
-  "keywords": ["xray", "pull-requests", "react", "typescript", "feature-map", "onboarding", "diagrams"]
+  "keywords": ["xray", "pull-requests", "react", "typescript", "feature-map", "onboarding", "diagrams", "code-quality"]
 }

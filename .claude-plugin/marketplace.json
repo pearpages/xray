@@ -6,7 +6,7 @@
     {
       "name": "xray",
       "source": "./plugins/xray",
-      "description": "Feature map and PR briefings for xray's reports, plus a project tour and a diagram check that work on any language."
+      "description": "Feature map and PR briefings for xray's reports, a quality report that tracks change over time, plus a project tour and a diagram check that work on any language."
     }
   ]
 }
