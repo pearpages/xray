@@ -176,6 +176,12 @@ build xray into the plugin's data folder (about a minute), then reuse that build
   unit a concrete next step (which test to add and which case it must cover), read from the diff
   and from what the existing tests actually check. It reads the report from the PR comment, or runs
   xray locally when the branch is checked out; it never posts to the PR.
+- **`/xray:quality-report`** (or "how is the code quality?", "did this repo get worse?"): scores
+  the whole repository, keeps a snapshot per commit in the plugin's data folder (the newest 30),
+  and says what changed since the last one: the score per metric, the new problems and the fixed
+  ones. It proposes issues for at most 5 new high-severity problems and files them through
+  [craft](https://github.com/pearpages/craft)'s `/craft:issue` on your OK (without craft, it lists
+  them). It never fixes anything.
 
 Two more skills work on **any language**, not only TypeScript/React. On TypeScript/JavaScript they
 use xray's exact numbers (churn × complexity, the real import graph); elsewhere they use their
@@ -237,7 +243,7 @@ Workspace imports such as `@acme/domain` or `@acme/ui/theme.css` resolve to that
    ([ADR-0009](docs/adr/0009-bundle-size-analysis.md)).
 
 Claude skills: ✅ `/xray:features` writes and updates the feature map; ✅ `/xray:explain-pr` explains
-a report and its risks; ✅ `/xray:onboard` tours a project; ✅ `/xray:check-diagrams` keeps its code
+a report and its risks; ✅ `/xray:quality-report` says how quality changed since the last run; ✅ `/xray:onboard` tours a project; ✅ `/xray:check-diagrams` keeps its code
 maps true.
 
 ## Project quality
