@@ -170,11 +170,13 @@ On older Claude Code versions: `/plugin marketplace add pearpages/xray`, then
 build xray into the plugin's data folder (about a minute), then reuse that build.
 
 - **`/xray:features`** (or "create the xray feature map"): reads your code, writes
-  `xray.features.json`, checks it, and leaves it for you to review and commit.
+  `xray.features.json`, checks it, and leaves it for you to review and commit. Feature names
+  follow your `GLOSSARY.md` when you keep one.
 - **`/xray:explain-pr`** (or "explain this xray report", "is this PR risky?"): turns a PR's report
   into a reviewer's briefing: what the PR does for users, where it reaches, and for every 🔴/🟡
   unit a concrete next step (which test to add and which case it must cover), read from the diff
-  and from what the existing tests actually check. It reads the report from the PR comment, or runs
+  and from what the existing tests actually check, in your project's terms from `GLOSSARY.md` and
+  `architecture.md` when they exist. It reads the report from the PR comment, or runs
   xray locally when the branch is checked out; it never posts to the PR.
 - **`/xray:quality-report`** (or "how is the code quality?", "did this repo get worse?"): scores
   the whole repository, keeps a snapshot per commit in the plugin's data folder (the newest 30),
