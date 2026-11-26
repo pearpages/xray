@@ -56,7 +56,8 @@ Node 24 is pinned in `mise.toml` (`mise exec -- <cmd>` if the shell has no defau
   (`-f json` for the raw `XrayResult`, `--bundle` to build and compare bundles, `--inventory` for
   the feature map skill's data).
 - `node packages/quality/dist/cli.js --cwd <repo> -o <file>`: the whole-repository quality report.
-- `npm run ui` (= `npm run dev -w @xray/quality-ui`) / `npm run build -w @xray/quality-ui`: the report viewer. The
+- `npm run ui` (= `npm run dev -w @xray/quality-ui`) / `npm run build -w @xray/quality-ui`: the report viewer;
+  the dev server lists `~/.xray/reports` (`XRAY_HOME` moves it, ADR-0028). The
   Action never installs it (`build:action`, ADR-0014), nor the root's dev dependencies: a tool only
   tests need goes in a workspace's `devDependencies` (`@vitest/coverage-v8` and `eslint` are in
   `@xray/quality`'s), never the root's (ADR-0016).

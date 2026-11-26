@@ -35,14 +35,20 @@ sees the report. Never open a public issue for an unfixed vulnerability.
 its cache, `.xray/cache/` (git churn keyed by commit, window and day) with `.xray/.gitignore`
 (`*`), so it is never committed or reported as a change; a missing, unreadable or corrupt entry is
 recomputed, never trusted, and `--no-cache` turns it off ([ADR-0021](docs/adr/0021-agent-mode.md)).
-The report goes where `-o` says. `--snapshots <dir>` writes a copy of each committed report into
-`<dir>`, the folder the caller names (the plugin passes its own data folder, outside the analysed
-repository), through a temp file and a rename, and deletes only snapshot-named files there
+The report goes where `-o` says. `--snapshots [dir]` writes a copy of each committed report into
+`<dir>`, or without one into the reports home (`$XRAY_HOME/reports` or `~/.xray/reports`,
+`<owner>-<repo>/quality/`, outside the analysed repository, [ADR-0028](docs/adr/0028-reports-home.md)),
+through a temp file and a rename, and deletes only snapshot-named files there
 (`<time>-<sha>.json`) beyond the newest 30; a damaged snapshot is skipped, never trusted;
 `compare` reads two report files and writes only where `-o` says
 ([ADR-0027](docs/adr/0027-quality-snapshots.md)). The UI is a
-  static page that reads report files locally and keeps the open ones in the browser's localStorage
-  (that origin only; *Close all* removes them).
+  static page that reads report files locally and keeps the ones opened by hand in the browser's
+  localStorage (that origin only; *Close all* removes them). Its dev and preview servers (`npm run
+  ui`) also serve the reports home, read only: `/reports/index.json` lists it and only files
+  matching `<key>/quality/<name>.json` (plain names, no `.`/`..` segments) are served, nothing
+  else under the home. Vite binds to localhost and checks the `Host` header and CORS origin, so
+  another site the browser opens can't read them; reports hold file paths, commit ids and
+  findings, not secrets. Don't start it with `--host` on a shared network.
 - **Write token in CI.** The Action uses `GITHUB_TOKEN` with `pull-requests: write` to create or
   update one comment, via the REST API at `GITHUB_API_URL`. It is meant for `pull_request` events,
   where fork PRs get a read-only token (the comment step then only warns; the report stays in the

@@ -6,6 +6,7 @@ import { agentReport, buildDependencyGraph, isSeverity, SEVERITIES, type AgentSe
 import { compareReports } from "./compare.js";
 import { loadQualityConfig } from "./config.js";
 import { git } from "./files.js";
+import { qualityHistory } from "./home.js";
 import { writeReport } from "./output.js";
 import { ANALYZERS } from "./registry.js";
 import { recordSnapshot } from "./snapshots.js";
@@ -22,7 +23,8 @@ interface Options {
   format: "json" | "agent" | "graph";
   minSeverity?: AgentSeverity;
   top?: number;
-  snapshots?: string;
+  /** A folder, or true for the reports home (`--snapshots` alone, ADR-0028). */
+  snapshots?: string | boolean;
 }
 
 const IDS = ANALYZERS.map((analyzer) => analyzer.id);
@@ -65,7 +67,7 @@ const program = new Command()
   .name("xray-quality")
   .enablePositionalOptions()
   .description(
-    "Score the quality of a whole repository and write a JSON report. Reads the repository; writes only its own ignored .xray/cache/, and --snapshots copies outside it.",
+    "Score the quality of a whole repository and write a JSON report. Reads the repository; writes only its own ignored .xray/cache/, and with --snapshots a copy in the reports home (~/.xray/reports) or the folder given.",
   )
   .option("-C, --cwd <dir>", "root of the repository to analyse", process.cwd())
   .option("-o, --out <file>", "write the report to a file instead of stdout")
@@ -76,7 +78,10 @@ const program = new Command()
   .option("--no-cache", "don't read or write .xray/cache/ (git churn by commit)")
   .option("--min-severity <level>", "agent format: lowest severity kept, high | medium | low (default medium)", parseSeverity)
   .option("--top <n>", "agent format: most findings kept (default 10)", parseTop)
-  .option("--snapshots <dir>", "keep this report in <dir> (one per commit, the newest 30) and add what changed since the last one")
+  .option(
+    "--snapshots [dir]",
+    "keep this report (one per commit, the newest 30) and add what changed since the last one; in <dir>, else in ~/.xray/reports/<owner>-<repo>/quality ($XRAY_HOME moves it)",
+  )
   .exitOverride()
   .action(async (options: Options) => {
     if (options.format !== "json" && options.format !== "agent" && options.format !== "graph") {
@@ -105,7 +110,7 @@ const program = new Command()
     });
     if (options.snapshots) {
       // Saved without the comparison; the printed report carries it (ADR-0027).
-      const outcome = recordSnapshot(resolve(options.snapshots), report, { save: !options.only && !options.files });
+      const outcome = recordSnapshot(options.snapshots === true ? qualityHistory(root) : resolve(options.snapshots), report, { save: !options.only && !options.files });
       if (outcome.comparison) report.comparison = outcome.comparison;
       const since = outcome.comparison
         ? `compared with ${outcome.comparison.previous.commit.slice(0, 7)} (score ${outcome.comparison.score.change === null ? "n/a" : `${outcome.comparison.score.change >= 0 ? "+" : ""}${outcome.comparison.score.change}`}, ${outcome.comparison.added.length} new, ${outcome.comparison.fixed.length} fixed)`

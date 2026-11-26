@@ -179,7 +179,7 @@ build xray into the plugin's data folder (about a minute), then reuse that build
   `architecture.md` when they exist. It reads the report from the PR comment, or runs
   xray locally when the branch is checked out; it never posts to the PR.
 - **`/xray:quality-report`** (or "how is the code quality?", "did this repo get worse?"): scores
-  the whole repository, keeps a snapshot per commit in the plugin's data folder (the newest 30),
+  the whole repository, keeps a snapshot per commit in `~/.xray/reports` (the newest 30),
   and says what changed since the last one: the score per metric, the new problems and the fixed
   ones. It proposes issues for at most 5 new high-severity problems and files them through
   [craft](https://github.com/pearpages/craft)'s `/craft:issue` on your OK (without craft, it lists
@@ -272,8 +272,9 @@ xray-quality
   --no-cache           don't read or write .xray/cache/
   --min-severity <l>   agent format: high | medium | low (default medium)
   --top <n>            agent format: most findings kept (default 10)
-  --snapshots <dir>    keep this report in <dir> (one per commit, the newest 30) and add
-                       `comparison`: what changed since the newest snapshot of an earlier commit
+  --snapshots [dir]    keep this report (one per commit, the newest 30) in <dir>, else in
+                       ~/.xray/reports/<owner>-<repo>/quality, and add `comparison`: what
+                       changed since the newest snapshot of an earlier commit
 
 xray-quality compare <previous.json> <current.json>
   -f, --format <fmt>   json (the comparison) | agent (the new problems only)
@@ -288,11 +289,28 @@ problem when only its numbers or its line changed (a hotspot whose churn grew). 
 unavailable in either report is `comparable: false`, with no score change and no findings listed,
 never a drop to 0 ([ADR-0027](docs/adr/0027-quality-snapshots.md)).
 
-`--snapshots <dir>` keeps the history for you: each run is compared with the newest snapshot of an
+`--snapshots` keeps the history for you: each run is compared with the newest snapshot of an
 earlier commit (the report gains `comparison`, and stderr says `compared with <sha> (score +3, 2
 new, 1 fixed)`), then saved as `<time>-<sha>.json`, replacing one of the same commit; the newest 30
 are kept. A run with uncommitted changes, `--only` or `--files` is compared but not saved, so the
 history only holds whole runs of committed code.
+
+**Where reports live.** Without a folder, `--snapshots` saves into the **reports home**, one folder
+for every repository on your machine (`$XRAY_HOME/reports` when set, else `~/.xray/reports`),
+named after the repository's `origin` (`git@github.com:pearpages/xray.git` → `pearpages-xray`; the
+folder's name without a remote):
+
+```
+~/.xray/reports/
+  pearpages-xray/
+    quality/20261126T101500000Z-f4a1600e2be1.json   quality history, one per commit
+    pr/134.md                                       PR reports you saved (xray --out)
+```
+
+`/xray:quality-report` and the UI use the same folder, so a report made by any of them shows up in
+the others ([ADR-0028](docs/adr/0028-reports-home.md)). A report you want to keep from a run with
+uncommitted changes can go in `quality/` as `<time>-<sha>-dirty.json`: the UI shows it, and it is
+never compared against or pruned.
 
 The report has the repository path, the analysed commit (and whether the tree had uncommitted
 changes), the date, a global score, and one result per metric: score, one-sentence summary and
@@ -314,8 +332,9 @@ Findings formula: `100 − (10·high + 3·medium + 1·low) / (code files / 100)`
 100 files costs 10 points. Global score: the weighted average of the metrics that ran.
 
 **The UI** (`npm run ui`, or `npm run build -w @xray/quality-ui` for a static
-build in `packages/quality-ui/dist/`): open one or more reports with the button or by dropping them
-(anywhere on the page once one is open). The header names the repository, commit and date and
+build in `packages/quality-ui/dist/`): `npm run ui` opens every report in the reports home on its
+own, every repository and its history. You can also open any report file with the button or by
+dropping it (anywhere on the page once one is open). The header names the repository, commit and date and
 switches between repositories and reports. Every metric has a tab, its score beside its name, the
 weakest first. The **Overview** says what holds the global score down and shows a card per metric,
 the weakest first: its score and band (good from 80, fair from 50, poor below), a one-line
@@ -329,8 +348,9 @@ metric's tab says why and how to measure it. With several reports of one reposit
 shows how much it moved since the one before, and the Overview charts them. Any file path opens
 the file's profile beside the page. **Findings** lists them all, filterable by severity and metric.
 Long lists come a page at a time, and the open tab is in the URL (`#coverage`), so Back works.
-Reports never leave the browser: it keeps the open ones (in localStorage) until you press *Close
-all*, so a reload doesn't lose them.
+Reports never leave your machine. The ones from the reports home are read again on every visit;
+the ones you open by hand are kept in the browser (in localStorage) until you press *Close all*, so
+a reload doesn't lose them.
 
 ### Configuration (`quality` in `xray.config.json`)
 

@@ -13,6 +13,7 @@ import { ScoreChip } from "./components/ScoreChip";
 import { Findings } from "./components/Findings";
 import { readReportFiles, ReportLoader } from "./components/ReportLoader";
 import { byRepo, type MetricResult, type QualityReport } from "./reports";
+import { loadHomeReports } from "./homeReports";
 import { browserStorage, loadSaved, save } from "./storage";
 import { FileProfileContext } from "./fileProfileContext";
 import { useHashTab } from "./useHashTab";
@@ -21,6 +22,8 @@ import "./App.css";
 interface Props {
   /** Where reports are kept between visits; the browser's localStorage by default. */
   storage?: Storage | undefined;
+  /** The reports home's reports (ADR-0028); the dev server's by default. */
+  loadHome?: () => Promise<QualityReport[]>;
 }
 
 // Each metric view loads when its tab first opens: the overview doesn't pay for the tables.
@@ -41,11 +44,22 @@ const VIEWS: Record<string, (metric: MetricResult, report: QualityReport) => Rea
   duplication: (metric) => <DuplicationBlocks metric={metric} />,
 };
 
-export function App({ storage = browserStorage() }: Props) {
+export function App({ storage = browserStorage(), loadHome = loadHomeReports }: Props) {
+  // Opened by hand: kept in the browser. From the reports home: read again on every visit, never copied.
   const [reports, setReports] = useState<QualityReport[]>(() => loadSaved(storage));
+  const [home, setHome] = useState<QualityReport[]>([]);
   const [kept, setKept] = useState(true);
   useEffect(() => setKept(save(storage, reports)), [storage, reports]);
-  const groups = useMemo(() => byRepo(reports), [reports]);
+  useEffect(() => {
+    let live = true;
+    void loadHome().then((loaded) => {
+      if (live && loaded.length) setHome(loaded);
+    });
+    return () => {
+      live = false;
+    };
+  }, [loadHome]);
+  const groups = useMemo(() => byRepo([...home, ...reports]), [home, reports]);
   const [repo, setRepo] = useState<string>();
   const [commit, setCommit] = useState<string>();
   const [tab, setTab] = useHashTab("overview");
@@ -98,7 +112,7 @@ export function App({ storage = browserStorage() }: Props) {
           </Heading>
           <EmptyState
             title="No report open"
-            description="Run xray-quality on a repository (node packages/quality/dist/cli.js --cwd <repo> -o report.json), then open its JSON report here. It stays in this browser."
+            description="Run xray-quality --snapshots on a repository (node packages/quality/dist/cli.js --cwd <repo> --snapshots): its report goes to ~/.xray/reports and shows here when the UI runs with npm run ui. Or open any JSON report here; it stays in this browser."
           />
           <ReportLoader onLoad={add} />
         </div>
@@ -129,6 +143,7 @@ export function App({ storage = browserStorage() }: Props) {
             onLoad={add}
             onCloseAll={() => {
               setReports([]);
+              setHome([]);
               setTab("overview");
             }}
           />

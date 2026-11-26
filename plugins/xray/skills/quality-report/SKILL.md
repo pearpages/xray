@@ -1,6 +1,6 @@
 ---
 name: quality-report
-description: Measure a TypeScript/JavaScript repository's quality and say what changed since the last time, then propose issues for the worst new problems. Use when asked how the code quality is, whether a repository got better or worse, what new problems or hotspots appeared, for a quality report, score or health check, or on /xray:quality-report. Runs xray-quality with a snapshot history kept in the plugin's data folder (one per commit, the newest 30), reports the score per metric with its change, the new and fixed problems, and hands at most 5 new high-severity problems to /craft:issue on the user's OK. Never fixes anything.
+description: Measure a TypeScript/JavaScript repository's quality and say what changed since the last time, then propose issues for the worst new problems. Use when asked how the code quality is, whether a repository got better or worse, what new problems or hotspots appeared, for a quality report, score or health check, or on /xray:quality-report. Runs xray-quality with a snapshot history kept in the reports home, ~/.xray/reports (one per commit, the newest 30), reports the score per metric with its change, the new and fixed problems, and hands at most 5 new high-severity problems to /craft:issue on the user's OK. Never fixes anything.
 argument-hint: "[repository root, default: current directory]"
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/xray.sh *) Bash(node ${CLAUDE_PLUGIN_ROOT}/skills/quality-report/scripts/digest.mjs *) Bash(git -C * remote get-url origin) Bash(git rev-parse --show-toplevel) Read
 ---
@@ -11,8 +11,9 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/xray.sh *) Bash(node ${CLAUDE_
 own says little; this skill keeps a history, so each run says **what got better, what got worse
 and which problems are new**, and turns the worst new ones into issues.
 
-**Scope:** reads the repository. Writes only the snapshot history in the plugin's data folder
-(`${CLAUDE_PLUGIN_DATA}/snapshots/`) and a scratch copy of the report. Never fixes code, and
+**Scope:** reads the repository. Writes only the snapshot history in the reports home
+(`${XRAY_HOME:-$HOME/.xray}/reports/<name>/quality/`, the one folder every xray report on this machine
+lives in, [ADR-0028](https://github.com/pearpages/xray/blob/main/docs/adr/0028-reports-home.md)) and a scratch copy of the report. Never fixes code, and
 files issues only through `/craft:issue`, on the user's OK
 ([ADR-0025](https://github.com/pearpages/xray/blob/main/docs/adr/0025-plugin-stays-about-analysis.md)).
 Works on TypeScript/JavaScript repositories; for another language, say so and suggest
@@ -24,10 +25,12 @@ Works on TypeScript/JavaScript repositories; for another language, say so and su
 2. **The history's name:** from `git -C <root> remote get-url origin`, the owner and repository
    joined by `-` (`git@github.com:pearpages/xray.git` → `pearpages-xray`); with no `origin`,
    the root folder's name. One repository always gets the same name, so its history is found again.
+   It is the name `xray-quality --snapshots` picks on its own; passing the folder keeps the skill
+   working with builds older than that default.
 3. **Run** (the first run builds xray, about a minute):
 
    ```bash
-   "${CLAUDE_PLUGIN_ROOT}/scripts/xray.sh" "${CLAUDE_PLUGIN_DATA}" quality -C <root> --snapshots "${CLAUDE_PLUGIN_DATA}/snapshots/<name>" -o <scratch>/quality.json
+   "${CLAUDE_PLUGIN_ROOT}/scripts/xray.sh" "${CLAUDE_PLUGIN_DATA}" quality -C <root> --snapshots "${XRAY_HOME:-$HOME/.xray}/reports/<name>/quality" -o <scratch>/quality.json
    ```
 
    Its last stderr line says what happened to the history: `compared with <sha> (…)` or `no

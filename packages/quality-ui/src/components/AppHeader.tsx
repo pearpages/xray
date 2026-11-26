@@ -66,7 +66,7 @@ export function AppHeader({ report, repositories, history, kept, onRepository, o
           </Button>
         </div>
         <Text tone="muted" size="xs">
-          {kept ? "Open reports are kept in this browser until you close them." : "This browser can't keep the reports: they close when you leave."}
+          {kept ? "Reports from ~/.xray/reports open on every visit; the ones you open by hand are kept in this browser until you close them." : "This browser can't keep the reports: they close when you leave."}
         </Text>
       </div>
     </header>

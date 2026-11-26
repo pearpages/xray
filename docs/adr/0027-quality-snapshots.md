@@ -1,7 +1,7 @@
 # 0027. Quality snapshots: kept in the plugin's data folder, compared by finding identity
 
 - **Date:** 2026-11-10
-- **Status:** Accepted — by the owner, 2026-11-10
+- **Status:** Accepted — by the owner, 2026-11-10; where the history lives superseded by [0028](0028-reports-home.md)
 
 ## Context
 

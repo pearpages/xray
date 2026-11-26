@@ -1,5 +1,5 @@
 // A repository's quality history: one saved report per commit, compared with the newest earlier
-// one (ADR-0027). The folder is the caller's (the plugin passes its data folder), never the
+// one (ADR-0027). The folder is the caller's (by default the reports home, ADR-0028), never the
 // analysed repository.
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

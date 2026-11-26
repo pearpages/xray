@@ -214,4 +214,18 @@ describe("xray-quality --snapshots", () => {
     expect(readdirSync(snapshots)).toHaveLength(2);
     expect(second.stderr).toContain(`xray-quality: compared with ${base.repo.commit.slice(0, 7)}`);
   });
+
+  it("keeps the history in the reports home, under the origin's owner and name, when given no folder", () => {
+    const { root } = repo();
+    fixture!.git("remote", "add", "origin", "https://github.com/acme/shop.git");
+    outDir = mkdtempSync(join(tmpdir(), "xray-quality-home-"));
+    const result = spawnSync(process.execPath, [CLI, "--cwd", root, "--snapshots", "-o", join(outDir, "report.json")], {
+      encoding: "utf8",
+      env: { ...process.env, XRAY_HOME: outDir },
+    });
+    expect(result.status).toBe(0);
+    const history = join(outDir, "reports", "acme-shop", "quality");
+    expect(readdirSync(history)).toHaveLength(1);
+    expect(result.stderr).toContain(`saved ${history}`);
+  });
 });

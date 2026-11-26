@@ -69,13 +69,25 @@ describe("App", () => {
     first.unmount();
 
     render(<App storage={storage} />);
-    expect(screen.getByText("Open reports are kept in this browser until you close them.")).toBeTruthy();
+    expect(screen.getByText("Reports from ~/.xray/reports open on every visit; the ones you open by hand are kept in this browser until you close them.")).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: "Close all" }));
     expect(screen.getByText("No report open")).toBeTruthy();
     cleanup();
 
     render(<App storage={storage} />);
     expect(screen.getByText("No report open")).toBeTruthy();
+  });
+
+  it("opens the reports home's reports on its own, without copying them into the browser", async () => {
+    const storage = new MemoryStorage();
+    const loadHome = async () => [
+      report({ commit: "aaa1111", generatedAt: "2026-10-01T00:00:00.000Z", score: 60 }),
+      report({ commit: "bbb2222", generatedAt: "2026-11-01T00:00:00.000Z", score: 77 }),
+    ];
+    render(<App storage={storage} loadHome={loadHome} />);
+    expect(await screen.findByRole("heading", { level: 1, name: "shop" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Global score: aaa1111: 60, bbb2222: 77" })).toBeTruthy();
+    expect(storage.getItem("xray-quality:reports")).toBeNull();
   });
 
   it("says when the browser can't keep the reports", async () => {
